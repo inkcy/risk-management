@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 const groups: { label: string; items: { href: string; icon: string; label: string; badge?: string }[] }[] = [
   {
@@ -33,8 +34,16 @@ export function Sidebar() {
   const pathname = usePathname();
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
+  useEffect(() => {
+    document.body.classList.remove('sidebar-open');
+  }, [pathname]);
+
+  const closeSidebar = () => document.body.classList.remove('sidebar-open');
+
   return (
-    <aside className="sidebar">
+    <>
+      <div className="sidebar-backdrop" onClick={closeSidebar} aria-hidden="true" />
+      <aside className="sidebar">
       <div className="logo">
         <div className="logo-mark">
           <div className="logo-icon">RM</div>
@@ -74,5 +83,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

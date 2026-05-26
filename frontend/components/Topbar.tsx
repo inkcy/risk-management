@@ -33,9 +33,21 @@ export function Topbar() {
     setIsLight(next);
   };
 
+  const toggleSidebar = () => {
+    document.body.classList.toggle('sidebar-open');
+  };
+
   return (
     <header className="topbar">
       <div className="topbar-left">
+        <button
+          className="menu-toggle"
+          onClick={toggleSidebar}
+          aria-label="เปิดเมนู"
+          type="button"
+        >
+          ☰
+        </button>
         <span className="page-title">{title}</span>
         <span className="breadcrumb">{breadcrumb}</span>
       </div>
@@ -48,8 +60,11 @@ export function Topbar() {
         >
           {isLight ? '☀️' : '🌙'}
         </button>
-        <button className="tb-btn tb-btn-ghost">⤓ ส่งออก</button>
-        <Link href="/report" className="tb-btn tb-btn-primary">+ รายงานใหม่</Link>
+        <button className="tb-btn tb-btn-ghost export-btn">⤓ ส่งออก</button>
+        <Link href="/report" className="tb-btn tb-btn-primary report-btn">
+          <span className="btn-full">+ รายงานใหม่</span>
+          <span className="btn-short" aria-hidden="true">+</span>
+        </Link>
       </div>
     </header>
   );

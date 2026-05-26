@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Sidebar } from '@/components/Sidebar';
 import { Topbar } from '@/components/Topbar';
 import './globals.css';
@@ -6,6 +6,12 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'ระบบบริหารความเสี่ยง — Hospital Risk Management',
   description: 'Hospital Risk Management Dashboard with HRO & Compassionate RCA',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0a0d14',
 };
 
 const themeBootstrap = `

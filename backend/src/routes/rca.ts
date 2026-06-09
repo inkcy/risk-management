@@ -1,51 +1,44 @@
 import { Router } from 'express';
-import { query } from '../db.js';
-import { envelope } from '../envelope.js';
-import { demoRcaBundle } from '../demo.js';
-import type { Incident, RcaCase, RcaTimelineEvent, RcaCause, RcaBundle } from '../types.js';
+import { loadActions, loadRcaBundle } from '../queries.js';
+import { buildRcaDocx } from '../docx.js';
+import { analyzeRca } from '../ai.js';
 
 const router = Router();
 
-router.get('/:id', async (req, res) => {
+router.post('/:id/analyze', async (req, res) => {
   const { id } = req.params;
-  const result = await envelope<RcaBundle>(async () => {
-    const incident = await query<Incident>(`
-      SELECT i.id, i.ir_code, i.occurred_at, i.title, i.description,
-             i.unit_id, u.name_th AS unit_name,
-             i.category, i.severity, i.rca_status, i.reported_by
-      FROM incidents i
-      LEFT JOIN units u ON u.id = i.unit_id
-      WHERE i.ir_code = $1 OR i.id::text = $1
-      LIMIT 1
-    `, [id]);
-
-    if (incident.rows.length === 0) {
-      return { incident: null, case: null, timeline: [], causes: [] };
+  try {
+    const [bundleEnv, actionsEnv] = await Promise.all([loadRcaBundle(id), loadActions()]);
+    if (!bundleEnv.data.incident) {
+      return res.status(404).json({ error: 'Incident not found' });
     }
-    const inc = incident.rows[0];
+    const result = await analyzeRca(bundleEnv.data, actionsEnv.data);
+    res.json(result);
+  } catch (err) {
+    console.error('AI analyze failed:', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
 
-    const rcaCase = await query<RcaCase>(
-      `SELECT * FROM rca_cases WHERE incident_id = $1`,
-      [inc.id],
-    );
-    if (rcaCase.rows.length === 0) {
-      return { incident: inc, case: null, timeline: [], causes: [] };
+router.get('/:id/export', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [bundleEnv, actionsEnv] = await Promise.all([loadRcaBundle(id), loadActions()]);
+    if (!bundleEnv.data.incident) {
+      return res.status(404).json({ error: 'Incident not found' });
     }
-    const c = rcaCase.rows[0];
+    const buffer = await buildRcaDocx(bundleEnv.data, actionsEnv.data);
+    const safeName = (bundleEnv.data.incident.ir_code || 'rca').replace(/[^\w.-]+/g, '_');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="RCA_${safeName}.docx"`);
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
 
-    const [timeline, causes] = await Promise.all([
-      query<RcaTimelineEvent>(
-        `SELECT * FROM rca_timeline WHERE rca_case_id = $1 ORDER BY sort_order ASC`,
-        [c.id],
-      ),
-      query<RcaCause>(
-        `SELECT * FROM rca_causes WHERE rca_case_id = $1`,
-        [c.id],
-      ),
-    ]);
-
-    return { incident: inc, case: c, timeline: timeline.rows, causes: causes.rows };
-  }, demoRcaBundle);
+router.get('/:id', async (req, res) => {
+  const result = await loadRcaBundle(req.params.id);
   res.json(result);
 });
 

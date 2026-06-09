@@ -1,5 +1,6 @@
 import { getRcaByCode, getActions, categoryLabel } from '@/lib/api';
 import { DemoBanner } from '@/components/DemoBanner';
+import { RcaAiPanel } from '@/components/RcaAiPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,6 +60,9 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
 
   const relatedActions = actions.filter(a => a.ir_code === incident.ir_code);
 
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+  const exportHref = `${backendUrl}/api/rca/${encodeURIComponent(incident.ir_code)}/export`;
+
   return (
     <>
       <DemoBanner error={error} />
@@ -75,11 +79,18 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
               {' · '}{incident.unit_name ?? '—'}{' · '}{categoryLabel[incident.category] ?? incident.category}
             </div>
           </div>
-          <span className={`badge ${sevBadge(incident.severity)}`} style={{ fontSize: 13, padding: '6px 12px' }}>
-            ระดับ {incident.severity}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+            <span className={`badge ${sevBadge(incident.severity)}`} style={{ fontSize: 13, padding: '6px 12px' }}>
+              ระดับ {incident.severity}
+            </span>
+            <a href={exportHref} className="tb-btn tb-btn-ghost" download>
+              ⤓ ส่งออก Word
+            </a>
+          </div>
         </div>
       </div>
+
+      <RcaAiPanel irCode={incident.ir_code} />
 
       <div className="grid-2">
         <div className="card">

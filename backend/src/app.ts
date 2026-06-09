@@ -6,6 +6,7 @@ import incidentsRouter from './routes/incidents.js';
 import rcaRouter from './routes/rca.js';
 import actionsRouter from './routes/actions.js';
 import statsRouter from './routes/stats.js';
+import cautiRouter from './routes/cauti.js';
 
 export function createApp() {
   const app = express();
@@ -26,6 +27,7 @@ export function createApp() {
   app.use('/api/rca', rcaRouter);
   app.use('/api/actions', actionsRouter);
   app.use('/api/stats', statsRouter);
+  app.use('/api/cauti', cautiRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 

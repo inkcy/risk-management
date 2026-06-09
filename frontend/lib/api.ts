@@ -1,5 +1,6 @@
 import type {
   ActionItem,
+  CautiPatient,
   Envelope,
   Incident,
   RcaBundle,
@@ -46,6 +47,11 @@ export function getRcaByCode(irCode: string) {
 
 export function getStats() {
   return fetchEnvelope<Stats>('/api/stats', FALLBACK_STATS);
+}
+
+const FALLBACK_CAUTI: CautiPatient[] = [];
+export function getCauti() {
+  return fetchEnvelope<CautiPatient[]>('/api/cauti', FALLBACK_CAUTI);
 }
 
 export const categoryLabel: Record<string, string> = {

@@ -1,5 +1,6 @@
 import type {
   ActionItem,
+  CautiPatient,
   Incident,
   RcaBundle,
   RcaCause,
@@ -84,6 +85,24 @@ export const demoRcaBundle: RcaBundle = {
       } satisfies RcaCause)),
     ),
 };
+
+function daysBetween(start: string, end: string): number {
+  const ms = new Date(end).getTime() - new Date(start).getTime();
+  return Math.max(0, Math.floor(ms / 86_400_000));
+}
+
+const baseCauti: Omit<CautiPatient, 'days_in' | 'is_overdue'>[] = [
+  { id: 1, bed: '19A-1', patient_name: 'สมชาย กิมนรากร',   age: 49, hn: 'HN001234', diagnosis: 'SBP with AKI',           ward: '19A', inserted_at: '2025-06-01', plan_off_date: '2025-06-04', removed_at: null,         outcome: 'death',   note: 'ผู้ป่วยเสียชีวิตก่อน off F/C' },
+  { id: 2, bed: '19A-2', patient_name: 'ประจิตร พรหมสรัย', age: 44, hn: 'HN001235', diagnosis: 'Alcoholic ketoacidosis', ward: '19A', inserted_at: '2025-06-01', plan_off_date: '2025-06-04', removed_at: '2025-06-03', outcome: 'removed', note: 'off ตามแผน' },
+  { id: 3, bed: '19A-3', patient_name: 'วิเชียร ธรรมสุ',    age: 60, hn: 'HN001236', diagnosis: 'Rt.MCA infarction',      ward: '19A', inserted_at: '2025-06-02', plan_off_date: '2025-06-05', removed_at: null,         outcome: 'death',   note: '' },
+  { id: 4, bed: '19A-4', patient_name: 'สุนิสา แก้วใส',     age: 71, hn: 'HN001237', diagnosis: 'CAUTI prevention obs',   ward: '19A', inserted_at: '2025-05-29', plan_off_date: '2025-06-01', removed_at: null,         outcome: '',        note: 'ใส่เกิน 3 วัน — ทบทวนแผน off' },
+];
+
+export const demoCauti: CautiPatient[] = baseCauti.map(p => {
+  const reference = p.removed_at ?? new Date().toISOString().slice(0, 10);
+  const days = daysBetween(p.inserted_at, reference);
+  return { ...p, days_in: days, is_overdue: !p.removed_at && days >= 3 };
+});
 
 export const demoStats: Stats = {
   totals: { incidents: 247, severe: 8, rca_pending: 2, actions_done: 28, actions_in_progress: 4, actions_planned: 2 },

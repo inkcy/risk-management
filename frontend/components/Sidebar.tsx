@@ -12,6 +12,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
       { href: '/incidents', icon: '⚠', label: 'อุบัติการณ์', badge: '3' },
       { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA' },
       { href: '/matrix', icon: '▦', label: 'Risk Matrix' },
+      { href: '/cauti', icon: '⚕', label: 'CAUTI QuickAlert' },
     ],
   },
   {

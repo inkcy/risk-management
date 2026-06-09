@@ -1,6 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+interface RecentReport {
+  ir_code: string;
+  title: string;
+  category: string;
+  severity: string;
+  submitted_at: string;
+}
+
+const RECENT_KEY = 'esafe_recent_reports';
+const MAX_RECENT = 5;
+
+function loadRecent(): RecentReport[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, MAX_RECENT) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(r: RecentReport) {
+  if (typeof window === 'undefined') return;
+  const list = [r, ...loadRecent().filter(x => x.ir_code !== r.ir_code)].slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+}
 
 const units = [
   { code: 'MICU', label: 'MICU / CCU' },
@@ -39,6 +69,12 @@ export default function ReportPage() {
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [lastIrCode, setLastIrCode] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentReport[]>([]);
+
+  useEffect(() => {
+    setRecent(loadRecent());
+  }, []);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm(s => ({ ...s, [k]: v }));
 
@@ -71,6 +107,16 @@ export default function ReportPage() {
       if (!res.ok) throw new Error((await res.json()).error ?? res.statusText);
       setStatus('success');
       setMessage(`บันทึก ${irCode} เรียบร้อย`);
+      setLastIrCode(irCode);
+      const newEntry: RecentReport = {
+        ir_code: irCode,
+        title: form.description.slice(0, 80) || 'อุบัติการณ์ใหม่',
+        category: form.category,
+        severity: form.severity,
+        submitted_at: new Date().toISOString(),
+      };
+      saveRecent(newEntry);
+      setRecent(loadRecent());
     } catch (err) {
       setStatus('error');
       setMessage(String(err));
@@ -135,8 +181,29 @@ export default function ReportPage() {
               <button type="button" className="tb-btn tb-btn-ghost">บันทึกร่าง</button>
             </div>
             {status === 'success' && (
-              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--green-bg)', color: 'var(--green)', fontSize: 12 }}>
-                ✓ {message}
+              <div style={{
+                marginTop: 14, padding: '14px 16px', borderRadius: 8,
+                background: 'var(--green-bg)', border: '1px solid rgba(62,207,142,0.25)',
+              }}>
+                <div style={{ color: 'var(--green)', fontWeight: 600, marginBottom: 6, fontSize: 13 }}>
+                  ✓ ระบบรับรายงานเรียบร้อย — {lastIrCode}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 10, lineHeight: 1.7 }}>
+                  ทีมบริหารความเสี่ยงจะติดตามต่อ · คุณสามารถดูสถานะหรือเริ่มทำ RCA ได้เลย
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {lastIrCode && (
+                    <Link
+                      href={`/rca?ir=${encodeURIComponent(lastIrCode)}`}
+                      className="tb-btn tb-btn-primary"
+                    >
+                      ◎ เริ่มวิเคราะห์ RCA
+                    </Link>
+                  )}
+                  <Link href="/incidents" className="tb-btn tb-btn-ghost">
+                    ดูรายการอุบัติการณ์
+                  </Link>
+                </div>
               </div>
             )}
             {status === 'error' && (
@@ -149,6 +216,46 @@ export default function ReportPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {recent.length > 0 && (
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">รายงานล่าสุดของคุณ</div>
+              <span className="badge badge-blue">{recent.length} รายการ</span>
+            </div>
+            <div className="card-body" style={{ padding: '8px 14px' }}>
+              {recent.map(r => {
+                const sevCls = ['E','F','G','H','I'].includes(r.severity) ? 'badge-red'
+                  : ['C','D'].includes(r.severity) ? 'badge-amber' : 'badge-blue';
+                return (
+                  <Link
+                    key={r.ir_code}
+                    href={`/rca?ir=${encodeURIComponent(r.ir_code)}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 0', borderBottom: '1px solid var(--border)',
+                      textDecoration: 'none', color: 'inherit',
+                    }}
+                  >
+                    <span className={`badge ${sevCls}`} style={{ flexShrink: 0 }}>{r.severity}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {r.title}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>
+                        {r.ir_code} · {new Date(r.submitted_at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <span style={{ color: 'var(--text3)', fontSize: 14 }}>›</span>
+                  </Link>
+                );
+              })}
+              <div style={{ paddingTop: 8, fontSize: 10, color: 'var(--text3)', textAlign: 'center' }}>
+                บันทึกอยู่ในเบราว์เซอร์ของคุณ (localStorage)
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="card">
           <div className="card-header"><div className="card-title">เกณฑ์การรายงาน</div></div>
           <div className="card-body" style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8 }}>

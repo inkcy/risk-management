@@ -95,3 +95,20 @@ export interface Envelope<T> {
   demo: boolean;
   error: string | null;
 }
+
+export interface CautiPatient {
+  id: number;
+  bed: string;
+  patient_name: string;
+  age: number | null;
+  hn: string | null;
+  diagnosis: string | null;
+  ward: string | null;
+  inserted_at: string;
+  plan_off_date: string | null;
+  removed_at: string | null;
+  outcome: string | null;
+  note: string | null;
+  days_in: number;
+  is_overdue: boolean;
+}

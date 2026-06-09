@@ -58,14 +58,19 @@ npm run dev                  # เปิด http://localhost:3000
 
 ## API Endpoints (ภายใต้ `BACKEND_URL` เช่น `http://localhost:4000`)
 
-| Method | Path                | คำอธิบาย                              |
-|--------|---------------------|----------------------------------------|
-| GET    | `/api/health`       | สถานะ backend + ว่า DB เชื่อมหรือยัง   |
-| GET    | `/api/incidents`    | รายการอุบัติการณ์                     |
-| POST   | `/api/incidents`    | บันทึกอุบัติการณ์ใหม่ (ต้องเชื่อม DB)   |
-| GET    | `/api/rca/:irCode`  | RCA bundle — incident + case + timeline + causes |
-| GET    | `/api/actions`      | มาตรการแก้ไขทั้งหมด                   |
-| GET    | `/api/stats`        | Aggregate stats สำหรับ Dashboard      |
+| Method | Path                       | คำอธิบาย                              |
+|--------|----------------------------|----------------------------------------|
+| GET    | `/api/health`              | สถานะ backend + ว่า DB เชื่อมหรือยัง   |
+| GET    | `/api/incidents`           | รายการอุบัติการณ์                     |
+| POST   | `/api/incidents`           | บันทึกอุบัติการณ์ใหม่ (ต้องเชื่อม DB)   |
+| GET    | `/api/rca/:irCode`         | RCA bundle — incident + case + timeline + causes |
+| GET    | `/api/rca/:irCode/export`  | ส่งออกรายงาน RCA เป็น Word (.docx)    |
+| POST   | `/api/rca/:irCode/analyze` | AI วิเคราะห์ RCA ด้วย Claude (5-Tier + Compassionate + HRO) |
+| GET    | `/api/actions`             | มาตรการแก้ไขทั้งหมด                   |
+| GET    | `/api/stats`               | Aggregate stats สำหรับ Dashboard      |
+| GET    | `/api/cauti`               | CAUTI QuickAlert — ทะเบียนผู้ป่วยใส่ Foley + flag overdue |
+| POST   | `/api/cauti`               | เพิ่มผู้ป่วยใหม่                       |
+| PATCH  | `/api/cauti/:id/remove`    | บันทึก off F/C                         |
 
 ทุก endpoint ของ GET จะตอบด้วย envelope:
 ```json
@@ -132,6 +137,8 @@ frontend/
 - `PORT` — พอร์ตที่ Express ฟัง (ดีฟอลต์ 4000)
 - `POSTGRES_URL` — Postgres connection string (ไม่ใส่ = demo mode)
 - `CORS_ORIGIN` — origin ที่อนุญาต (คั่นด้วยจุลภาคได้) ดีฟอลต์ `http://localhost:3000`
+- `ANTHROPIC_API_KEY` — Claude API key สำหรับฟีเจอร์ AI วิเคราะห์ RCA (ไม่ใส่ = demo mock) สมัครที่ <https://console.anthropic.com>
+- `ANTHROPIC_MODEL` — โมเดล Claude ที่ใช้ (ดีฟอลต์ `claude-sonnet-4-6` · ทางเลือก `claude-haiku-4-5` ถูกสุด, `claude-opus-4-8` ฉลาดสุด)
 
 **frontend/.env.local**
 - `BACKEND_URL` — URL ที่ Next.js server ใช้เรียก backend (SSR) ดีฟอลต์ `http://localhost:4000`

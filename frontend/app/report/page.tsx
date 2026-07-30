@@ -89,8 +89,7 @@ export default function ReportPage() {
     try {
       const occurred = `${form.occurred_at}T${form.time || '00:00'}:00+07:00`;
       const irCode = `IR ${new Date().getFullYear().toString().slice(-2)}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Date.now() % 1000000).padStart(6, '0')}`;
-      const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
-      const res = await fetch(`${backend}/api/incidents`, {
+      const res = await fetch(`/api/incidents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

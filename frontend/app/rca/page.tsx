@@ -60,8 +60,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
 
   const relatedActions = actions.filter(a => a.ir_code === incident.ir_code);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
-  const exportHref = `${backendUrl}/api/rca/${encodeURIComponent(incident.ir_code)}/export`;
+  const exportHref = `/api/rca/${encodeURIComponent(incident.ir_code)}/export`;
 
   return (
     <>
@@ -83,9 +82,17 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
             <span className={`badge ${sevBadge(incident.severity)}`} style={{ fontSize: 13, padding: '6px 12px' }}>
               ระดับ {incident.severity}
             </span>
-            <a href={exportHref} className="tb-btn tb-btn-ghost" download>
-              ⤓ ส่งออก Word
-            </a>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <a
+                href={`/rca/form?ir=${encodeURIComponent(incident.ir_code)}`}
+                className="tb-btn tb-btn-primary"
+              >
+                ▤ กรอกแบบฟอร์ม RCA
+              </a>
+              <a href={exportHref} className="tb-btn tb-btn-ghost" download>
+                ⤓ ส่งออก Word
+              </a>
+            </div>
           </div>
         </div>
       </div>

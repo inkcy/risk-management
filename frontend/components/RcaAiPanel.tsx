@@ -114,8 +114,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
     setLoading(true);
     setError(null);
     try {
-      const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
-      const res = await fetch(`${backend}/api/rca/${encodeURIComponent(irCode)}/analyze`, {
+      const res = await fetch(`/api/rca/${encodeURIComponent(irCode)}/analyze`, {
         method: 'POST',
       });
       const json = await res.json();

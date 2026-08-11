@@ -181,12 +181,26 @@ function RowActions({ onRemove, canRemove }: { onRemove: () => void; canRemove: 
 
 // ---------- หน้าหลัก ----------
 
+interface CloudFormRow {
+  id: number;
+  rm_no: string | null;
+  subject: string | null;
+  unit: string | null;
+  updated_at: string;
+  updated_by_name: string | null;
+  updated_by_email: string | null;
+}
+
 export default function RcaFormPage() {
   const [form, setForm] = useState<RcaFormData>(emptyRcaForm);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err' | 'info'; text: string } | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  /** id ของร่างบนเซิร์ฟเวอร์ — null คือยังไม่เคยบันทึกลงระบบ */
+  const [formId, setFormId] = useState<number | null>(null);
+  const [cloudForms, setCloudForms] = useState<CloudFormRow[]>([]);
+  const [showCloud, setShowCloud] = useState(false);
   const irRef = useRef<string | null>(null);
 
   // โหลดร่างจากเบราว์เซอร์ หรือดึงข้อมูลจากเคสเมื่อเปิดด้วย ?ir=
@@ -292,11 +306,92 @@ export default function RcaFormPage() {
     }
   };
 
+  /** บันทึกลงฐานข้อมูล — ส่ง id ไปด้วยคือเขียนทับใบเดิม */
+  const save = async (id: number | null) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/rca/forms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id ?? undefined, irCode: irRef.current, form }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? res.statusText);
+
+      setFormId(body.form.id);
+      setMsg({
+        kind: 'ok',
+        text: id ? `บันทึกทับใบที่ ${body.form.id} แล้ว` : `บันทึกลงระบบแล้ว (ใบที่ ${body.form.id})`,
+      });
+      if (showCloud) void loadCloudList();
+    } catch (err) {
+      setMsg({ kind: 'err', text: `บันทึกไม่สำเร็จ: ${(err as Error).message}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveToCloud = () => save(formId);
+  const saveAsNew = () => save(null);
+
+  const loadCloudList = useCallback(async () => {
+    try {
+      const res = await fetch('/api/rca/forms');
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? res.statusText);
+      setCloudForms(body.forms);
+    } catch (err) {
+      setMsg({ kind: 'err', text: `โหลดรายการไม่สำเร็จ: ${(err as Error).message}` });
+    }
+  }, []);
+
+  const toggleCloud = () => {
+    const next = !showCloud;
+    setShowCloud(next);
+    if (next) void loadCloudList();
+  };
+
+  const openCloudForm = async (id: number) => {
+    if (!isBlankRcaForm(form) && !confirm('เปิดร่างนี้จะแทนที่ข้อมูลที่กรอกค้างไว้ ดำเนินการต่อ?')) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/rca/forms/${id}`);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? res.statusText);
+      setForm(normalizeRcaForm(body.form.data));
+      setFormId(body.form.id);
+      irRef.current = body.form.ir_code ?? null;
+      setShowCloud(false);
+      setMsg({ kind: 'ok', text: `เปิดใบที่ ${id} แล้ว — แก้ไขแล้วกดบันทึกทับได้` });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      setMsg({ kind: 'err', text: `เปิดร่างไม่สำเร็จ: ${(err as Error).message}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteCloudForm = async (id: number) => {
+    if (!confirm(`ลบใบที่ ${id} ออกจากระบบถาวร?`)) return;
+    try {
+      const res = await fetch(`/api/rca/forms/${id}`, { method: 'DELETE' });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? res.statusText);
+      if (formId === id) setFormId(null);
+      void loadCloudList();
+      setMsg({ kind: 'info', text: `ลบใบที่ ${id} แล้ว` });
+    } catch (err) {
+      setMsg({ kind: 'err', text: `ลบไม่สำเร็จ: ${(err as Error).message}` });
+    }
+  };
+
   const clearForm = () => {
     if (!confirm('ล้างข้อมูลทั้งหมดในแบบฟอร์ม? ร่างที่บันทึกไว้จะถูกลบ')) return;
     localStorage.removeItem(DRAFT_KEY);
     setForm(emptyRcaForm());
-    setMsg({ kind: 'info', text: 'ล้างแบบฟอร์มแล้ว' });
+    setFormId(null);
+    setMsg({ kind: 'info', text: 'ล้างแบบฟอร์มแล้ว (ใบที่บันทึกไว้บนระบบยังอยู่)' });
   };
 
   const loadSample = () => {
@@ -354,10 +449,13 @@ export default function RcaFormPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" className="tb-btn tb-btn-ghost" onClick={toggleCloud}>
+                {showCloud ? 'ปิดรายการ' : '☁ ร่างที่บันทึกไว้'}
+              </button>
               <button type="button" className="tb-btn tb-btn-ghost" onClick={loadSample}>ใส่ตัวอย่าง</button>
               <button type="button" className="tb-btn tb-btn-ghost" onClick={clearForm}>ล้างฟอร์ม</button>
-              <button type="button" className="tb-btn tb-btn-primary" onClick={exportWord} disabled={busy}>
-                {busy ? 'กำลังสร้างไฟล์...' : '⤓ ส่งออก Word'}
+              <button type="button" className="tb-btn tb-btn-primary" onClick={saveToCloud} disabled={busy}>
+                {busy ? 'กำลังทำงาน...' : '💾 บันทึก'}
               </button>
             </div>
             {savedAt && (
@@ -380,6 +478,66 @@ export default function RcaFormPage() {
           </div>
         )}
       </div>
+
+      {showCloud && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-header">
+            <div className="card-title">☁ ร่างที่บันทึกไว้บนระบบ</div>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>เปิดต่อได้จากทุกเครื่อง</span>
+          </div>
+          <div className="card-body">
+            {cloudForms.length === 0 ? (
+              <div style={{ fontSize: 12.5, color: 'var(--text2)' }}>
+                ยังไม่มีร่างที่บันทึกไว้ — กรอกฟอร์มแล้วกดปุ่ม <strong>บันทึก</strong> ได้เลย
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>เรื่อง</th>
+                      <th>เลขที่ RM</th>
+                      <th>หน่วยงาน</th>
+                      <th>แก้ไขล่าสุด</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cloudForms.map(f => (
+                      <tr key={f.id}>
+                        <td>{f.subject || <span style={{ color: 'var(--text3)' }}>(ไม่มีชื่อเรื่อง)</span>}</td>
+                        <td>{f.rm_no || '—'}</td>
+                        <td>{f.unit || '—'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {new Date(f.updated_at).toLocaleString('th-TH', {
+                            day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit',
+                          })}
+                          <div style={{ fontSize: 10.5, color: 'var(--text3)' }}>
+                            {f.updated_by_name ?? f.updated_by_email ?? '—'}
+                          </div>
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                          <button type="button" className="tb-btn tb-btn-ghost" onClick={() => openCloudForm(f.id)} disabled={busy}>
+                            เปิด
+                          </button>{' '}
+                          <button
+                            type="button"
+                            className="tb-btn tb-btn-ghost"
+                            onClick={() => deleteCloudForm(f.id)}
+                            style={{ color: 'var(--red)' }}
+                          >
+                            ลบ
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ---- ส่วนหัวแบบฟอร์ม ---- */}
       <Section title="ข้อมูลทั่วไป">
@@ -550,12 +708,22 @@ export default function RcaFormPage() {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-body" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button type="button" className="tb-btn tb-btn-primary" onClick={exportWord} disabled={busy}>
-            {busy ? 'กำลังสร้างไฟล์...' : '⤓ ส่งออก Word (.docx)'}
+          <button type="button" className="tb-btn tb-btn-primary" onClick={saveToCloud} disabled={busy}>
+            {busy ? 'กำลังทำงาน...' : formId ? '💾 บันทึกทับใบเดิม' : '💾 บันทึกลงระบบ'}
+          </button>
+          {formId && (
+            <button type="button" className="tb-btn tb-btn-ghost" onClick={saveAsNew} disabled={busy}>
+              บันทึกเป็นใบใหม่
+            </button>
+          )}
+          <button type="button" className="tb-btn tb-btn-ghost" onClick={exportWord} disabled={busy}>
+            ⤓ ส่งออก Word (.docx)
           </button>
           <Link href="/rca" className="tb-btn tb-btn-ghost">← กลับหน้า RCA</Link>
           <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-            ร่างเก็บไว้ในเบราว์เซอร์นี้เท่านั้น (localStorage) — ยังไม่บันทึกลงฐานข้อมูล
+            {formId
+              ? `บันทึกบนระบบแล้ว (ใบที่ ${formId}) — เปิดต่อจากเครื่องไหนก็ได้`
+              : 'ยังไม่ได้บันทึกลงระบบ — ตอนนี้ร่างอยู่ในเบราว์เซอร์นี้เท่านั้น'}
           </span>
         </div>
       </div>

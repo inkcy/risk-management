@@ -7,6 +7,7 @@ import {
   PageOrientation,
   Packer,
   Paragraph,
+  HeightRule,
   Table,
   TableCell,
   TableRow,
@@ -30,7 +31,8 @@ import {
 } from './rcaForm';
 
 const FONT = 'TH Sarabun New';
-const HINT_COLOR = 'C00000'; // ตัวอักษรสีแดง (คำถามนำ) เหมือนแบบฟอร์มกระดาษ
+// ช่องที่ยังไม่ได้กรอกจะเว้นว่างไว้ให้เขียนมือ — คำถามนำอยู่ในหน้ากรอกฟอร์มบนเว็บแทน
+const BLANK_ROW_HEIGHT = 700; // twips ≈ 1.2 ซม.
 const HEAD_FILL = 'D9E2F3';
 const GROUP_FILL = 'EDEDED';
 
@@ -380,22 +382,14 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
       ...W5H1_ROWS.map((r, i) => {
         const answer = form.w5h1[r.key];
         return new TableRow({
+          height: filled(answer) ? undefined : { value: BLANK_ROW_HEIGHT, rule: HeightRule.ATLEAST },
           children: [
             cell(`${i + 1} ${r.label}`, { width: 3823, bold: true, vAlign: VerticalAlign.CENTER }),
-            filled(answer)
-              ? cell(answer, { width: 11597 })
-              : cell(r.hint, { width: 11597, color: HINT_COLOR }),
+            cell(answer, { width: 11597 }),
           ],
         });
       }),
     ]),
-  );
-  landscape.push(
-    para('หมายเหตุ เมื่อบันทึกแบบฟอร์มสามารถลบตัวอักษรสีแดง (ตัวอย่างคำถามที่ใช้ประเมินปัจจัยที่เกี่ยวข้อง)', {
-      size: 24,
-      color: '666666',
-      after: 40,
-    }),
   );
 
   // ---- 4. 5 Tier Contributory Factor ----
@@ -409,9 +403,10 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
       TIER_ROWS.map(t => {
         const value = form.tiers[t.key];
         return new TableRow({
+          height: filled(value) ? undefined : { value: BLANK_ROW_HEIGHT, rule: HeightRule.ATLEAST },
           children: [
             centerCell(t.label, { width: 3000, bold: true, fill: GROUP_FILL, size: 24 }),
-            filled(value) ? cell(value, { width: 12420 }) : cell(t.hint, { width: 12420, color: HINT_COLOR, size: 24 }),
+            cell(value, { width: 12420, size: 24 }),
           ],
         });
       }),

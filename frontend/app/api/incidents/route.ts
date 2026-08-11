@@ -16,7 +16,7 @@ export async function GET() {
       ORDER BY i.occurred_at DESC
     `);
     return rows;
-  }, demoIncidents);
+  }, demoIncidents, []);
   return NextResponse.json(result);
 }
 

@@ -564,9 +564,14 @@ option { background: var(--bg3); }
   display: block; font-size: 11px; color: var(--text2);
   margin-bottom: 5px; line-height: 1.5; font-weight: 500;
 }
+/* คำถามนำ — ย้ายมาจากตัวอักษรสีแดงในไฟล์ Word จึงต้องอ่านออกจริง ไม่ใช่ตัวจาง ๆ */
 .rf .rf-hint {
-  display: block; font-size: 10px; color: var(--text3);
-  margin-bottom: 5px; line-height: 1.5;
+  display: block; font-size: 11.5px; color: var(--text2);
+  margin-bottom: 7px; line-height: 1.65;
+  background: var(--bg3);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 7px 11px;
 }
 .rf input, .rf textarea, .rf select {
   width: 100%; padding: 8px 11px;

@@ -3,6 +3,15 @@ import { envelope } from './envelope';
 import { demoActions, demoCauti, demoIncidents, demoRcaBundle, demoStats } from './demo';
 import type { ActionItem, CautiPatient, Incident, RcaBundle, RcaCase, RcaCause, RcaTimelineEvent, RiskRegisterItem, Stats } from './types';
 
+/** ค่าที่คืนเมื่อ query พัง — ว่างเปล่าจริง ๆ ไม่ใช่ข้อมูลตัวอย่าง */
+const EMPTY_RCA_BUNDLE: RcaBundle = { incident: null, case: null, timeline: [], causes: [] };
+const EMPTY_STATS: Stats = {
+  totals: { incidents: 0, severe: 0, rca_pending: 0, actions_done: 0, actions_in_progress: 0, actions_planned: 0 },
+  by_category: [],
+  by_month: [],
+  risk_top5: [],
+};
+
 export function loadIncidents() {
   return envelope<Incident[]>(async () => {
     const { rows } = await query<Incident>(`
@@ -14,7 +23,7 @@ export function loadIncidents() {
       ORDER BY i.occurred_at DESC
     `);
     return rows;
-  }, demoIncidents);
+  }, demoIncidents, []);
 }
 
 export function loadActions() {
@@ -27,7 +36,7 @@ export function loadActions() {
       ORDER BY a.due_date ASC NULLS LAST
     `);
     return rows;
-  }, demoActions);
+  }, demoActions, []);
 }
 
 export function loadCauti() {
@@ -50,7 +59,7 @@ export function loadCauti() {
       ORDER BY (removed_at IS NULL) DESC, inserted_at DESC
     `);
     return rows;
-  }, demoCauti);
+  }, demoCauti, []);
 }
 
 export function loadRcaBundle(id: string) {
@@ -91,7 +100,7 @@ export function loadRcaBundle(id: string) {
     ]);
 
     return { incident: inc, case: c, timeline: timeline.rows, causes: causes.rows };
-  }, demoRcaBundle);
+  }, demoRcaBundle, EMPTY_RCA_BUNDLE);
 }
 
 export function loadStats() {
@@ -136,5 +145,5 @@ export function loadStats() {
       by_month: byMonth.rows.map(r => ({ ym: r.ym, count: Number(r.n) })),
       risk_top5: risk.rows,
     };
-  }, demoStats);
+  }, demoStats, EMPTY_STATS);
 }

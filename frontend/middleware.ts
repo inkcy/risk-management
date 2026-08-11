@@ -12,7 +12,9 @@ const PUBLIC_PREFIXES = ['/login', '/api/auth/', '/api/health'];
  * แต่ถ้ามี POSTGRES_URL แล้ว (มีข้อมูลจริง) จะบังคับล็อกอินเสมอ แม้ตั้ง OAuth ไม่ครบ — ต้อง fail closed
  */
 function demoModeOpen(): boolean {
-  return !process.env.POSTGRES_URL && !process.env.GOOGLE_CLIENT_ID;
+  // อ่าน env ตรง ๆ เพราะ middleware รันบน Edge จะ import lib/db (ที่ใช้ pg) ไม่ได้
+  const hasDb = !!(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+  return !hasDb && !process.env.GOOGLE_CLIENT_ID;
 }
 
 export async function middleware(request: NextRequest) {

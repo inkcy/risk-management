@@ -11,11 +11,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0a0d14',
+  themeColor: '#f5f6fc',
 };
 
+// ธีมสว่างเป็นค่าเริ่มต้น — ใส่คลาสก่อน paint แรกเพื่อไม่ให้จอกระพริบเป็นสีเข้ม
 const themeBootstrap = `
-(function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();
+(function(){try{if(localStorage.getItem('theme')!=='dark'){document.documentElement.classList.add('light');}}catch(e){document.documentElement.classList.add('light');}})();
 `;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

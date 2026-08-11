@@ -7,7 +7,7 @@ import 'dotenv/config';
 const { Pool } = pg;
 
 async function main() {
-  const url = process.env.POSTGRES_URL;
+  const url = process.env.POSTGRES_URL || process.env.DATABASE_URL;
   if (!url) {
     console.error('POSTGRES_URL is not set.');
     process.exit(1);

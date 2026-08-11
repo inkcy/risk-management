@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Sidebar } from '@/components/Sidebar';
-import { Topbar } from '@/components/Topbar';
+import { AppShell } from '@/components/AppShell';
+import { getSessionUser } from '@/lib/auth';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,7 +18,9 @@ const themeBootstrap = `
 (function(){try{if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light');}}catch(e){}})();
 `;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getSessionUser();
+
   return (
     <html lang="th">
       <head>
@@ -29,11 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body>
-        <Sidebar />
-        <main className="main">
-          <Topbar />
-          <div className="content">{children}</div>
-        </main>
+        <AppShell user={user}>{children}</AppShell>
       </body>
     </html>
   );

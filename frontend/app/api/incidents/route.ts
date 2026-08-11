@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConfigured, query } from '@/lib/db';
+import { query } from '@/lib/db';
+import { audit, requireRole } from '@/lib/auth';
 import { envelope } from '@/lib/envelope';
 import { demoIncidents } from '@/lib/demo';
 import type { Incident } from '@/lib/types';
@@ -20,9 +21,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!dbConfigured()) {
-    return NextResponse.json({ error: 'Database not configured — cannot save incident' }, { status: 503 });
-  }
+  const auth = await requireRole('editor');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json() as Record<string, unknown>;
     const { ir_code, occurred_at, title, description, unit_id, category, severity, reported_by } = body;
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
        RETURNING *`,
       [ir_code, occurred_at, title, description ?? null, unit_id ?? null, category, severity, reported_by ?? null],
     );
+    await audit(auth.user, 'incident.create', 'incident', rows[0].id, { ir_code, severity });
     return NextResponse.json({ incident: rows[0] }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

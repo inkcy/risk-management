@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConfigured, query } from '@/lib/db';
+import { query } from '@/lib/db';
+import { audit, requireRole } from '@/lib/auth';
 import { loadCauti } from '@/lib/queries';
 
 export async function GET() {
@@ -8,9 +9,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!dbConfigured()) {
-    return NextResponse.json({ error: 'Database not configured — cannot save patient' }, { status: 503 });
-  }
+  const auth = await requireRole('editor');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json() as Record<string, unknown>;
     const { bed, patient_name, age, hn, diagnosis, ward, inserted_at, plan_off_date, note } = body;
@@ -24,6 +25,8 @@ export async function POST(request: NextRequest) {
       [bed, patient_name, age ?? null, hn ?? null, diagnosis ?? null, ward ?? null,
        inserted_at, plan_off_date ?? null, note ?? null],
     );
+    // ไม่บันทึกชื่อ/HN ลง audit detail — เก็บแค่ที่พอชี้เป้าได้ ตัวข้อมูลเต็มอยู่ในตารางหลักแล้ว
+    await audit(auth.user, 'cauti.create', 'cauti_patient', rows[0].id, { bed, ward: ward ?? null });
     return NextResponse.json({ patient: rows[0] }, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

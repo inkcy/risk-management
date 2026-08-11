@@ -34,6 +34,10 @@ npm run dev                    # เปิด http://localhost:3000
 ถ้ายังไม่ตั้ง `POSTGRES_URL` → ระบบจะใช้ข้อมูล demo อัตโนมัติและแสดงแบนเนอร์ "Demo mode"
 (หน้าแบบฟอร์ม RCA `/rca/form` และการส่งออก Word ใช้งานได้เต็มที่แม้ไม่มี DB เพราะข้อมูลมาจากที่กรอกในหน้าเว็บ)
 
+demo mode ล้วน (ไม่ตั้งทั้ง `POSTGRES_URL` และ `GOOGLE_CLIENT_ID`) จะข้ามการล็อกอินให้เปิดดูได้เลย
+**แต่เมื่อใดที่ตั้ง `POSTGRES_URL` แล้ว ทุกหน้าจะบังคับล็อกอินทันที** — ดูหัวข้อ
+[การเข้าสู่ระบบและสิทธิ์](#การเข้าสู่ระบบและสิทธิ์-google-sign-in)
+
 ---
 
 ## เชื่อม Postgres จริง (Neon / Vercel / local)
@@ -161,6 +165,11 @@ backend/                    ← ไม่ต้อง deploy · ใช้รั�
 **frontend/.env.local** (และ Environment Variables บน Vercel) — ไม่ใส่เลยก็รันได้ เป็น demo mode
 
 - `POSTGRES_URL` — Postgres connection string (ไม่ใส่ = demo mode + แบนเนอร์ Demo)
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — OAuth client สำหรับเข้าสู่ระบบด้วย Google
+- `SESSION_SECRET` — กุญแจเซ็น session cookie ต้องยาว ≥ 32 ตัวอักษร
+- `APP_URL` — โดเมนจริงของเว็บ เช่น `https://risk-management.vercel.app` (บังคับ redirect_uri ให้คงที่)
+- `ALLOWED_EMAIL_DOMAINS` — จำกัดโดเมนอีเมลที่ล็อกอินได้ คั่นด้วย comma (เว้นว่าง = ไม่จำกัด)
+- `ADMIN_EMAILS` — อีเมลที่ได้สิทธิ์ admin อัตโนมัติ คั่นด้วย comma
 - `ANTHROPIC_API_KEY` — Claude API key สำหรับฟีเจอร์ AI วิเคราะห์ RCA (ไม่ใส่ = คืนผลตัวอย่าง ไม่ error) สมัครที่ <https://console.anthropic.com>
 - `ANTHROPIC_MODEL` — โมเดล Claude ที่ใช้ (ดีฟอลต์ `claude-sonnet-4-6`)
 
@@ -168,6 +177,48 @@ backend/                    ← ไม่ต้อง deploy · ใช้รั�
 
 - `POSTGRES_URL` — ตัวเดียวกับที่ frontend ใช้
 - (`PORT`, `CORS_ORIGIN` มีผลเฉพาะเมื่อจะรัน Express API เดิมเป็นระบบแยก)
+
+---
+
+## การเข้าสู่ระบบและสิทธิ์ (Google Sign-In)
+
+ทุกหน้าและทุก API ยกเว้น `/login`, `/api/auth/*` และ `/api/health` ต้องเข้าสู่ระบบก่อน
+บังคับที่ [frontend/middleware.ts](frontend/middleware.ts) — ระบบไม่เก็บรหัสผ่านเอง ใช้ Google ยืนยันตัวตนอย่างเดียว
+
+### สิทธิ์ 3 ระดับ
+
+| role | ทำอะไรได้ |
+|---|---|
+| `viewer` (ค่าเริ่มต้นของผู้ใช้ใหม่) | ดูข้อมูลอย่างเดียว · กรอกฟอร์ม RCA + ส่งออก Word ได้ |
+| `editor` | บันทึกอุบัติการณ์ ข้อมูล CAUTI และสั่ง AI วิเคราะห์ RCA |
+| `admin` | ทุกอย่าง + จัดการสิทธิ์ผู้ใช้ที่ `/settings` |
+
+ผู้ที่ล็อกอินครั้งแรกได้ `viewer` เสมอ ต้องให้ admin เลื่อนสิทธิ์ให้ (ยกเว้นอีเมลที่อยู่ใน `ADMIN_EMAILS`)
+
+### ตั้งค่า Google OAuth
+
+1. ไปที่ <https://console.cloud.google.com/apis/credentials> → **Create Credentials → OAuth client ID**
+2. Application type: **Web application**
+3. **Authorized redirect URIs** ใส่ให้ครบทั้งของ dev และ production:
+   ```
+   http://localhost:3000/api/auth/callback/google
+   https://<โดเมนจริง>/api/auth/callback/google
+   ```
+4. คัดลอก Client ID / Client secret ไปใส่ env
+5. สร้าง `SESSION_SECRET`:
+   ```powershell
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+6. ใส่อีเมลตัวเองใน `ADMIN_EMAILS` แล้วล็อกอินครั้งแรก — จะได้สิทธิ์ admin ทันที
+
+### ร่องรอยการใช้งาน
+
+ทุกการล็อกอิน/ออกจากระบบ/บันทึกข้อมูล/เปลี่ยนสิทธิ์ ถูกบันทึกในตาราง `audit_log`
+(ผู้ใช้ เวลา การกระทำ IP) — จำเป็นสำหรับข้อมูลสุขภาพส่วนบุคคลตาม PDPA
+audit log ของ CAUTI จงใจไม่เก็บชื่อ/HN ซ้ำ เก็บแค่เตียงกับ ward
+
+> **ก่อนใส่ข้อมูลผู้ป่วยจริง** ควรตรวจสอบกับฝ่าย IT/ผู้บริหารโรงพยาบาลเรื่องนโยบายข้อมูล
+> อย่างน้อยควรตั้ง `ALLOWED_EMAIL_DOMAINS` ให้เป็นโดเมนของโรงพยาบาล
 
 ---
 

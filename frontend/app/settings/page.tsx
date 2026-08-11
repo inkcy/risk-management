@@ -1,5 +1,19 @@
-export default function SettingsPage() {
+import { getSessionUser } from '@/lib/auth';
+import { UserAdmin } from '@/components/UserAdmin';
+
+export default async function SettingsPage() {
+  const user = await getSessionUser();
+
   return (
+    <>
+    {user?.role === 'admin' && (
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card-header"><div className="card-title">ผู้ใช้และสิทธิ์การเข้าถึง</div></div>
+        <div className="card-body">
+          <UserAdmin currentUserId={user.id} />
+        </div>
+      </div>
+    )}
     <div className="grid-2">
       <div className="card">
         <div className="card-header"><div className="card-title">ข้อมูลองค์กร</div></div>
@@ -50,5 +64,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

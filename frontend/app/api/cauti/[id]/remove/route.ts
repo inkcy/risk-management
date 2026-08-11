@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbConfigured, query } from '@/lib/db';
+import { query } from '@/lib/db';
+import { audit, requireRole } from '@/lib/auth';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!dbConfigured()) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
-  }
+  const auth = await requireRole('editor');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json() as { removed_at?: string; outcome?: string };
@@ -22,6 +23,7 @@ export async function PATCH(
       [removed_at ?? null, outcome ?? 'removed', id],
     );
     if (rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    await audit(auth.user, 'cauti.remove', 'cauti_patient', id, { removed_at: removed_at ?? null, outcome: outcome ?? 'removed' });
     return NextResponse.json({ patient: rows[0] });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

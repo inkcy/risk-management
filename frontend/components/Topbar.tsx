@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { SessionUser } from '@/lib/auth';
 
 const titles: Record<string, [string, string]> = {
   '/': ['แดชบอร์ด', 'ปีงบประมาณ 2568 · รพ.ตัวอย่าง'],
@@ -17,10 +18,17 @@ const titles: Record<string, [string, string]> = {
   '/settings': ['ตั้งค่าระบบ', 'จัดการองค์กรและผู้ใช้'],
 };
 
-export function Topbar() {
+const ROLE_LABEL: Record<string, string> = {
+  admin: 'ผู้ดูแลระบบ',
+  editor: 'ผู้กรอกข้อมูล',
+  viewer: 'ผู้ดูอย่างเดียว',
+};
+
+export function Topbar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const [title, breadcrumb] = titles[pathname] || titles['/'];
   const [isLight, setIsLight] = useState(false);
+  const canEdit = user?.role === 'admin' || user?.role === 'editor';
 
   useEffect(() => {
     setIsLight(document.documentElement.classList.contains('light'));
@@ -62,10 +70,40 @@ export function Topbar() {
           {isLight ? '☀️' : '🌙'}
         </button>
         <button className="tb-btn tb-btn-ghost export-btn">⤓ ส่งออก</button>
-        <Link href="/report" className="tb-btn tb-btn-primary report-btn">
-          <span className="btn-full">+ รายงานใหม่</span>
-          <span className="btn-short" aria-hidden="true">+</span>
-        </Link>
+        {canEdit && (
+          <Link href="/report" className="tb-btn tb-btn-primary report-btn">
+            <span className="btn-full">+ รายงานใหม่</span>
+            <span className="btn-short" aria-hidden="true">+</span>
+          </Link>
+        )}
+        {user && (
+          <div
+            title={`${user.email} · ${ROLE_LABEL[user.role] ?? user.role}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt=""
+                width={26}
+                height={26}
+                style={{ borderRadius: '50%', display: 'block' }}
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <span className="user-name" style={{ fontSize: 12.5, lineHeight: 1.25 }}>
+              {user.name ?? user.email}
+              <br />
+              <span style={{ color: 'var(--text3)', fontSize: 11 }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+            </span>
+            <form action="/api/auth/logout" method="post">
+              <button className="tb-btn tb-btn-ghost" type="submit" title="ออกจากระบบ" style={{ fontSize: 15, padding: '7px 10px' }}>
+                ⏻
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </header>
   );

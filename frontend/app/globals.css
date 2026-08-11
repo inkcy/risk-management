@@ -436,6 +436,7 @@ option { background: var(--bg3); }
   .breadcrumb { display: none; }
   .menu-toggle { display: inline-flex; flex-shrink: 0; }
   .export-btn { display: none; }
+  .user-name { display: none; }
   .tb-btn { padding: 6px 10px; font-size: 12px; }
   .report-btn .btn-full { display: none; }
   .report-btn .btn-short { display: inline; font-size: 16px; }

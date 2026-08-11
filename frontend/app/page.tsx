@@ -49,24 +49,18 @@ export default async function DashboardPage() {
         <div className="stat-card blue">
           <div className="stat-label">อุบัติการณ์ทั้งหมด</div>
           <div className="stat-val">{stats.totals.incidents}</div>
-          <div className="stat-change up">↑ 12% จากปีก่อน</div>
         </div>
         <div className="stat-card red">
           <div className="stat-label">ระดับ E–I รุนแรง</div>
           <div className="stat-val">{stats.totals.severe}</div>
-          <div className="stat-change down">↓ 3 เหตุการณ์</div>
         </div>
         <div className="stat-card amber">
           <div className="stat-label">RCA รอดำเนินการ</div>
           <div className="stat-val">{stats.totals.rca_pending}</div>
-          <div className="stat-change" style={{ color: 'var(--text3)' }}>
-            จากทั้งหมด {stats.totals.severe} เคส
-          </div>
         </div>
         <div className="stat-card green">
           <div className="stat-label">มาตรการแก้ไขเสร็จ</div>
           <div className="stat-val">{stats.totals.actions_done}</div>
-          <div className="stat-change down">↑ 82% อัตราสำเร็จ</div>
         </div>
       </div>
 

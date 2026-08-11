@@ -109,6 +109,15 @@ body {
   text-decoration: none;
 }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
+/* ยุบลงเล็กน้อยตอนกด ให้รู้สึกว่าปุ่มตอบสนองทันทีก่อนหน้าใหม่จะมา */
+.nav-item:active { transform: scale(0.985); }
+.nav-spinner {
+  margin-left: auto; width: 13px; height: 13px; flex-shrink: 0;
+  border: 2px solid currentColor; border-right-color: transparent;
+  border-radius: 50%; opacity: .65;
+  animation: nav-spin .6s linear infinite;
+}
+@keyframes nav-spin { to { transform: rotate(360deg); } }
 /* เมนูที่เลือกอยู่เป็นแคปซูลสีม่วงทึบตามดีไซน์อ้างอิง */
 .nav-item.active {
   background: var(--accent); color: #fff; font-weight: 500;
@@ -149,13 +158,16 @@ body {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 999px;
   font-size: 12px; font-weight: 500; cursor: pointer;
-  transition: all 0.15s; border: none; font-family: inherit;
+  /* transform เร็วกว่าตัวอื่นเพื่อให้จังหวะกดตอบสนองทันมือ */
+  transition: background .15s, color .15s, opacity .15s, box-shadow .15s, transform .08s;
+  border: none; font-family: inherit;
   text-decoration: none;
 }
 .tb-btn-ghost { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
 .tb-btn-ghost:hover { background: var(--bg3); color: var(--text); }
 .tb-btn-primary { background: var(--accent); color: white; box-shadow: 0 6px 16px rgba(123,97,255,0.30); }
 .tb-btn-primary:hover { opacity: 0.9; }
+.tb-btn:active:not(:disabled) { transform: scale(0.96); }
 .tb-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .content { padding: 28px; }
@@ -177,7 +189,7 @@ body {
   box-shadow: 0 8px 20px rgba(123,97,255,0.18);
   transform: translateY(-1px);
 }
-.google-btn:active { transform: none; }
+.google-btn:active { transform: scale(0.98); }
 
 .stats-row {
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -444,6 +456,16 @@ option { background: var(--bg3); }
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* ผู้ที่ตั้งค่าระบบให้ลดการเคลื่อนไหว (เช่น ผู้ที่เวียนศีรษะจากแอนิเมชัน) ต้องได้ UI ที่นิ่ง */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .stat-card:hover, .google-btn:hover, .tb-btn:active, .nav-item:active { transform: none; }
 }
 
 /* Hamburger button (hidden on desktop) */

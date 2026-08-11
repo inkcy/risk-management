@@ -1,15 +1,31 @@
 'use client';
 
-import Link from 'next/link';
+import Link, { useLinkStatus } from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import type { SessionUser } from '@/lib/auth';
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: 'ผู้ดูแลระบบ',
+  editor: 'ผู้กรอกข้อมูล',
+  viewer: 'ผู้ดูอย่างเดียว',
+};
+
+/**
+ * จุดหมุนเล็ก ๆ ที่ขึ้นทันทีที่กดเมนู แล้วหายไปเมื่อหน้าใหม่มาถึง
+ * ต้องอยู่ "ข้างใน" <Link> เท่านั้น useLinkStatus ถึงจะรู้สถานะของลิงก์นั้น
+ */
+function NavPending() {
+  const { pending } = useLinkStatus();
+  return pending ? <span className="nav-spinner" aria-hidden="true" /> : null;
+}
 
 const groups: { label: string; items: { href: string; icon: string; label: string; badge?: string }[] }[] = [
   {
     label: 'หลัก',
     items: [
       { href: '/', icon: '⬡', label: 'แดชบอร์ด' },
-      { href: '/incidents', icon: '⚠', label: 'อุบัติการณ์', badge: '3' },
+      { href: '/incidents', icon: '⚠', label: 'อุบัติการณ์' },
       { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA' },
       { href: '/rca/form', icon: '▤', label: 'แบบฟอร์ม RCA' },
       { href: '/matrix', icon: '▦', label: 'Risk Matrix' },
@@ -34,7 +50,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
 
 const allHrefs = [...groups.flatMap(g => g.items.map(i => i.href)), '/settings'];
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   // เลือกเมนูที่ตรงกับ path มากที่สุด เพื่อไม่ให้ /rca และ /rca/form ถูกไฮไลต์พร้อมกัน
   const matches = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
@@ -70,6 +86,7 @@ export function Sidebar() {
               >
                 <span className="nav-icon">{it.icon}</span> {it.label}
                 {it.badge && <span className="nav-badge">{it.badge}</span>}
+                <NavPending />
               </Link>
             ))}
           </div>
@@ -77,18 +94,21 @@ export function Sidebar() {
         <div style={{ marginTop: 8 }}>
           <Link href="/settings" className={`nav-item ${isActive('/settings') ? 'active' : ''}`}>
             <span className="nav-icon">⚙</span> ตั้งค่า
+            <NavPending />
           </Link>
         </div>
       </nav>
-      <div className="sidebar-footer">
-        <div className="user-row">
-          <div className="user-avatar">วส</div>
-          <div>
-            <div className="user-name">วสันต์ รักษ์ชาติ</div>
-            <div className="user-role">ผู้จัดการความเสี่ยง</div>
+      {user && (
+        <div className="sidebar-footer">
+          <div className="user-row">
+            <div className="user-avatar">{(user.name ?? user.email).trim().slice(0, 2)}</div>
+            <div style={{ minWidth: 0 }}>
+              <div className="user-name">{user.name ?? user.email}</div>
+              <div className="user-role">{ROLE_LABEL[user.role] ?? user.role}</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </aside>
     </>
   );

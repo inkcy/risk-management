@@ -13,7 +13,7 @@ export function AppShell({ user, children }: { user: SessionUser | null; childre
 
   return (
     <>
-      <Sidebar />
+      <Sidebar user={user} />
       <main className="main">
         <Topbar user={user} />
         <div className="content">{children}</div>

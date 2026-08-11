@@ -2,70 +2,72 @@
 
 แดชบอร์ดบริหารความเสี่ยงโรงพยาบาล สร้างจากเคสตัวอย่าง RCA ให้เลือดผิดคน (IR 2503000003) และกรอบ HRO + Safety Culture + Compassionate RCA จากเอกสาร S7_Anuwat (HACC Forum 2568)
 
-**สถาปัตยกรรม:** แยก frontend และ backend ออกเป็น 2 ระบบ
+**สถาปัตยกรรม:** `frontend` เป็นระบบเดียวจบในตัว — Next.js ต่อ Postgres โดยตรงผ่าน route handlers
 
 ```
 risk_management/
-├── backend/      Express + TypeScript + Postgres (pg)  →  REST API บนพอร์ต 4000
-└── frontend/     Next.js 15 (App Router) + React 19    →  UI บนพอร์ต 3000
+├── frontend/     Next.js 15 (App Router) + React 19 + pg   →  UI + API บนพอร์ต 3000
+└── backend/      Express + TypeScript (ไม่จำเป็นต้องรันแล้ว)  →  เหลือไว้ทำ migration / ใช้เป็น API แยก
 ```
 
-- **backend** ดูแล DB, migration, business logic, REST API ทั้งหมด (รวม demo mode fallback เมื่อยังไม่มี DB)
-- **frontend** เป็น UI ล้วน เรียก backend ผ่าน `fetch` — ไม่ได้ติด DB โดยตรงอีกแล้ว
+- **frontend** ดูแลทุกอย่าง: UI, DB query (`lib/db.ts` + `lib/queries.ts`), REST API (`app/api/*`),
+  demo-mode fallback เมื่อยังไม่มี DB, Word export และฟีเจอร์ AI
+- **backend** เดิมทำหน้าที่เป็น API แยก ตอนนี้ frontend ไม่เรียกใช้แล้ว (ไม่มีการอ้าง `BACKEND_URL` ที่ไหนเลย)
+  แต่ยังเก็บไว้เพราะเป็นที่อยู่ของ `migrations/` และสคริปต์ `db:migrate` / `db:seed`
+
+> เดิมโครงสร้างนี้แยก 2 ระบบและ frontend เรียก backend ผ่าน `fetch` — เปลี่ยนมาเป็นระบบเดียวแล้ว
+> เพื่อให้ deploy ง่ายขึ้น (Vercel project เดียว ไม่ต้องตั้ง CORS)
 
 ---
 
 ## เริ่มใช้งานเร็ว (Demo mode — ไม่ต้องมี DB)
 
-เปิด 2 terminal:
+เปิด terminal เดียว:
 
-**Terminal 1 — backend**
-```powershell
-cd backend
-npm install
-copy .env.example .env       # ปรับ PORT หรือ POSTGRES_URL ถ้าต้องการ
-npm run dev                  # เริ่ม API ที่ http://localhost:4000
-```
-
-**Terminal 2 — frontend**
 ```powershell
 cd frontend
 npm install
-copy .env.example .env.local
-npm run dev                  # เปิด http://localhost:3000
+copy .env.example .env.local   # ปล่อยว่างไว้ก็ได้ถ้าจะลอง demo mode
+npm run dev                    # เปิด http://localhost:3000
 ```
 
-ถ้ายังไม่ตั้ง `POSTGRES_URL` ใน backend → API จะตอบด้วยข้อมูล demo อัตโนมัติ และ frontend จะแสดงแบนเนอร์ "Demo mode"
+ถ้ายังไม่ตั้ง `POSTGRES_URL` → ระบบจะใช้ข้อมูล demo อัตโนมัติและแสดงแบนเนอร์ "Demo mode"
+(หน้าแบบฟอร์ม RCA `/rca/form` และการส่งออก Word ใช้งานได้เต็มที่แม้ไม่มี DB เพราะข้อมูลมาจากที่กรอกในหน้าเว็บ)
 
 ---
 
 ## เชื่อม Postgres จริง (Neon / Vercel / local)
 
 1. สร้างฐานข้อมูล Postgres (แนะนำ Neon free tier <https://neon.tech>)
-2. ที่ `backend/.env` ใส่:
+2. ที่ `frontend/.env.local` ใส่:
    ```
    POSTGRES_URL=postgres://USER:PASSWORD@HOST/DB?sslmode=require
    ```
-3. รัน migration และ seed
+3. รัน migration และ seed — สคริปต์อยู่ในโฟลเดอร์ `backend` ใส่ `POSTGRES_URL` ตัวเดียวกันใน `backend/.env`
    ```powershell
    cd backend
+   npm install
+   copy .env.example .env
    npm run db:migrate
    npm run db:seed
    ```
-4. รีสตาร์ท backend dev server — แบนเนอร์ Demo จะหายไป
+4. รีสตาร์ท `npm run dev` ของ frontend — แบนเนอร์ Demo จะหายไป
 
 ---
 
-## API Endpoints (ภายใต้ `BACKEND_URL` เช่น `http://localhost:4000`)
+## API Endpoints (route handlers ใน `frontend/app/api`)
+
+เรียกด้วย path แบบ relative เช่น `/api/incidents` — ไม่ต้องตั้ง base URL
 
 | Method | Path                       | คำอธิบาย                              |
 |--------|----------------------------|----------------------------------------|
-| GET    | `/api/health`              | สถานะ backend + ว่า DB เชื่อมหรือยัง   |
+| GET    | `/api/health`              | สถานะระบบ + ว่าตั้ง `POSTGRES_URL` หรือยัง |
 | GET    | `/api/incidents`           | รายการอุบัติการณ์                     |
 | POST   | `/api/incidents`           | บันทึกอุบัติการณ์ใหม่ (ต้องเชื่อม DB)   |
 | GET    | `/api/rca/:irCode`         | RCA bundle — incident + case + timeline + causes |
-| GET    | `/api/rca/:irCode/export`  | ส่งออกรายงาน RCA เป็น Word (.docx)    |
+| GET    | `/api/rca/:irCode/export`  | ส่งออกรายงาน RCA จากข้อมูลในระบบเป็น Word (.docx) |
 | POST   | `/api/rca/:irCode/analyze` | AI วิเคราะห์ RCA ด้วย Claude (5-Tier + Compassionate + HRO) |
+| POST   | `/api/rca/export-form`     | รับข้อมูลแบบฟอร์ม FM-QPS-QSH-002 (JSON) → คืนไฟล์ Word |
 | GET    | `/api/actions`             | มาตรการแก้ไขทั้งหมด                   |
 | GET    | `/api/stats`               | Aggregate stats สำหรับ Dashboard      |
 | GET    | `/api/cauti`               | CAUTI QuickAlert — ทะเบียนผู้ป่วยใส่ Foley + flag overdue |
@@ -77,55 +79,78 @@ npm run dev                  # เปิด http://localhost:3000
 { "data": <payload>, "demo": <bool>, "error": <string|null> }
 ```
 
+ยกเว้น `/api/health` และ endpoint ที่คืนไฟล์ `.docx` (สอง endpoint ของ export)
+
+---
+
+## แบบฟอร์ม RCA (FM-QPS-QSH-002/03) → Word
+
+หน้า `/rca/form` เป็นแบบฟอร์มกรอกข้อมูลตามแบบฟอร์มกระดาษของโรงพยาบาล แล้วกดส่งออกเป็นไฟล์ `.docx`
+เข้าได้จากเมนู "แบบฟอร์ม RCA" ในแถบซ้าย หรือปุ่มในหน้า `/rca`
+(เปิดด้วย `/rca/form?ir=IR...` จะดึงข้อมูลตั้งต้นจากเคสนั้นมาใส่ให้ก่อน)
+
+หัวข้อที่ครอบคลุม: ส่วนหัวฟอร์ม · **1** Story and Timeline + problem statement + COLONOGY OF EVENT ·
+**2** CARE MANAGEMENT PROBLEM (Unsafe act) · **3** 5W1H · **4** 5 Tier Contributory Factor ·
+**5** สรุป RCA (Creative solution) · **6** Process Management
+
+ไฟล์ที่เกี่ยวข้อง:
+- `lib/rcaForm.ts` — โครงข้อมูล หัวข้อ/คำถามนำทั้งหมด และข้อมูลตัวอย่าง
+- `lib/rcaFormDocx.ts` — สร้าง `.docx` 2 section: ส่วนหัว + หัวข้อ 1 เป็นหน้าแนวตั้ง, ตารางหัวข้อ 2–6 เป็นหน้าแนวนอน
+  (ความกว้างคอลัมน์ · footer `FM-QPS-QSH-002/03 : 28/04/64` + เลขหน้า · ฟอนต์ TH Sarabun New ตามแบบฟอร์มต้นฉบับ)
+- `app/rca/form/page.tsx` — หน้ากรอกข้อมูล (บันทึกร่างอัตโนมัติใน localStorage ยังไม่บันทึกลง DB)
+
+ช่องที่ไม่กรอกในหัวข้อ 3 และ 4 จะพิมพ์คำถามนำเป็นตัวอักษรสีแดงเหมือนแบบฟอร์มกระดาษ (ลบทิ้งได้ตามหมายเหตุในฟอร์ม)
+
 ---
 
 ## โครงสร้างโปรเจค
 
 ```
-backend/
-├── src/
-│   ├── server.ts           Express bootstrap + CORS + router mount
-│   ├── db.ts               pg Pool
-│   ├── envelope.ts         demo-fallback helper { data, demo, error }
-│   ├── demo.ts             demo ข้อมูลตัวอย่าง
-│   ├── types.ts            TypeScript types ของ domain
-│   └── routes/
-│       ├── incidents.ts    GET, POST
-│       ├── rca.ts          GET /:id
-│       ├── actions.ts      GET
-│       └── stats.ts        GET
-├── scripts/
-│   ├── migrate.ts          อ่าน migrations/*.sql แล้วรัน
-│   └── seed.ts             รัน 002_seed.sql อย่างเดียว
-├── migrations/
-│   ├── 001_init.sql        Schema: units, incidents, rca_*, actions, risk_register
-│   └── 002_seed.sql        ข้อมูลตัวอย่าง
-├── package.json
-├── tsconfig.json
-└── .env.example
-
-frontend/
+frontend/                   ← ระบบหลัก (deploy เฉพาะโฟลเดอร์นี้)
 ├── app/
 │   ├── layout.tsx          Sidebar + Topbar + global frame
 │   ├── page.tsx            Dashboard
 │   ├── incidents/page.tsx
 │   ├── rca/page.tsx        รับ ?ir=IR... param
+│   ├── rca/form/page.tsx   แบบฟอร์ม RCA (FM-QPS-QSH-002) → ส่งออก Word
 │   ├── matrix/page.tsx
 │   ├── actions/page.tsx
-│   ├── report/page.tsx     ฟอร์ม POST → backend
+│   ├── cauti/page.tsx      CAUTI QuickAlert
+│   ├── report/page.tsx     ฟอร์ม POST → /api/incidents
 │   ├── culture/page.tsx
 │   ├── compassion/page.tsx
 │   ├── settings/page.tsx
+│   ├── api/                route handlers ทั้งหมด (ดูตาราง endpoint ด้านบน)
 │   └── globals.css
 ├── components/
-│   ├── Sidebar.tsx, Topbar.tsx, BarChart.tsx, DemoBanner.tsx
+│   └── Sidebar.tsx, Topbar.tsx, BarChart.tsx, DemoBanner.tsx, RcaAiPanel.tsx
 ├── lib/
-│   ├── types.ts            (ซ้ำกับ backend โดยตั้งใจ ให้ frontend ไม่ต้องอ้าง backend)
-│   └── api.ts              fetch wrapper เรียก backend
+│   ├── db.ts               pg Pool + dbConfigured()
+│   ├── queries.ts          SQL ทั้งหมด (คืน envelope)
+│   ├── envelope.ts         demo-fallback helper { data, demo, error }
+│   ├── demo.ts             demo ข้อมูลตัวอย่าง
+│   ├── types.ts            TypeScript types ของ domain
+│   ├── api.ts              re-export จาก queries ให้ server component เรียก
+│   ├── ai.ts               Claude API + prompt 3 กรอบ (5-Tier / Compassionate / HRO)
+│   ├── docx.ts             Word export ของรายงาน RCA จากข้อมูลในระบบ
+│   ├── rcaForm.ts          โครงข้อมูลแบบฟอร์ม FM-QPS-QSH-002
+│   └── rcaFormDocx.ts      Word export ของแบบฟอร์ม FM-QPS-QSH-002
 ├── package.json
 ├── tsconfig.json
 ├── next.config.ts
 ├── next-env.d.ts
+└── .env.example
+
+backend/                    ← ไม่ต้อง deploy · ใช้รัน migration เป็นหลัก
+├── migrations/
+│   ├── 001_init.sql        Schema: units, incidents, rca_*, actions, risk_register
+│   └── 002_seed.sql        ข้อมูลตัวอย่าง
+├── scripts/
+│   ├── migrate.ts          อ่าน migrations/*.sql แล้วรัน
+│   └── seed.ts             รัน 002_seed.sql อย่างเดียว
+├── src/                    Express API เดิม (frontend ไม่เรียกใช้แล้ว)
+├── api/index.ts            entry สำหรับ Vercel serverless (เหลือไว้เฉย ๆ)
+├── vercel.json             rewrite ทุก request → Express (ไม่ถูกใช้ถ้า deploy แค่ frontend)
 └── .env.example
 ```
 
@@ -133,62 +158,55 @@ frontend/
 
 ## Environment variables
 
-**backend/.env**
-- `PORT` — พอร์ตที่ Express ฟัง (ดีฟอลต์ 4000)
-- `POSTGRES_URL` — Postgres connection string (ไม่ใส่ = demo mode)
-- `CORS_ORIGIN` — origin ที่อนุญาต (คั่นด้วยจุลภาคได้) ดีฟอลต์ `http://localhost:3000`
-- `ANTHROPIC_API_KEY` — Claude API key สำหรับฟีเจอร์ AI วิเคราะห์ RCA (ไม่ใส่ = demo mock) สมัครที่ <https://console.anthropic.com>
-- `ANTHROPIC_MODEL` — โมเดล Claude ที่ใช้ (ดีฟอลต์ `claude-sonnet-4-6` · ทางเลือก `claude-haiku-4-5` ถูกสุด, `claude-opus-4-8` ฉลาดสุด)
+**frontend/.env.local** (และ Environment Variables บน Vercel) — ไม่ใส่เลยก็รันได้ เป็น demo mode
 
-**frontend/.env.local**
-- `BACKEND_URL` — URL ที่ Next.js server ใช้เรียก backend (SSR) ดีฟอลต์ `http://localhost:4000`
-- `NEXT_PUBLIC_BACKEND_URL` — URL ที่ browser ใช้เรียก backend (form `/report`) ดีฟอลต์ `http://localhost:4000`
+- `POSTGRES_URL` — Postgres connection string (ไม่ใส่ = demo mode + แบนเนอร์ Demo)
+- `ANTHROPIC_API_KEY` — Claude API key สำหรับฟีเจอร์ AI วิเคราะห์ RCA (ไม่ใส่ = คืนผลตัวอย่าง ไม่ error) สมัครที่ <https://console.anthropic.com>
+- `ANTHROPIC_MODEL` — โมเดล Claude ที่ใช้ (ดีฟอลต์ `claude-sonnet-4-6`)
+
+**backend/.env** — ใช้ตอนรัน migration เท่านั้น
+
+- `POSTGRES_URL` — ตัวเดียวกับที่ frontend ใช้
+- (`PORT`, `CORS_ORIGIN` มีผลเฉพาะเมื่อจะรัน Express API เดิมเป็นระบบแยก)
 
 ---
 
-## Deploy ขึ้น Vercel (2 projects แยกกัน)
+## Deploy ขึ้น Vercel (project เดียว)
 
-โครงสร้างนี้เป็น monorepo — สร้าง Vercel project **2 ตัว** จาก repo เดียวกัน โดยตั้ง Root Directory ต่างกัน
-
-### 1) Backend (Express on Vercel serverless)
-
-ไฟล์ที่เกี่ยวข้องเตรียมไว้แล้ว: `backend/api/index.ts` (function entry) และ `backend/vercel.json` (rewrite ทุก request → Express app)
+frontend จบในตัว ไม่ต้อง deploy backend และไม่ต้องมี `vercel.json` ที่ root
 
 ที่ Vercel dashboard:
 1. **Add New… → Project** เลือก repo นี้
-2. **Root Directory:** `backend`
-3. **Framework Preset:** Other (ปล่อย Vercel ตรวจอัตโนมัติ)
-4. **Environment Variables:**
-   - `POSTGRES_URL` = connection string ของ Neon/Vercel Postgres
-   - `CORS_ORIGIN` = URL ของ frontend หลัง deploy เช่น `https://my-app-frontend.vercel.app`
+2. **Application Preset:** `Next.js`
+   (ถ้า Vercel ตรวจเจอเป็น `Services` แล้วเตือนว่า `vercel.json required to deploy projects with multiple services`
+   ให้เปลี่ยน preset เป็น Next.js — คำเตือนจะหายไปเพราะเหลือ service เดียว)
+3. **Root Directory:** `frontend`
+4. **Environment Variables:** ใส่หรือไม่ใส่ก็ได้ (ดูหัวข้อด้านบน)
 5. Deploy
 
-เสร็จแล้วเทสที่ `https://<backend-domain>.vercel.app/api/health` ควรได้ `{ status: "ok", db: true, ... }`
+เสร็จแล้วเทส:
+- `https://<domain>.vercel.app/api/health` → `{ "status": "ok", "db": true|false, ... }`
+- `https://<domain>.vercel.app/rca/form` → กด "ใส่ตัวอย่าง" แล้ว "ส่งออก Word" ควรได้ไฟล์ `.docx`
 
-> Migration: รัน local ครั้งเดียวก่อน — `vercel env pull backend/.env` แล้ว `cd backend && npm run db:migrate && npm run db:seed`
-> (Vercel functions ไม่ได้ออกแบบไว้รัน migration ตอน deploy)
+### Migration บน DB จริง
 
-### 2) Frontend (Next.js on Vercel)
+Vercel functions ไม่ได้ออกแบบไว้รัน migration ตอน deploy — ต้องรันจากเครื่องครั้งเดียว:
 
-ที่ Vercel dashboard:
-1. **Add New… → Project** เลือก repo เดิม
-2. **Root Directory:** `frontend`
-3. **Framework Preset:** Next.js (auto)
-4. **Environment Variables:**
-   - `BACKEND_URL` = URL ของ backend project เช่น `https://my-app-backend.vercel.app`
-   - `NEXT_PUBLIC_BACKEND_URL` = URL เดียวกัน (browser ใช้ตอนยิงฟอร์ม `/report`)
-5. Deploy
+```powershell
+vercel env pull frontend/.env.local     # ดึง POSTGRES_URL ลงมา
+# คัดลอกค่า POSTGRES_URL ไปใส่ backend/.env
+cd backend
+npm install
+npm run db:migrate
+npm run db:seed
+```
 
-### 3) อัปเดต CORS
+### ถ้าจะกลับไปใช้ Express backend เป็นระบบแยก
 
-หลัง deploy frontend แล้ว กลับไปที่ **backend project → Settings → Environment Variables** ปรับ `CORS_ORIGIN` ให้ตรงกับ domain ของ frontend แล้ว Redeploy backend
-
-### ทางเลือกอื่นสำหรับ backend
-
-ถ้าไม่อยากใช้ Vercel serverless กับ Express:
-
-- **Railway / Render / Fly.io / VPS** — รัน `npm run start` ตรงๆ (เป็น long-running Node server)
-- frontend ยังคง deploy บน Vercel ได้เหมือนเดิม แค่เปลี่ยน `BACKEND_URL` ให้ชี้ไปที่ host ใหม่
+โค้ดใน `backend/src` ยังใช้ได้ แต่ frontend ปัจจุบันไม่ได้เรียก `BACKEND_URL` แล้ว
+ถ้าต้องการสถาปัตยกรรมแบบ 2 ระบบ ต้องแก้ `frontend/lib/api.ts` กลับไปเป็น fetch wrapper
+แล้วจึง deploy `backend` เป็น Vercel project ที่สอง (หรือ Railway / Render / Fly.io / VPS ด้วย `npm run start`)
+พร้อมตั้ง `CORS_ORIGIN` ให้ตรงกับ domain ของ frontend
 
 ---
 
@@ -196,5 +214,6 @@ frontend/
 
 - ยังไม่มีระบบ Auth (demo mode) — เปิดให้ทุกคนเข้าได้
 - Theme dark/light persist ผ่าน localStorage
+- ร่างของแบบฟอร์ม RCA เก็บใน localStorage ของเบราว์เซอร์ ยังไม่บันทึกลงฐานข้อมูล
 - โฟลเดอร์ `_legacy/` เป็น HTML ต้นฉบับสำหรับอ้างอิงเท่านั้น ไม่ใช้แล้ว
 - `node_modules/` ที่อยู่นอก backend/frontend เป็นของเก่าก่อนแยกระบบ ลบทิ้งได้ปลอดภัย

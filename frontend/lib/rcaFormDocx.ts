@@ -277,31 +277,50 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
   const landscape: (Paragraph | Table)[] = [];
 
   // ---- ลำดับเหตุการณ์ ----
+  // ตามแบบ timeline template: 2 คอลัมน์ Time | Event โดยมีแถว date เชื่อมเต็มความกว้างคร่อมแต่ละวัน
   landscape.push(para('ลำดับเหตุการณ์', { bold: true, size: 30, after: 100 }));
-  const tlRows = form.timeline.filter(t => filled(t.day) || filled(t.time) || filled(t.event));
-  const tlBody = tlRows.length > 0 ? tlRows : [{ day: '', time: '', event: '' }];
-  landscape.push(
-    table([1560, 1300, 12560], [
-      new TableRow({
-        tableHeader: true,
-        children: [
-          centerCell('Day', { width: 1560, bold: true, fill: HEAD_FILL }),
-          centerCell('Time', { width: 1300, bold: true, fill: HEAD_FILL }),
-          centerCell('Event', { width: 12560, bold: true, fill: HEAD_FILL }),
-        ],
-      }),
-      ...tlBody.map(
-        t =>
-          new TableRow({
-            children: [
-              centerCell(t.day, { width: 1560 }),
-              centerCell(t.time, { width: 1300 }),
-              cell(t.event, { width: 12560 }),
-            ],
-          }),
-      ),
-    ]),
-  );
+
+  const TL_TIME_W = 1276;
+  const TL_EVENT_W = 14148;
+  const tlWidths = [TL_TIME_W, TL_EVENT_W];
+
+  const dateRow = (day: string) =>
+    new TableRow({
+      children: [centerCell(day, { width: TL_TIME_W + TL_EVENT_W, colSpan: 2, bold: true, fill: GROUP_FILL })],
+    });
+  const tlHeaderRow = () =>
+    new TableRow({
+      tableHeader: true,
+      children: [
+        centerCell('Time', { width: TL_TIME_W, bold: true, fill: HEAD_FILL }),
+        centerCell('Event', { width: TL_EVENT_W, bold: true, fill: HEAD_FILL }),
+      ],
+    });
+  const tlEventRow = (time: string, event: string) =>
+    new TableRow({
+      children: [centerCell(time, { width: TL_TIME_W }), cell(event, { width: TL_EVENT_W })],
+    });
+
+  const tlFilled = form.timeline.filter(t => filled(t.day) || filled(t.time) || filled(t.event));
+  const tlRows: TableRow[] = [];
+
+  if (tlFilled.length === 0) {
+    // ฟอร์มเปล่า — เว้นบรรทัดว่างไว้ให้เขียนมือเหมือน template
+    tlRows.push(dateRow(''), tlHeaderRow());
+    for (let i = 0; i < 8; i++) tlRows.push(tlEventRow('', ''));
+  } else {
+    // จัดกลุ่มตามวัน โดยรักษาลำดับที่กรอกไว้ — ขึ้นแถว date ใหม่เมื่อวันเปลี่ยน
+    let currentDay: string | null = null;
+    for (const t of tlFilled) {
+      if (t.day !== currentDay) {
+        currentDay = t.day;
+        tlRows.push(dateRow(t.day));
+        tlRows.push(tlHeaderRow());
+      }
+      tlRows.push(tlEventRow(t.time, t.event));
+    }
+  }
+  landscape.push(table(tlWidths, tlRows));
 
   // ---- 2. CARE MANAGEMENT PROBLEM ----
   landscape.push(

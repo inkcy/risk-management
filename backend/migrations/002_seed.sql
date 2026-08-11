@@ -41,7 +41,8 @@ FROM rca, (VALUES
   ('2025-02-18 10:48+07', 'ตรวจสอบ Blood number เท่านั้น', 'ไม่ตรวจชื่อผู้ป่วยกับป้ายคล้องเลือด ไม่มี double check', 'bad', 4),
   ('2025-02-18 11:00+07', 'ให้เลือดผิดคน', 'ไม่คล้องป้ายหมู่เลือด ไม่บ่งชี้ตัวผู้ป่วยที่ป้ายข้อมือ', 'bad', 5),
   ('2025-02-18 11:15+07', 'หัวหน้าทีมตรวจพบ หยุดทันที', 'รายงานแพทย์ เจาะเลือดตรวจ ส่งถุงคืนธนาคารเลือด', 'ok', 6)
-) t(occurred_at, event_title, event_detail, severity_tag, sort_order);
+) t(occurred_at, event_title, event_detail, severity_tag, sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM rca_timeline);
 
 -- Causes (Swiss Cheese)
 WITH rca AS (SELECT rc.id FROM rca_cases rc JOIN incidents i ON rc.incident_id=i.id WHERE i.ir_code='IR 2503000003')
@@ -58,7 +59,8 @@ FROM rca, (VALUES
   ('environment','ขาดป้ายแยก',false),
   ('management','ไม่กำหนดนโยบายชัด',true),
   ('management','มอบหมายงานไม่ชัด',true)
-) c(category, label, is_hot);
+) c(category, label, is_hot)
+WHERE NOT EXISTS (SELECT 1 FROM rca_causes);
 
 -- Actions for IR 2503000003
 INSERT INTO actions (incident_id, title, description, owner, due_date, status, progress)
@@ -71,12 +73,15 @@ FROM incidents i, (VALUES
   ('นโยบายมอบหมายงานข้ามหน่วย', 'ต้องได้รับมอบหมายจากหัวหน้าทีมก่อนทำกิจกรรม High Risk', 'ผู้อำนวยการพยาบาล', '2025-04-30', 'done', 100),
   ('กระติกขนส่งเลือดมาตรฐาน', 'มี ice pack และเทอร์โมมิเตอร์ Calibrate แล้ว', 'BME', '2025-09-30', 'planned', 0)
 ) a(title, description, owner, due_date, status, progress)
-WHERE i.ir_code = 'IR 2503000003';
+WHERE i.ir_code = 'IR 2503000003'
+  AND NOT EXISTS (SELECT 1 FROM actions);
 
-INSERT INTO risk_register (title, likelihood, consequence, category, note) VALUES
+INSERT INTO risk_register (title, likelihood, consequence, category, note)
+SELECT * FROM (VALUES
   ('การให้เลือดผิดคน / ผิดหมู่', 3, 5, 'blood', 'จากเคส IR 2503000003'),
   ('ยา High Alert ผิดขนาด', 4, 4, 'medication', 'มีอุบัติการณ์ซ้ำในไตรมาส'),
   ('ผู้ป่วยพลัดตกจากเตียง', 4, 2, 'fall', 'พบบ่อยใน ward ผู้สูงอายุ'),
   ('การสื่อสารส่งต่อผิดพลาด', 5, 4, 'communication', 'จุดเชื่อม ER → ward'),
   ('ติดเชื้อจากหัตถการ', 3, 3, 'procedure', 'IPC')
-ON CONFLICT DO NOTHING;
+) AS v(title, likelihood, consequence, category, note)
+WHERE NOT EXISTS (SELECT 1 FROM risk_register);

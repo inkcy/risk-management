@@ -23,7 +23,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getSessionUser();
 
   return (
-    <html lang="th">
+    // themeBootstrap เติมคลาส light ลงบน <html> ก่อน React hydrate ทำให้ไม่ตรงกับ HTML ฝั่ง server เสมอ
+    // ตั้งใจให้เป็นแบบนี้เพื่อกันจอกระพริบ จึงบอก React ให้ข้ามการเทียบเฉพาะ element นี้
+    <html lang="th" suppressHydrationWarning>
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap"

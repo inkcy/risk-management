@@ -605,6 +605,13 @@ option { background: var(--bg3); }
 .rf input:focus, .rf textarea:focus, .rf select:focus {
   outline: none; border-color: var(--accent);
 }
+/* ตัวอย่างการกรอก — จางกว่าข้อความจริงชัดเจน เพื่อไม่ให้เข้าใจผิดว่ากรอกไว้แล้ว */
+.rf input::placeholder,
+.rf textarea::placeholder {
+  color: var(--text3);
+  opacity: .62;
+  line-height: 1.55;
+}
 .rf textarea { resize: vertical; min-height: 40px; }
 .rf select { appearance: none; cursor: pointer; }
 

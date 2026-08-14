@@ -6,6 +6,7 @@ import {
   CMP_COLUMNS,
   COLONOGY_CLINICAL,
   COLONOGY_GENERAL,
+  EXAMPLE,
   FORM_CODE,
   FORM_TITLE,
   TIER_ROWS,
@@ -409,7 +410,7 @@ export default function RcaFormPage() {
             <input
               className="rf-rowcard-title"
               value={r.area}
-              placeholder={CMP_COLUMNS[0]}
+              placeholder={EXAMPLE.cmp.area}
               onChange={e => setArrayItem<CmpRow>(which, i, { area: e.target.value })}
             />
             <RowActions
@@ -418,13 +419,13 @@ export default function RcaFormPage() {
             />
           </div>
           <div className="rf-grid">
-            <Area label={CMP_COLUMNS[1]} rows={3} value={r.standard} onChange={v => setArrayItem<CmpRow>(which, i, { standard: v })} />
-            <Area label={CMP_COLUMNS[2]} rows={3} value={r.unsafeAct} onChange={v => setArrayItem<CmpRow>(which, i, { unsafeAct: v })} />
-            <Area label={CMP_COLUMNS[3]} rows={3} value={r.constraint} onChange={v => setArrayItem<CmpRow>(which, i, { constraint: v })} />
+            <Area label={CMP_COLUMNS[1]} rows={3} value={r.standard} placeholder={EXAMPLE.cmp.standard} onChange={v => setArrayItem<CmpRow>(which, i, { standard: v })} />
+            <Area label={CMP_COLUMNS[2]} rows={3} value={r.unsafeAct} placeholder={EXAMPLE.cmp.unsafeAct} onChange={v => setArrayItem<CmpRow>(which, i, { unsafeAct: v })} />
+            <Area label={CMP_COLUMNS[3]} rows={3} value={r.constraint} placeholder={EXAMPLE.cmp.constraint} onChange={v => setArrayItem<CmpRow>(which, i, { constraint: v })} />
           </div>
           <div className="rf-grid">
-            <Field label={CMP_COLUMNS[4]} value={r.period} placeholder="เช่น 10.48 - 11.15 น." onChange={v => setArrayItem<CmpRow>(which, i, { period: v })} />
-            <Field label={CMP_COLUMNS[5]} value={r.system} placeholder="ระบบงาน/แนวทางปฏิบัติที่เกี่ยวข้อง" onChange={v => setArrayItem<CmpRow>(which, i, { system: v })} />
+            <Field label={CMP_COLUMNS[4]} value={r.period} placeholder={EXAMPLE.cmp.period} onChange={v => setArrayItem<CmpRow>(which, i, { period: v })} />
+            <Field label={CMP_COLUMNS[5]} value={r.system} placeholder={EXAMPLE.cmp.system} onChange={v => setArrayItem<CmpRow>(which, i, { system: v })} />
           </div>
         </div>
       ))}
@@ -445,6 +446,10 @@ export default function RcaFormPage() {
             <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>{FORM_TITLE}</div>
             <div style={{ fontSize: 12, color: 'var(--text3)' }}>
               กรอกข้อมูลในหน้านี้ แล้วกด “ส่งออก Word” เพื่อได้ไฟล์ .docx ตามรูปแบบแบบฟอร์มต้นฉบับ
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 6, lineHeight: 1.6 }}>
+              ข้อความจาง ๆ ในช่องกรอกคือ<strong>ตัวอย่าง</strong>จากกรณีผู้ป่วยได้รับยาซ้ำซ้อน (double dose)
+              — พิมพ์ทับได้เลย ไม่ถูกบันทึกและไม่ติดไปกับไฟล์ Word
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
@@ -541,12 +546,12 @@ export default function RcaFormPage() {
 
       {/* ---- ส่วนหัวแบบฟอร์ม ---- */}
       <Section title="ข้อมูลทั่วไป">
-        <Area label="เรื่อง" rows={2} value={form.subject} placeholder="เรื่องที่นำมาทบทวน" onChange={v => set('subject', v)} />
+        <Area label="เรื่อง" rows={2} value={form.subject} placeholder={EXAMPLE.subject} onChange={v => set('subject', v)} />
         <div className="rf-grid">
-          <Field label="RM No." value={form.rmNo} placeholder="เช่น 2503000003" onChange={v => set('rmNo', v)} />
-          <Field label="ปี (พ.ศ. 2 หลัก)" value={form.rmYear} placeholder="68" onChange={v => set('rmYear', v)} />
-          <Field label="วันที่ทบทวน" value={form.reviewDate} placeholder="14 พฤษภาคม 2568" onChange={v => set('reviewDate', v)} />
-          <Field label="วันที่เกิดเหตุการณ์" value={form.eventDate} placeholder="18 กุมภาพันธ์ 2568" onChange={v => set('eventDate', v)} />
+          <Field label="RM No." value={form.rmNo} placeholder={EXAMPLE.rmNo} onChange={v => set('rmNo', v)} />
+          <Field label="ปี (พ.ศ. 2 หลัก)" value={form.rmYear} placeholder={EXAMPLE.rmYear} onChange={v => set('rmYear', v)} />
+          <Field label="วันที่ทบทวน" value={form.reviewDate} placeholder={EXAMPLE.reviewDate} onChange={v => set('reviewDate', v)} />
+          <Field label="วันที่เกิดเหตุการณ์" value={form.eventDate} placeholder={EXAMPLE.eventDate} onChange={v => set('eventDate', v)} />
         </div>
         <div className="rf-grid">
           <label className="rf-field">
@@ -557,21 +562,21 @@ export default function RcaFormPage() {
               <option value="general">ทั่วไป</option>
             </select>
           </label>
-          <Field label="หน่วยงาน / ทีม" value={form.unit} placeholder="เช่น MICU / ธนาคารเลือด" onChange={v => set('unit', v)} />
-          <Field label="ระดับความรุนแรง ( A-I / 1-5 )" value={form.severity} placeholder="เช่น E หรือ 4" onChange={v => set('severity', v)} />
+          <Field label="หน่วยงาน / ทีม" value={form.unit} placeholder={EXAMPLE.unit} onChange={v => set('unit', v)} />
+          <Field label="ระดับความรุนแรง ( A-I / 1-5 )" value={form.severity} placeholder={EXAMPLE.severity} onChange={v => set('severity', v)} />
         </div>
-        <Area label="สมาชิกผู้ร่วมทบทวน" rows={3} value={form.members} placeholder="ชื่อ-ตำแหน่ง ผู้ร่วมทบทวน คั่นด้วยเครื่องหมายจุลภาค หรือขึ้นบรรทัดใหม่" onChange={v => set('members', v)} />
+        <Area label="สมาชิกผู้ร่วมทบทวน" rows={3} value={form.members} placeholder={EXAMPLE.members} onChange={v => set('members', v)} />
       </Section>
 
       {/* ---- 1. Story and Timeline ---- */}
       <Section no="1." title="Story and Timeline" sub="บรรยายเหตุการณ์ที่สำคัญสั้น ๆ บุคคลที่เกี่ยวข้องโดยไม่ระบุชื่อ">
-        <Area label="เรื่องเล่าเหตุการณ์" rows={8} value={form.story} placeholder="ลำดับความเป็นมาของเหตุการณ์ ข้อมูลผู้ป่วยที่จำเป็น การดำเนินการที่เกิดขึ้น..." onChange={v => set('story', v)} />
+        <Area label="เรื่องเล่าเหตุการณ์" rows={8} value={form.story} placeholder={EXAMPLE.story} onChange={v => set('story', v)} />
 
         <div className="sub-label" style={{ marginTop: 18 }}>adverse event / problem statement</div>
         <div className="rf-grid">
-          <Area label="1 อุบัติการณ์เกิดกับใคร" rows={3} value={form.psWho} onChange={v => set('psWho', v)} />
-          <Area label="2 เหตุการณ์ที่เกิดขึ้นคืออะไร" rows={3} value={form.psWhat} onChange={v => set('psWhat', v)} />
-          <Area label="3 ผลกระทบ/ความรุนแรงที่เกิดขึ้น" rows={3} value={form.psImpact} onChange={v => set('psImpact', v)} />
+          <Area label="1 อุบัติการณ์เกิดกับใคร" rows={3} value={form.psWho} placeholder={EXAMPLE.psWho} onChange={v => set('psWho', v)} />
+          <Area label="2 เหตุการณ์ที่เกิดขึ้นคืออะไร" rows={3} value={form.psWhat} placeholder={EXAMPLE.psWhat} onChange={v => set('psWhat', v)} />
+          <Area label="3 ผลกระทบ/ความรุนแรงที่เกิดขึ้น" rows={3} value={form.psImpact} placeholder={EXAMPLE.psImpact} onChange={v => set('psImpact', v)} />
         </div>
 
         <div className="sub-label" style={{ marginTop: 18 }}>
@@ -584,6 +589,7 @@ export default function RcaFormPage() {
             label={`${i + 1} ${label}`}
             rows={2}
             value={form.colonogyClinical[i] ?? ''}
+            placeholder={EXAMPLE.colonogyClinical[i]}
             onChange={v => set('colonogyClinical', form.colonogyClinical.map((x, j) => (j === i ? v : x)))}
           />
         ))}
@@ -594,6 +600,7 @@ export default function RcaFormPage() {
             label={`${i + 1} ${label}`}
             rows={2}
             value={form.colonogyGeneral[i] ?? ''}
+            placeholder={EXAMPLE.colonogyGeneral[i]}
             onChange={v => set('colonogyGeneral', form.colonogyGeneral.map((x, j) => (j === i ? v : x)))}
           />
         ))}
@@ -606,9 +613,9 @@ export default function RcaFormPage() {
               <RowActions canRemove={form.timeline.length > 1} onRemove={() => set('timeline', form.timeline.filter((_, j) => j !== i))} />
             </div>
             <div className="rf-grid rf-grid-tl">
-              <Field label="Day" value={t.day} placeholder="18/2/68" onChange={v => setArrayItem<TimelineRow>('timeline', i, { day: v })} />
-              <Field label="Time" value={t.time} placeholder="10.48" onChange={v => setArrayItem<TimelineRow>('timeline', i, { time: v })} />
-              <Area label="Event" rows={2} value={t.event} placeholder="เหตุการณ์ที่เกิดขึ้นในช่วงเวลานี้" onChange={v => setArrayItem<TimelineRow>('timeline', i, { event: v })} />
+              <Field label="Day" value={t.day} placeholder={EXAMPLE.timeline.day} onChange={v => setArrayItem<TimelineRow>('timeline', i, { day: v })} />
+              <Field label="Time" value={t.time} placeholder={EXAMPLE.timeline.time} onChange={v => setArrayItem<TimelineRow>('timeline', i, { time: v })} />
+              <Area label="Event" rows={2} value={t.event} placeholder={EXAMPLE.timeline.event} onChange={v => setArrayItem<TimelineRow>('timeline', i, { event: v })} />
             </div>
           </div>
         ))}
@@ -641,6 +648,7 @@ export default function RcaFormPage() {
             hint={r.hint}
             rows={3}
             value={form.w5h1[r.key]}
+            placeholder={EXAMPLE.w5h1[r.key]}
             onChange={v => set('w5h1', { ...form.w5h1, [r.key]: v })}
           />
         ))}
@@ -659,6 +667,7 @@ export default function RcaFormPage() {
             hint={t.hint}
             rows={3}
             value={form.tiers[t.key]}
+            placeholder={EXAMPLE.tiers[t.key]}
             onChange={v => set('tiers', { ...form.tiers, [t.key]: v })}
           />
         ))}
@@ -672,11 +681,11 @@ export default function RcaFormPage() {
               <span className="rf-rowcard-no">สาเหตุที่ {i + 1}</span>
               <RowActions canRemove={form.solutions.length > 1} onRemove={() => set('solutions', form.solutions.filter((_, j) => j !== i))} />
             </div>
-            <Area label="สาเหตุที่แท้จริง (Root cause)" rows={2} value={s.rootCause} onChange={v => setArrayItem<SolutionRow>('solutions', i, { rootCause: v })} />
-            <Area label="มาตรการการป้องกัน" rows={4} value={s.prevention} placeholder="ขึ้นบรรทัดใหม่เพื่อแยกเป็นข้อ ๆ" onChange={v => setArrayItem<SolutionRow>('solutions', i, { prevention: v })} />
+            <Area label="สาเหตุที่แท้จริง (Root cause)" rows={2} value={s.rootCause} placeholder={EXAMPLE.solution.rootCause} onChange={v => setArrayItem<SolutionRow>('solutions', i, { rootCause: v })} />
+            <Area label="มาตรการการป้องกัน" rows={4} value={s.prevention} placeholder={EXAMPLE.solution.prevention} onChange={v => setArrayItem<SolutionRow>('solutions', i, { prevention: v })} />
             <div className="rf-grid">
-              <Field label="ผู้รับผิดชอบ" value={s.owner} onChange={v => setArrayItem<SolutionRow>('solutions', i, { owner: v })} />
-              <Field label="ระยะเวลาดำเนินการ" value={s.timeframe} placeholder="เช่น ภายใน 1 เดือน" onChange={v => setArrayItem<SolutionRow>('solutions', i, { timeframe: v })} />
+              <Field label="ผู้รับผิดชอบ" value={s.owner} placeholder={EXAMPLE.solution.owner} onChange={v => setArrayItem<SolutionRow>('solutions', i, { owner: v })} />
+              <Field label="ระยะเวลาดำเนินการ" value={s.timeframe} placeholder={EXAMPLE.solution.timeframe} onChange={v => setArrayItem<SolutionRow>('solutions', i, { timeframe: v })} />
             </div>
           </div>
         ))}
@@ -693,11 +702,11 @@ export default function RcaFormPage() {
               <span className="rf-rowcard-no">กระบวนการที่ {i + 1}</span>
               <RowActions canRemove={form.processes.length > 1} onRemove={() => set('processes', form.processes.filter((_, j) => j !== i))} />
             </div>
-            <Area label="กระบวนการ" rows={2} value={p.process} onChange={v => setArrayItem<ProcessRow>('processes', i, { process: v })} />
+            <Area label="กระบวนการ" rows={2} value={p.process} placeholder={EXAMPLE.process.process} onChange={v => setArrayItem<ProcessRow>('processes', i, { process: v })} />
             <div className="rf-grid">
-              <Area label="ข้อกำหนดของกระบวนการ (process requirement)" rows={4} value={p.requirement} onChange={v => setArrayItem<ProcessRow>('processes', i, { requirement: v })} />
-              <Area label="ตัวชี้วัดของกระบวนการ (process indicators)" rows={4} value={p.indicators} onChange={v => setArrayItem<ProcessRow>('processes', i, { indicators: v })} />
-              <Area label="การออกแบบกระบวนการ (process design)" rows={4} value={p.design} onChange={v => setArrayItem<ProcessRow>('processes', i, { design: v })} />
+              <Area label="ข้อกำหนดของกระบวนการ (process requirement)" rows={4} value={p.requirement} placeholder={EXAMPLE.process.requirement} onChange={v => setArrayItem<ProcessRow>('processes', i, { requirement: v })} />
+              <Area label="ตัวชี้วัดของกระบวนการ (process indicators)" rows={4} value={p.indicators} placeholder={EXAMPLE.process.indicators} onChange={v => setArrayItem<ProcessRow>('processes', i, { indicators: v })} />
+              <Area label="การออกแบบกระบวนการ (process design)" rows={4} value={p.design} placeholder={EXAMPLE.process.design} onChange={v => setArrayItem<ProcessRow>('processes', i, { design: v })} />
             </div>
           </div>
         ))}

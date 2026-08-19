@@ -9,8 +9,8 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // การวิเคราะห์ยิง API ที่มีค่าใช้จ่ายต่อครั้ง — ไม่เปิดให้ผู้ดูอย่างเดียวกดได้
-  const auth = await requireRole('editor');
+  // ผู้ใช้ที่ล็อกอินและยัง active ทุกระดับสามารถเรียก AI วิเคราะห์ได้
+  const auth = await requireRole('viewer');
   if (!auth.ok) return auth.response;
 
   const { id } = await params;

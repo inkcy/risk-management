@@ -120,7 +120,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
         </div>
       </div>
 
-      {(user?.role === 'admin' || user?.role === 'editor') && <RcaAiPanel irCode={incident.ir_code} />}
+      {user && <RcaAiPanel irCode={incident.ir_code} />}
 
       <div className="grid-2">
         <div className="card">

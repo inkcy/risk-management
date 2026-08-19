@@ -15,7 +15,6 @@
     "db:clear-demo": "tsx scripts/clear-demo.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.65.0",
     "cors": "^2.8.5",
     "docx": "^9.0.3",
     "dotenv": "^17.4.2",

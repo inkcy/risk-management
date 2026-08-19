@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { ActionItem, RcaBundle } from './types.js';
 
 const RCA_METHODOLOGY = `คุณคือผู้เชี่ยวชาญด้านการบริหารความเสี่ยงและคุณภาพในโรงพยาบาล มีหน้าที่ช่วยทีม Patient Safety วิเคราะห์อุบัติการณ์เชิงระบบ โดยยึดกรอบแนวทาง 3 กรอบรวมกัน
@@ -117,7 +116,7 @@ RCA ไม่ใช่การจับผิดบุคลากร แต่
 - อ้างกรอบ 5-Tier และ HRO ตรงๆ ในเนื้อหา ไม่ใช่แค่หัวข้อ`;
 
 const DEMO_ANALYSIS = `## สรุปเหตุการณ์
-[Demo mode — ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY] นี่คือผลตัวอย่างเพื่อแสดง layout ของฟีเจอร์ AI วิเคราะห์ RCA เมื่อเชื่อม Claude API จริง ระบบจะส่งข้อมูลเคสนี้ไปวิเคราะห์ตามกรอบ 5-Tier Contributory Factor + Compassionate RCA + HRO 5 มิติ
+[Demo mode — ยังไม่ได้ตั้งค่า GEMINI_API_KEY] นี่คือผลตัวอย่างเพื่อแสดง layout ของฟีเจอร์ AI วิเคราะห์ RCA เมื่อเชื่อม Gemini API จริง ระบบจะส่งข้อมูลเคสนี้ไปวิเคราะห์ตามกรอบ 5-Tier Contributory Factor + Compassionate RCA + HRO 5 มิติ
 
 ## วิเคราะห์ Timeline (Critical Decision Points)
 - **10:19** — รับเลือดทั้ง 2 รายวางใกล้กัน เป็นจุด "system vulnerability" แรกที่เปิดโอกาสให้เกิดความสับสน
@@ -167,15 +166,8 @@ const DEMO_ANALYSIS = `## สรุปเหตุการณ์
 - **Disclosure** — เปิดเผยกับผู้ป่วย/ญาติด้วยความจริงใจ ขอโทษ และอธิบายมาตรการป้องกัน
 - **Organizational learning** — นำ case เข้า monthly M&M conference เป็น learning case ของ รพ.`;
 
-let client: Anthropic | undefined;
-
 export function aiConfigured(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
-}
-
-function getClient(): Anthropic {
-  if (!client) client = new Anthropic();
-  return client;
+  return !!process.env.GEMINI_API_KEY?.trim();
 }
 
 function fmtDate(iso: string): string {
@@ -259,41 +251,82 @@ export interface AiAnalysisResult {
   };
 }
 
+interface GeminiGenerateContentResponse {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+  }>;
+  modelVersion?: string;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    cachedContentTokenCount?: number;
+  };
+  error?: { message?: string };
+}
+
+async function geminiError(response: Response): Promise<Error> {
+  let message = `Gemini API ตอบกลับด้วยสถานะ ${response.status}`;
+  try {
+    const body = await response.json() as GeminiGenerateContentResponse;
+    if (body.error?.message) message = `Gemini API: ${body.error.message}`;
+  } catch {
+    // Keep the status-only message when the response is not JSON.
+  }
+  return new Error(message);
+}
+
 export async function analyzeRca(bundle: RcaBundle, actions: ActionItem[]): Promise<AiAnalysisResult> {
   if (!aiConfigured()) {
     return { analysis: DEMO_ANALYSIS, demo: true };
   }
 
-  const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+  const apiKey = process.env.GEMINI_API_KEY!.trim();
+  const model = (process.env.GEMINI_MODEL ?? 'gemini-3.6-flash').trim().replace(/^models\//, '');
   const userText = formatRcaForAi(bundle, actions);
 
-  const msg = await getClient().messages.create({
-    model,
-    max_tokens: 4096,
-    system: [
-      {
-        type: 'text',
-        text: RCA_METHODOLOGY,
-        cache_control: { type: 'ephemeral' },
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
       },
-    ],
-    messages: [{ role: 'user', content: userText }],
-  });
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: RCA_METHODOLOGY }] },
+        contents: [{ role: 'user', parts: [{ text: userText }] }],
+        generationConfig: {
+          maxOutputTokens: 4096,
+        },
+      }),
+    },
+  );
 
-  const text = msg.content
-    .filter((c): c is Anthropic.TextBlock => c.type === 'text')
-    .map(c => c.text)
-    .join('\n');
+  if (!response.ok) throw await geminiError(response);
+
+  const msg = await response.json() as GeminiGenerateContentResponse;
+  const text = (msg.candidates ?? [])
+    .flatMap(candidate => candidate.content?.parts ?? [])
+    .map(part => part.text ?? '')
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+
+  if (!text) {
+    throw new Error('Gemini API ไม่ได้ส่งข้อความวิเคราะห์กลับมา');
+  }
+
+  const usage = msg.usageMetadata;
 
   return {
     analysis: text,
     demo: false,
-    model: msg.model,
+    model: msg.modelVersion ?? model,
     usage: {
-      input_tokens: msg.usage.input_tokens,
-      output_tokens: msg.usage.output_tokens,
-      cache_read_input_tokens: msg.usage.cache_read_input_tokens ?? 0,
-      cache_creation_input_tokens: msg.usage.cache_creation_input_tokens ?? 0,
+      input_tokens: usage?.promptTokenCount ?? 0,
+      output_tokens: usage?.candidatesTokenCount ?? 0,
+      cache_read_input_tokens: usage?.cachedContentTokenCount ?? 0,
+      cache_creation_input_tokens: 0,
     },
   };
 }

@@ -159,7 +159,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
             color: 'var(--text3)', fontSize: 12, lineHeight: 1.8,
           }}>
             <div style={{ marginBottom: 8 }}>
-              คลิกปุ่ม &quot;วิเคราะห์ด้วย AI&quot; เพื่อให้ Claude วิเคราะห์เคสนี้
+              คลิกปุ่ม &quot;วิเคราะห์ด้วย AI&quot; เพื่อให้ Gemini วิเคราะห์เคสนี้
             </div>
             <div style={{ fontSize: 11 }}>
               ใช้กรอบ 5-Tier Contributory Factor for Incident Analysis · Compassionate RCA (อ.สุรพล) · HRO 5 มิติ
@@ -196,7 +196,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
                 background: 'var(--amber-bg)', color: 'var(--amber)',
                 borderRadius: 4, fontSize: 11, lineHeight: 1.6,
               }}>
-                <strong>Demo mode</strong> — ยังไม่ได้ตั้งค่า <code>ANTHROPIC_API_KEY</code> ใน <code>backend/.env</code> · กำลังแสดงผลตัวอย่าง
+                <strong>Demo mode</strong> — ยังไม่ได้ตั้งค่า <code>GEMINI_API_KEY</code> ใน <code>frontend/.env.local</code> · กำลังแสดงผลตัวอย่าง
               </div>
             )}
             <div style={{ color: 'var(--text)' }}>

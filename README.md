@@ -70,7 +70,7 @@ demo mode ล้วน (ไม่ตั้งทั้ง `POSTGRES_URL` แล�
 | POST   | `/api/incidents`           | บันทึกอุบัติการณ์ใหม่ (ต้องเชื่อม DB)   |
 | GET    | `/api/rca/:irCode`         | RCA bundle — incident + case + timeline + causes |
 | GET    | `/api/rca/:irCode/export`  | ส่งออกรายงาน RCA จากข้อมูลในระบบเป็น Word (.docx) |
-| POST   | `/api/rca/:irCode/analyze` | AI วิเคราะห์ RCA ด้วย Claude (5-Tier + Compassionate + HRO) |
+| POST   | `/api/rca/:irCode/analyze` | AI วิเคราะห์ RCA ด้วย Gemini (5-Tier + Compassionate + HRO) |
 | POST   | `/api/rca/export-form`     | รับข้อมูลแบบฟอร์ม FM-QPS-QSH-002 (JSON) → คืนไฟล์ Word |
 | GET    | `/api/actions`             | มาตรการแก้ไขทั้งหมด                   |
 | GET    | `/api/stats`               | Aggregate stats สำหรับ Dashboard      |
@@ -135,7 +135,7 @@ frontend/                   ← ระบบหลัก (deploy เฉพาะ
 │   ├── demo.ts             demo ข้อมูลตัวอย่าง
 │   ├── types.ts            TypeScript types ของ domain
 │   ├── api.ts              re-export จาก queries ให้ server component เรียก
-│   ├── ai.ts               Claude API + prompt 3 กรอบ (5-Tier / Compassionate / HRO)
+│   ├── ai.ts               Gemini API + prompt 3 กรอบ (5-Tier / Compassionate / HRO)
 │   ├── docx.ts             Word export ของรายงาน RCA จากข้อมูลในระบบ
 │   ├── rcaForm.ts          โครงข้อมูลแบบฟอร์ม FM-QPS-QSH-002
 │   └── rcaFormDocx.ts      Word export ของแบบฟอร์ม FM-QPS-QSH-002
@@ -170,8 +170,8 @@ backend/                    ← ไม่ต้อง deploy · ใช้รั�
 - `APP_URL` — โดเมนจริงของเว็บ เช่น `https://risk-management.vercel.app` (บังคับ redirect_uri ให้คงที่)
 - `ALLOWED_EMAIL_DOMAINS` — จำกัดโดเมนอีเมลที่ล็อกอินได้ คั่นด้วย comma (เว้นว่าง = ไม่จำกัด)
 - `ADMIN_EMAILS` — อีเมลที่ได้สิทธิ์ admin อัตโนมัติ คั่นด้วย comma
-- `ANTHROPIC_API_KEY` — Claude API key สำหรับฟีเจอร์ AI วิเคราะห์ RCA (ไม่ใส่ = คืนผลตัวอย่าง ไม่ error) สมัครที่ <https://console.anthropic.com>
-- `ANTHROPIC_MODEL` — โมเดล Claude ที่ใช้ (ดีฟอลต์ `claude-sonnet-4-6`)
+- `GEMINI_API_KEY` — Gemini API key สำหรับฟีเจอร์ AI วิเคราะห์ RCA (ไม่ใส่ = คืนผลตัวอย่าง ไม่ error) สร้างที่ <https://aistudio.google.com/apikey>
+- `GEMINI_MODEL` — โมเดล Gemini ที่ใช้ (ดีฟอลต์ `gemini-3.6-flash`)
 
 **backend/.env** — ใช้ตอนรัน migration เท่านั้น
 
@@ -189,8 +189,8 @@ backend/                    ← ไม่ต้อง deploy · ใช้รั�
 
 | role | ทำอะไรได้ |
 |---|---|
-| `viewer` (ค่าเริ่มต้นของผู้ใช้ใหม่) | ดูข้อมูลอย่างเดียว · กรอกฟอร์ม RCA + ส่งออก Word ได้ |
-| `editor` | บันทึกอุบัติการณ์ ข้อมูล CAUTI และสั่ง AI วิเคราะห์ RCA |
+| `viewer` (ค่าเริ่มต้นของผู้ใช้ใหม่) | ดูข้อมูล · กรอกฟอร์ม RCA + ส่งออก Word · สั่ง AI วิเคราะห์ RCA ได้ |
+| `editor` | ทุกอย่างที่ viewer ทำได้ + บันทึกอุบัติการณ์และข้อมูล CAUTI |
 | `admin` | ทุกอย่าง + จัดการสิทธิ์ผู้ใช้ที่ `/settings` |
 
 ผู้ที่ล็อกอินครั้งแรกได้ `viewer` เสมอ ต้องให้ admin เลื่อนสิทธิ์ให้ (ยกเว้นอีเมลที่อยู่ใน `ADMIN_EMAILS`)

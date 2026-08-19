@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadRcaBundle, loadActions } from '@/lib/queries';
 import { buildRcaDocx } from '@/lib/docx';
+import { requireReadAccess } from '@/lib/auth';
 
 export const maxDuration = 30;
 
@@ -8,6 +9,8 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireReadAccess();
+  if (denied) return denied;
   const { id } = await params;
   try {
     const [bundleEnv, actionsEnv] = await Promise.all([loadRcaBundle(id), loadActions()]);

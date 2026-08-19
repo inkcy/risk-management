@@ -34,7 +34,7 @@ export default function CompassionPage() {
           <span className="badge badge-purple">Trauma Transformed</span>
         </div>
         <div className="card-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10 }}>
+          <div className="compassion-steps">
             {opportunities.map(o => (
               <div key={o.n} style={{ padding: 14, border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg3)' }}>
                 <div style={{

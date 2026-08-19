@@ -1,6 +1,8 @@
-import { getRcaByCode, getActions, categoryLabel } from '@/lib/api';
+import Link from 'next/link';
+import { getRcaByCode, getActions, getIncidents, categoryLabel } from '@/lib/api';
 import { DemoBanner } from '@/components/DemoBanner';
 import { RcaAiPanel } from '@/components/RcaAiPanel';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +38,28 @@ const actionStatus = (s: string) =>
 
 export default async function RcaPage({ searchParams }: { searchParams: Promise<{ ir?: string }> }) {
   const params = await searchParams;
-  const irCode = params.ir ?? 'IR 2503000003';
+  const [{ data: incidents, error: incidentListError }, user] = await Promise.all([
+    getIncidents(),
+    getSessionUser(),
+  ]);
+  const irCode = params.ir?.trim() || incidents[0]?.ir_code;
+
+  if (!irCode) {
+    return (
+      <>
+        <DemoBanner error={incidentListError} />
+        <div className="card">
+          <div className="card-body" style={{ textAlign: 'center', padding: 32 }}>
+            <div style={{ marginBottom: 12, color: 'var(--text2)' }}>ยังไม่มีอุบัติการณ์สำหรับเริ่มวิเคราะห์ RCA</div>
+            {(user?.role === 'admin' || user?.role === 'editor') && (
+              <Link href="/report" className="tb-btn tb-btn-primary">+ รายงานอุบัติการณ์ใหม่</Link>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   const [{ data: bundle, error }, { data: actions }] = await Promise.all([
     getRcaByCode(irCode),
     getActions(),
@@ -97,7 +120,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
         </div>
       </div>
 
-      <RcaAiPanel irCode={incident.ir_code} />
+      {(user?.role === 'admin' || user?.role === 'editor') && <RcaAiPanel irCode={incident.ir_code} />}
 
       <div className="grid-2">
         <div className="card">

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildRcaFormDocx } from '@/lib/rcaFormDocx';
 import { normalizeRcaForm } from '@/lib/rcaForm';
+import { requireReadAccess } from '@/lib/auth';
 
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
+  const denied = await requireReadAccess();
+  if (denied) return denied;
   try {
     const body = await request.json();
     const form = normalizeRcaForm(body);

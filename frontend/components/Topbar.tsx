@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react';
 import type { SessionUser } from '@/lib/auth';
 
 const titles: Record<string, [string, string]> = {
-  '/': ['แดชบอร์ด', 'ปีงบประมาณ 2568 · รพ.ตัวอย่าง'],
+  '/': ['แดชบอร์ด', 'ภาพรวมระบบบริหารความเสี่ยง'],
   '/incidents': ['รายการอุบัติการณ์', 'ทุกเหตุการณ์ที่บันทึกไว้'],
-  '/rca': ['Root Cause Analysis', 'IR 2503000003 · ให้เลือดผิดคน'],
+  '/rca': ['Root Cause Analysis', 'วิเคราะห์สาเหตุและติดตามมาตรการ'],
+  '/rca/form': ['แบบฟอร์ม RCA', 'บันทึกและส่งออกแบบวิเคราะห์สาเหตุ'],
   '/matrix': ['Risk Matrix', 'ประเมินความเสี่ยงองค์กร'],
   '/cauti': ['CAUTI QuickAlert', 'เฝ้าระวังผู้ป่วยใส่ Foley catheter · alert เมื่อใส่เกิน 3 วัน'],
   '/actions': ['มาตรการแก้ไข', 'ติดตามความคืบหน้า'],
@@ -26,7 +27,10 @@ const ROLE_LABEL: Record<string, string> = {
 
 export function Topbar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
-  const [title, breadcrumb] = titles[pathname] || titles['/'];
+  const titleKey = Object.keys(titles)
+    .filter(path => path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0] ?? '/';
+  const [title, breadcrumb] = titles[titleKey];
   const [isLight, setIsLight] = useState(false);
   const canEdit = user?.role === 'admin' || user?.role === 'editor';
 
@@ -69,7 +73,6 @@ export function Topbar({ user }: { user: SessionUser | null }) {
         >
           {isLight ? '☀️' : '🌙'}
         </button>
-        <button className="tb-btn tb-btn-ghost export-btn">⤓ ส่งออก</button>
         {canEdit && (
           <Link href="/report" className="tb-btn tb-btn-primary report-btn">
             <span className="btn-full">+ รายงานใหม่</span>

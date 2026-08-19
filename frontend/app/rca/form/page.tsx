@@ -190,6 +190,8 @@ interface CloudFormRow {
   updated_at: string;
   updated_by_name: string | null;
   updated_by_email: string | null;
+  can_edit: boolean;
+  can_delete: boolean;
 }
 
 export default function RcaFormPage() {
@@ -200,6 +202,7 @@ export default function RcaFormPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   /** id ของร่างบนเซิร์ฟเวอร์ — null คือยังไม่เคยบันทึกลงระบบ */
   const [formId, setFormId] = useState<number | null>(null);
+  const [canEditCurrent, setCanEditCurrent] = useState(true);
   const [cloudForms, setCloudForms] = useState<CloudFormRow[]>([]);
   const [showCloud, setShowCloud] = useState(false);
   const irRef = useRef<string | null>(null);
@@ -309,6 +312,10 @@ export default function RcaFormPage() {
 
   /** บันทึกลงฐานข้อมูล — ส่ง id ไปด้วยคือเขียนทับใบเดิม */
   const save = async (id: number | null) => {
+    if (id && !canEditCurrent) {
+      setMsg({ kind: 'err', text: 'RCA ใบนี้เปิดแบบดูอย่างเดียว — แก้ไขได้เฉพาะเจ้าของร่างหรือผู้ดูแลระบบ' });
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -321,6 +328,7 @@ export default function RcaFormPage() {
       if (!res.ok) throw new Error(body.error ?? res.statusText);
 
       setFormId(body.form.id);
+      setCanEditCurrent(true);
       setMsg({
         kind: 'ok',
         text: id ? `บันทึกทับใบที่ ${body.form.id} แล้ว` : `บันทึกลงระบบแล้ว (ใบที่ ${body.form.id})`,
@@ -362,9 +370,15 @@ export default function RcaFormPage() {
       if (!res.ok) throw new Error(body.error ?? res.statusText);
       setForm(normalizeRcaForm(body.form.data));
       setFormId(body.form.id);
+      setCanEditCurrent(body.form.can_edit === true);
       irRef.current = body.form.ir_code ?? null;
       setShowCloud(false);
-      setMsg({ kind: 'ok', text: `เปิดใบที่ ${id} แล้ว — แก้ไขแล้วกดบันทึกทับได้` });
+      setMsg({
+        kind: body.form.can_edit ? 'ok' : 'info',
+        text: body.form.can_edit
+          ? `เปิดใบที่ ${id} แล้ว — แก้ไขแล้วกดบันทึกทับได้`
+          : `เปิดใบที่ ${id} แบบดูอย่างเดียว — ผู้ดูแลระบบหรือเจ้าของร่างเท่านั้นที่แก้ไขได้`,
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setMsg({ kind: 'err', text: `เปิดร่างไม่สำเร็จ: ${(err as Error).message}` });
@@ -392,6 +406,7 @@ export default function RcaFormPage() {
     localStorage.removeItem(DRAFT_KEY);
     setForm(emptyRcaForm());
     setFormId(null);
+    setCanEditCurrent(true);
     setMsg({ kind: 'info', text: 'ล้างแบบฟอร์มแล้ว (ใบที่บันทึกไว้บนระบบยังอยู่)' });
   };
 
@@ -459,8 +474,13 @@ export default function RcaFormPage() {
               </button>
               <button type="button" className="tb-btn tb-btn-ghost" onClick={loadSample}>ใส่ตัวอย่าง</button>
               <button type="button" className="tb-btn tb-btn-ghost" onClick={clearForm}>ล้างฟอร์ม</button>
-              <button type="button" className="tb-btn tb-btn-primary" onClick={saveToCloud} disabled={busy}>
-                {busy ? 'กำลังทำงาน...' : '💾 บันทึก'}
+              <button
+                type="button"
+                className="tb-btn tb-btn-primary"
+                onClick={saveToCloud}
+                disabled={busy || (!!formId && !canEditCurrent)}
+              >
+                {busy ? 'กำลังทำงาน...' : formId && !canEditCurrent ? 'ดูอย่างเดียว' : '💾 บันทึก'}
               </button>
             </div>
             {savedAt && (
@@ -524,15 +544,17 @@ export default function RcaFormPage() {
                         <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                           <button type="button" className="tb-btn tb-btn-ghost" onClick={() => openCloudForm(f.id)} disabled={busy}>
                             เปิด
-                          </button>{' '}
-                          <button
-                            type="button"
-                            className="tb-btn tb-btn-ghost"
-                            onClick={() => deleteCloudForm(f.id)}
-                            style={{ color: 'var(--red)' }}
-                          >
-                            ลบ
                           </button>
+                          {f.can_delete && <>{' '}
+                            <button
+                              type="button"
+                              className="tb-btn tb-btn-ghost"
+                              onClick={() => deleteCloudForm(f.id)}
+                              style={{ color: 'var(--red)' }}
+                            >
+                              ลบ
+                            </button>
+                          </>}
                         </td>
                       </tr>
                     ))}
@@ -544,6 +566,7 @@ export default function RcaFormPage() {
         </div>
       )}
 
+      <fieldset className="rf-edit-area" disabled={!!formId && !canEditCurrent}>
       {/* ---- ส่วนหัวแบบฟอร์ม ---- */}
       <Section title="ข้อมูลทั่วไป">
         <Area label="เรื่อง" rows={2} value={form.subject} placeholder={EXAMPLE.subject} onChange={v => set('subject', v)} />
@@ -715,12 +738,14 @@ export default function RcaFormPage() {
         </button>
       </Section>
 
+      </fieldset>
+
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-body" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button type="button" className="tb-btn tb-btn-primary" onClick={saveToCloud} disabled={busy}>
-            {busy ? 'กำลังทำงาน...' : formId ? '💾 บันทึกทับใบเดิม' : '💾 บันทึกลงระบบ'}
+          <button type="button" className="tb-btn tb-btn-primary" onClick={saveToCloud} disabled={busy || (!!formId && !canEditCurrent)}>
+            {busy ? 'กำลังทำงาน...' : formId && !canEditCurrent ? 'ดูอย่างเดียว' : formId ? '💾 บันทึกทับใบเดิม' : '💾 บันทึกลงระบบ'}
           </button>
-          {formId && (
+          {formId && canEditCurrent && (
             <button type="button" className="tb-btn tb-btn-ghost" onClick={saveAsNew} disabled={busy}>
               บันทึกเป็นใบใหม่
             </button>

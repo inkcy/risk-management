@@ -326,6 +326,7 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .cause-pill.hot { border-color: rgba(226,81,74,0.4); color: #f08080; background: var(--red-bg); }
 
 .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
+.compassion-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .action-card {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--r); padding: 14px 16px; position: relative;
@@ -394,6 +395,7 @@ option { background: var(--bg3); }
   border-radius: var(--r-sm); padding: 10px 12px;
   background: var(--bg3); cursor: pointer;
   transition: all .15s;
+  color: var(--text); font: inherit; text-align: left;
 }
 .sev-card:hover, .sev-card.selected { border-color: var(--accent); background: var(--blue-bg); }
 .sev-letter { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
@@ -487,6 +489,7 @@ option { background: var(--bg3); }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .grid-13 { grid-template-columns: 1fr; }
   .action-grid { grid-template-columns: repeat(2, 1fr); }
+  .compassion-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ── Mobile (≤768px) ─────────────────────────────────────────── */
@@ -574,6 +577,7 @@ option { background: var(--bg3); }
 /* ── Small phones (≤420px) ───────────────────────────────────── */
 @media (max-width: 420px) {
   .stats-row { grid-template-columns: 1fr; }
+  .compassion-steps { grid-template-columns: 1fr; }
   .sev-grid { grid-template-columns: 1fr; }
   .topbar-right .tb-btn-ghost:not(.menu-toggle):not(.report-btn) {
     /* keep theme toggle only */
@@ -628,6 +632,7 @@ option { background: var(--bg3); }
   padding: 12px 14px;
   margin-bottom: 12px;
 }
+.rf .rf-edit-area { border: 0; margin: 0; padding: 0; min-width: 0; }
 .rf .rf-rowcard-head {
   display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
 }

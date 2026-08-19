@@ -20,14 +20,22 @@ function demoModeOpen(): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (demoModeOpen()) return NextResponse.next();
+  // ส่ง path ปัจจุบันให้ root layout เพื่อยืนยัน session กับฐานข้อมูลอีกชั้น
+  // (middleware บน Edge ตรวจได้เพียงลายเซ็น cookie)
+  const nextWithPath = () => {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-risk-pathname', pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  };
+
+  if (demoModeOpen()) return nextWithPath();
 
   if (PUBLIC_PREFIXES.some(p => pathname === p || pathname.startsWith(p))) {
-    return NextResponse.next();
+    return nextWithPath();
   }
 
   const sessionId = await verifyValue(request.cookies.get(SESSION_COOKIE)?.value);
-  if (sessionId) return NextResponse.next();
+  if (sessionId) return nextWithPath();
 
   if (pathname.startsWith('/api/')) {
     return NextResponse.json({ error: 'Unauthorized — กรุณาเข้าสู่ระบบ' }, { status: 401 });

@@ -153,6 +153,16 @@ export type AuthResult =
   | { ok: false; response: NextResponse };
 
 /**
+ * ป้องกัน API อ่านข้อมูลเมื่อเชื่อมฐานข้อมูลจริง แต่ยังเปิด demo mode ที่ไม่มี DB
+ * ให้ทำงานได้ตามเดิม (middleware จะเปิด demo เฉพาะเมื่อไม่มี OAuth ด้วย)
+ */
+export async function requireReadAccess(): Promise<NextResponse | null> {
+  if (!dbConfigured()) return null;
+  const auth = await requireRole('viewer');
+  return auth.ok ? null : auth.response;
+}
+
+/**
  * ใช้ต้นทางของ route handler ที่เขียนข้อมูล:
  *   const auth = await requireRole('editor');
  *   if (!auth.ok) return auth.response;

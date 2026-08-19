@@ -12,7 +12,18 @@ interface RecentReport {
 }
 
 const RECENT_KEY = 'esafe_recent_reports';
+const DRAFT_KEY = 'esafe_report_draft_v1';
 const MAX_RECENT = 5;
+
+const EMPTY_FORM = {
+  occurred_at: '',
+  time: '',
+  unit: '',
+  category: '',
+  severity: '',
+  description: '',
+  immediate_action: '',
+};
 
 function loadRecent(): RecentReport[] {
   if (typeof window === 'undefined') return [];
@@ -28,8 +39,12 @@ function loadRecent(): RecentReport[] {
 
 function saveRecent(r: RecentReport) {
   if (typeof window === 'undefined') return;
-  const list = [r, ...loadRecent().filter(x => x.ir_code !== r.ir_code)].slice(0, MAX_RECENT);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+  try {
+    const list = [r, ...loadRecent().filter(x => x.ir_code !== r.ir_code)].slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+  } catch {
+    // รายงานถูกบันทึกบนเซิร์ฟเวอร์แล้ว ต้องไม่แจ้งว่าล้มเหลวเพียงเพราะ localStorage เต็ม/ถูกปิด
+  }
 }
 
 const units = [
@@ -54,33 +69,50 @@ const severities = [
   { value: 'C', label: 'เกิดอันตราย ไม่ต้องรักษา', color: 'var(--accent)' },
   { value: 'D', label: 'ต้องติดตามดูแลเพิ่ม', color: 'var(--amber)' },
   { value: 'E', label: 'ต้องรักษา / ผ่าตัด', color: 'var(--red)' },
+  { value: 'F', label: 'ต้องนอนโรงพยาบาลนานขึ้น', color: 'var(--red)' },
+  { value: 'G', label: 'เกิดความพิการถาวร', color: 'var(--red)' },
+  { value: 'H', label: 'ต้องช่วยชีวิต', color: 'var(--red)' },
   { value: 'I', label: 'เสียชีวิต', color: 'var(--red)' },
 ];
 
 export default function ReportPage() {
-  const [form, setForm] = useState({
-    occurred_at: '',
-    time: '',
-    unit: '',
-    category: '',
-    severity: '',
-    description: '',
-    immediate_action: '',
-  });
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error' | 'draft'>('idle');
   const [message, setMessage] = useState('');
   const [lastIrCode, setLastIrCode] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentReport[]>([]);
 
   useEffect(() => {
     setRecent(loadRecent());
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<typeof EMPTY_FORM>;
+        setForm({ ...EMPTY_FORM, ...parsed });
+        setStatus('draft');
+        setMessage('เปิดร่างรายงานที่บันทึกไว้ในเบราว์เซอร์นี้แล้ว');
+      }
+    } catch {
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* storage ถูกปิดใช้งาน */ }
+    }
   }, []);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm(s => ({ ...s, [k]: v }));
 
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+      setStatus('draft');
+      setMessage('บันทึกร่างไว้ในเบราว์เซอร์นี้แล้ว');
+    } catch {
+      setStatus('error');
+      setMessage('บันทึกร่างไม่สำเร็จ พื้นที่จัดเก็บของเบราว์เซอร์อาจเต็ม');
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.occurred_at || !form.unit || !form.category || !form.severity) {
+    if (!form.occurred_at || !form.unit || !form.category || !form.severity || !form.description.trim()) {
       setStatus('error');
       setMessage('กรุณากรอกข้อมูลให้ครบ');
       return;
@@ -88,7 +120,12 @@ export default function ReportPage() {
     setStatus('submitting');
     try {
       const occurred = `${form.occurred_at}T${form.time || '00:00'}:00+07:00`;
-      const irCode = `IR ${new Date().getFullYear().toString().slice(-2)}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Date.now() % 1000000).padStart(6, '0')}`;
+      const now = new Date();
+      const irCode = `IR ${now.getFullYear().toString().slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(Date.now()).slice(-8)}`;
+      const description = [
+        form.description.trim(),
+        form.immediate_action.trim() ? `การดำเนินการเบื้องต้น: ${form.immediate_action.trim()}` : '',
+      ].filter(Boolean).join('\n\n');
       const res = await fetch(`/api/incidents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,11 +133,10 @@ export default function ReportPage() {
           ir_code: irCode,
           occurred_at: occurred,
           title: form.description.slice(0, 80) || 'อุบัติการณ์ใหม่',
-          description: form.description,
-          unit_id: null,
+          description,
+          unit_code: form.unit,
           category: form.category,
           severity: form.severity,
-          reported_by: 'demo',
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? res.statusText);
@@ -116,9 +152,11 @@ export default function ReportPage() {
       };
       saveRecent(newEntry);
       setRecent(loadRecent());
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* รายงานบนเซิร์ฟเวอร์บันทึกสำเร็จแล้ว */ }
+      setForm(EMPTY_FORM);
     } catch (err) {
       setStatus('error');
-      setMessage(String(err));
+      setMessage(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -158,16 +196,22 @@ export default function ReportPage() {
               <label className="form-label">ระดับความรุนแรง</label>
               <div className="sev-grid">
                 {severities.map(s => (
-                  <div key={s.value} className={`sev-card ${form.severity === s.value ? 'selected' : ''}`} onClick={() => set('severity', s.value)}>
+                  <button
+                    key={s.value}
+                    type="button"
+                    className={`sev-card ${form.severity === s.value ? 'selected' : ''}`}
+                    onClick={() => set('severity', s.value)}
+                    aria-pressed={form.severity === s.value}
+                  >
                     <div className="sev-letter" style={{ color: s.color }}>{s.value}</div>
                     <div className="sev-name">{s.label}</div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
             <div className="form-group">
               <label className="form-label">รายละเอียดเหตุการณ์</label>
-              <textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="ระบุลำดับเหตุการณ์ที่เกิดขึ้น วันเวลา และผู้เกี่ยวข้อง..."></textarea>
+              <textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="ระบุลำดับเหตุการณ์ที่เกิดขึ้น วันเวลา และผู้เกี่ยวข้อง..." required></textarea>
             </div>
             <div className="form-group">
               <label className="form-label">การดำเนินการเบื้องต้น</label>
@@ -177,7 +221,7 @@ export default function ReportPage() {
               <button type="submit" className="tb-btn tb-btn-primary" disabled={status === 'submitting'}>
                 {status === 'submitting' ? 'กำลังบันทึก...' : 'บันทึกรายงาน'}
               </button>
-              <button type="button" className="tb-btn tb-btn-ghost">บันทึกร่าง</button>
+              <button type="button" className="tb-btn tb-btn-ghost" onClick={saveDraft}>บันทึกร่าง</button>
             </div>
             {status === 'success' && (
               <div style={{
@@ -208,6 +252,11 @@ export default function ReportPage() {
             {status === 'error' && (
               <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', fontSize: 12 }}>
                 ✗ {message}
+              </div>
+            )}
+            {status === 'draft' && (
+              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--blue-bg)', color: 'var(--accent)', fontSize: 12 }}>
+                {message}
               </div>
             )}
           </form>

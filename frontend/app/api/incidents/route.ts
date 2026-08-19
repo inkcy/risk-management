@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { audit, requireRole } from '@/lib/auth';
+import { audit, requireReadAccess, requireRole } from '@/lib/auth';
 import { envelope } from '@/lib/envelope';
 import { demoIncidents } from '@/lib/demo';
 import type { Incident } from '@/lib/types';
 
+const CATEGORIES = ['blood', 'medication', 'fall', 'procedure', 'communication', 'other'] as const;
+const SEVERITIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] as const;
+
 export async function GET() {
+  const denied = await requireReadAccess();
+  if (denied) return denied;
   const result = await envelope<Incident[]>(async () => {
     const { rows } = await query<Incident>(`
       SELECT i.id, i.ir_code, i.occurred_at, i.title, i.description,
@@ -26,19 +31,45 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json() as Record<string, unknown>;
-    const { ir_code, occurred_at, title, description, unit_id, category, severity, reported_by } = body;
-    if (!ir_code || !occurred_at || !title || !category || !severity) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const { ir_code, occurred_at, title, description, unit_id, unit_code, category, severity } = body;
+    if (
+      typeof ir_code !== 'string' || !ir_code.trim() ||
+      typeof occurred_at !== 'string' || !occurred_at.trim() ||
+      typeof title !== 'string' || !title.trim() ||
+      typeof category !== 'string' || !CATEGORIES.includes(category as (typeof CATEGORIES)[number]) ||
+      typeof severity !== 'string' || !SEVERITIES.includes(severity as (typeof SEVERITIES)[number])
+    ) {
+      return NextResponse.json({ error: 'ข้อมูลรายงานไม่ครบหรือมีค่าไม่ถูกต้อง' }, { status: 400 });
+    }
+    if (Number.isNaN(Date.parse(occurred_at))) {
+      return NextResponse.json({ error: 'วันที่หรือเวลาเกิดเหตุไม่ถูกต้อง' }, { status: 400 });
+    }
+
+    let resolvedUnitId = typeof unit_id === 'number' && Number.isInteger(unit_id) ? unit_id : null;
+    if (resolvedUnitId === null && typeof unit_code === 'string' && unit_code.trim()) {
+      const unit = await query<{ id: number }>('SELECT id FROM units WHERE code = $1', [unit_code.trim()]);
+      if (unit.rows.length === 0) {
+        return NextResponse.json({ error: 'ไม่พบหน่วยงานที่เลือก' }, { status: 400 });
+      }
+      resolvedUnitId = unit.rows[0].id;
     }
     const { rows } = await query<Incident>(
       `INSERT INTO incidents (ir_code, occurred_at, title, description, unit_id, category, severity, reported_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [ir_code, occurred_at, title, description ?? null, unit_id ?? null, category, severity, reported_by ?? null],
+      [
+        ir_code.trim(), occurred_at, title.trim(),
+        typeof description === 'string' && description.trim() ? description.trim() : null,
+        resolvedUnitId, category, severity, auth.user.name ?? auth.user.email,
+      ],
     );
-    await audit(auth.user, 'incident.create', 'incident', rows[0].id, { ir_code, severity });
+    await audit(auth.user, 'incident.create', 'incident', rows[0].id, { ir_code: ir_code.trim(), severity });
     return NextResponse.json({ incident: rows[0] }, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    if ((err as { code?: string }).code === '23505') {
+      return NextResponse.json({ error: 'รหัสอุบัติการณ์ซ้ำ กรุณาลองบันทึกอีกครั้ง' }, { status: 409 });
+    }
+    console.error('create incident failed:', err);
+    return NextResponse.json({ error: 'บันทึกรายงานไม่สำเร็จ' }, { status: 500 });
   }
 }

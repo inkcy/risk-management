@@ -4,21 +4,23 @@ interface Props {
 
 export function DemoBanner({ error }: Props) {
   if (!error) return null;
+  const isDemo = error.includes('POSTGRES_URL is not set');
   return (
     <div style={{
       marginBottom: 16,
       padding: '10px 14px',
       borderRadius: 'var(--r-sm)',
-      border: '1px solid rgba(245,165,36,0.35)',
-      background: 'rgba(245,165,36,0.08)',
-      color: 'var(--amber)',
+      border: isDemo ? '1px solid rgba(245,165,36,0.35)' : '1px solid rgba(226,81,74,0.35)',
+      background: isDemo ? 'rgba(245,165,36,0.08)' : 'var(--red-bg)',
+      color: isDemo ? 'var(--amber)' : 'var(--red)',
       fontSize: 12,
       lineHeight: 1.55,
     }}>
-      <strong>Demo mode</strong> — ไม่ได้เชื่อมฐานข้อมูล กำลังแสดงข้อมูลตัวอย่าง · ตั้งค่า{' '}
-      <code style={{ background: 'rgba(0,0,0,0.18)', padding: '1px 5px', borderRadius: 3 }}>POSTGRES_URL</code>{' '}
-      ใน <code style={{ background: 'rgba(0,0,0,0.18)', padding: '1px 5px', borderRadius: 3 }}>.env.local</code>{' '}
-      และรัน <code style={{ background: 'rgba(0,0,0,0.18)', padding: '1px 5px', borderRadius: 3 }}>npm run db:migrate &amp;&amp; npm run db:seed</code> เพื่อใช้ข้อมูลจริง
+      {isDemo ? (
+        <><strong>Demo mode</strong> — ยังไม่ได้เชื่อมฐานข้อมูล กำลังแสดงข้อมูลตัวอย่าง</>
+      ) : (
+        <><strong>โหลดข้อมูลไม่สำเร็จ</strong> — กรุณาลองรีเฟรชหน้า หรือติดต่อผู้ดูแลระบบหากยังพบปัญหา</>
+      )}
     </div>
   );
 }

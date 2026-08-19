@@ -12,18 +12,23 @@ export async function GET() {
 
   const { rows } = await query(
     `SELECT f.id, f.rm_no, f.subject, f.unit, f.ir_code, f.updated_at,
-            u.name AS updated_by_name, u.email AS updated_by_email
+            u.name AS updated_by_name, u.email AS updated_by_email,
+            (f.created_by = $1 OR $2 = 'admin') AS can_edit,
+            ($2 = 'admin') AS can_delete
      FROM rca_forms f
      LEFT JOIN users u ON u.id = f.updated_by
      ORDER BY f.updated_at DESC
      LIMIT 100`,
+    [auth.user.id, auth.user.role],
   );
   return NextResponse.json({ forms: rows });
 }
 
 /** บันทึกร่าง — ส่ง id มาด้วยคือแก้ใบเดิม ไม่ส่งคือสร้างใบใหม่ */
 export async function POST(request: NextRequest) {
-  const auth = await requireRole('editor');
+  // แบบฟอร์ม RCA เป็นพื้นที่ทำงานของผู้ใช้ทุกคนที่ล็อกอิน ไม่ใช่การแก้ไข
+  // incident หลัก จึงอนุญาต viewer ให้สร้าง/บันทึกร่างได้เช่นเดียวกับการเปิดร่าง
+  const auth = await requireRole('viewer');
   if (!auth.ok) return auth.response;
 
   try {
@@ -40,10 +45,20 @@ export async function POST(request: NextRequest) {
             SET rm_no = $2, subject = $3, unit = $4, ir_code = $5,
                 data = $6, updated_by = $7, updated_at = now()
           WHERE id = $1
+            AND (created_by = $7 OR $8 = 'admin')
           RETURNING id, updated_at`,
-        [body.id, ...meta, JSON.stringify(form), auth.user.id],
+        [body.id, ...meta, JSON.stringify(form), auth.user.id, auth.user.role],
       );
-      if (rows.length === 0) return NextResponse.json({ error: 'ไม่พบร่างนี้' }, { status: 404 });
+      if (rows.length === 0) {
+        const existing = await query('SELECT 1 FROM rca_forms WHERE id = $1', [body.id]);
+        if (existing.rows.length === 0) {
+          return NextResponse.json({ error: 'ไม่พบร่างนี้' }, { status: 404 });
+        }
+        return NextResponse.json(
+          { error: 'แก้ไข RCA ของผู้อื่นได้เฉพาะผู้ดูแลระบบ' },
+          { status: 403 },
+        );
+      }
 
       await audit(auth.user, 'rca_form.update', 'rca_form', body.id, { rm_no: form.rmNo || null });
       return NextResponse.json({ form: rows[0] });

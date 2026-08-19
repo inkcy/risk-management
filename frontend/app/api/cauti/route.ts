@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { audit, requireRole } from '@/lib/auth';
+import { audit, requireReadAccess, requireRole } from '@/lib/auth';
 import { loadCauti } from '@/lib/queries';
 
 export async function GET() {
+  const denied = await requireReadAccess();
+  if (denied) return denied;
   const result = await loadCauti();
   return NextResponse.json(result);
 }

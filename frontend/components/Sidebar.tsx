@@ -52,6 +52,8 @@ const allHrefs = [...groups.flatMap(g => g.items.map(i => i.href)), '/settings']
 
 export function Sidebar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
+  const canEdit = user?.role === 'admin' || user?.role === 'editor';
+  const isAdmin = user?.role === 'admin';
   // เลือกเมนูที่ตรงกับ path มากที่สุด เพื่อไม่ให้ /rca และ /rca/form ถูกไฮไลต์พร้อมกัน
   const matches = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
   const bestMatch = allHrefs.filter(matches).sort((a, b) => b.length - a.length)[0];
@@ -78,7 +80,7 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
         {groups.map((g) => (
           <div key={g.label}>
             <div className="nav-group-label">{g.label}</div>
-            {g.items.map((it) => (
+            {g.items.filter(it => it.href !== '/report' || canEdit).map((it) => (
               <Link
                 key={it.href}
                 href={it.href}
@@ -91,12 +93,12 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
             ))}
           </div>
         ))}
-        <div style={{ marginTop: 8 }}>
+        {isAdmin && <div style={{ marginTop: 8 }}>
           <Link href="/settings" className={`nav-item ${isActive('/settings') ? 'active' : ''}`}>
             <span className="nav-icon">⚙</span> ตั้งค่า
             <NavPending />
           </Link>
-        </div>
+        </div>}
       </nav>
       {user && (
         <div className="sidebar-footer">

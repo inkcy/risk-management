@@ -21,6 +21,13 @@ export function getPool(): pg.Pool {
     pool = new Pool({
       connectionString: url,
       ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      max: 10,
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 30_000,
+      query_timeout: 20_000,
+    });
+    pool.on('error', err => {
+      console.error('idle database connection failed:', err);
     });
   }
   return pool;

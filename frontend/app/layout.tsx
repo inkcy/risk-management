@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { getSessionUser } from '@/lib/auth';
+import { dbConfigured } from '@/lib/db';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,7 +23,13 @@ const themeBootstrap = `
 `;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await getSessionUser();
+  const [user, headerStore] = await Promise.all([getSessionUser(), headers()]);
+  const pathname = headerStore.get('x-risk-pathname') ?? '';
+
+  // cookie อาจยังมีลายเซ็นถูกต้อง แต่ session ใน DB หมดอายุหรือบัญชีถูกระงับแล้ว
+  if (dbConfigured() && pathname !== '/login' && !user) {
+    redirect('/login?error=expired');
+  }
 
   return (
     // themeBootstrap เติมคลาส light ลงบน <html> ก่อน React hydrate ทำให้ไม่ตรงกับ HTML ฝั่ง server เสมอ

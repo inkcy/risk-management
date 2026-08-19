@@ -21,6 +21,16 @@ export function getPool(): pg.Pool {
     pool = new Pool({
       connectionString: url,
       ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      max: 10,
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 30_000,
+      query_timeout: 20_000,
+    });
+
+    // pg จะ emit error จาก idle client นอก promise ของ query ถ้าเครือข่าย/Neon ตัดการเชื่อมต่อ
+    // ต้องมี listener เสมอ ไม่เช่นนั้น Node มองเป็น uncaught exception และกระทบทุกหน้า
+    pool.on('error', err => {
+      console.error('idle database connection failed:', err);
     });
   }
   return pool;

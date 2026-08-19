@@ -24,6 +24,11 @@ export default async function DashboardPage() {
 
   const recent = incidents.slice(0, 3);
   const remainingAction = actions.find(a => a.status === 'in_progress');
+  const overallProgress = actions.length > 0
+    ? Math.round(actions.reduce((sum, action) => sum + action.progress, 0) / actions.length)
+    : 0;
+  const now = new Date();
+  const fiscalYear = now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0);
 
   const monthly = stats.by_month.map(m => ({
     label: thaiMonth[m.ym.split('-')[1]] || m.ym,
@@ -68,7 +73,7 @@ export default async function DashboardPage() {
         <div className="card">
           <div className="card-header">
             <div className="card-title">อุบัติการณ์รายเดือน</div>
-            <span className="badge badge-blue">ปี 2568</span>
+            <span className="badge badge-blue">ปีงบประมาณ {fiscalYear}</span>
           </div>
           <div className="card-body">
             <BarChart data={monthly} />
@@ -142,9 +147,9 @@ export default async function DashboardPage() {
               </div>
             </div>
             <div className="progress-item">
-              <div className="prog-header"><span className="prog-name">ความคืบหน้าโดยรวม</span><span className="prog-count">82%</span></div>
+              <div className="prog-header"><span className="prog-name">ความคืบหน้าโดยรวม</span><span className="prog-count">{overallProgress}%</span></div>
               <div className="prog-bar" style={{ height: 8 }}>
-                <div className="prog-fill" style={{ width: '82%', background: 'var(--green)' }}></div>
+                <div className="prog-fill" style={{ width: `${overallProgress}%`, background: 'var(--green)' }}></div>
               </div>
             </div>
             {remainingAction && (

@@ -15,6 +15,11 @@ const RECENT_KEY = 'esafe_recent_reports';
 const DRAFT_KEY = 'esafe_report_draft_v1';
 const MAX_RECENT = 5;
 
+function time24Input(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  return digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits;
+}
+
 const EMPTY_FORM = {
   occurred_at: '',
   time: '',
@@ -172,8 +177,19 @@ export default function ReportPage() {
                 <input type="date" value={form.occurred_at} onChange={e => set('occurred_at', e.target.value)} required />
               </div>
               <div className="form-group">
-                <label className="form-label">เวลา</label>
-                <input type="time" value={form.time} onChange={e => set('time', e.target.value)} />
+                <label className="form-label" htmlFor="occurred-time">เวลาไทย (24 ชั่วโมง)</label>
+                <input
+                  id="occurred-time"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={5}
+                  pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                  placeholder="เช่น 22:08"
+                  title="กรอกเวลาแบบ 24 ชั่วโมง เช่น 22:08"
+                  value={form.time}
+                  onChange={e => set('time', time24Input(e.target.value))}
+                />
               </div>
             </div>
             <div className="form-row">
@@ -290,7 +306,10 @@ export default function ReportPage() {
                         {r.title}
                       </div>
                       <div style={{ fontSize: 10, color: 'var(--text3)' }}>
-                        {r.ir_code} · {new Date(r.submitted_at).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {r.ir_code} · {new Date(r.submitted_at).toLocaleString('th-TH', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                          hour12: false, timeZone: 'Asia/Bangkok',
+                        })}
                       </div>
                     </div>
                     <span style={{ color: 'var(--text3)', fontSize: 14 }}>›</span>

@@ -83,7 +83,7 @@ function para(text: string, o: RunOpts & { after?: number; before?: number; alig
 
 /** ข้อความหลายบรรทัด -> หลาย Paragraph (ไว้ใช้ในเซลล์ตาราง) */
 function lines(text: string, o: RunOpts = {}): Paragraph[] {
-  const parts = (text ?? '').split('\n');
+  const parts = displayValue(text).split('\n');
   const out = parts
     .map(l => l.trim())
     .filter((l, i, arr) => l !== '' || arr.length === 1)
@@ -135,7 +135,7 @@ function centerCell(text: string, o: { width?: number; bold?: boolean; size?: nu
     shading: o.fill ? { fill: o.fill } : undefined,
     verticalAlign: VerticalAlign.CENTER,
     margins: { top: 60, bottom: 60, left: 90, right: 90 },
-    children: text.split('\n').map(
+    children: displayValue(text).split('\n').map(
       l =>
         new Paragraph({
           alignment: AlignmentType.CENTER,
@@ -196,10 +196,13 @@ function labelValue(label: string, value: string, o: { size?: number; bold?: boo
   });
 }
 
+/** พิมพ์ - ในช่องฟอร์ม = ตั้งใจไม่ให้ส่งออกช่องนั้นใน Word */
+const omitted = (v: string | undefined) => (v ?? '').trim() === '-';
+const displayValue = (v: string | undefined) => omitted(v) ? '' : (v ?? '');
 const hasContent = (r: CmpRow) =>
-  [r.standard, r.unsafeAct, r.constraint, r.period, r.system].some(v => (v ?? '').trim() !== '');
+  [r.standard, r.unsafeAct, r.constraint, r.period, r.system].some(filled);
 
-const filled = (v: string | undefined) => (v ?? '').trim() !== '';
+const filled = (v: string | undefined) => (v ?? '').trim() !== '' && !omitted(v);
 
 export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
   // ============ หน้าที่ 1 (แนวตั้ง) ============
@@ -255,9 +258,9 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
   for (const p of lines(form.story || '—', { size: 28 })) portrait.push(p);
 
   portrait.push(para('adverse event / problem statement', { bold: true, before: 160, after: 40 }));
-  portrait.push(labelValue('1 อุบัติการณ์เกิดกับใคร', form.psWho, { size: 28 }));
-  portrait.push(labelValue('2 เหตุการณ์ที่เกิดขึ้นคืออะไร', form.psWhat, { size: 28 }));
-  portrait.push(labelValue('3 ผลกระทบ/ความรุนแรงที่เกิดขึ้น', form.psImpact, { size: 28 }));
+  if (!omitted(form.psWho)) portrait.push(labelValue('1 อุบัติการณ์เกิดกับใคร', form.psWho, { size: 28 }));
+  if (!omitted(form.psWhat)) portrait.push(labelValue('2 เหตุการณ์ที่เกิดขึ้นคืออะไร', form.psWhat, { size: 28 }));
+  if (!omitted(form.psImpact)) portrait.push(labelValue('3 ผลกระทบ/ความรุนแรงที่เกิดขึ้น', form.psImpact, { size: 28 }));
 
   portrait.push(
     para('COLONOGY OF EVENT ( WORK FLOW) กระบวนการทำงานที่เกี่ยวข้องกับเหตุการณ์', {
@@ -268,11 +271,13 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
   );
   portrait.push(para('ด้านกระบวนการดูแลผู้ป่วย (สำหรับความเสี่ยงด้านคลินิก)', { bold: true, size: 26, after: 40 }));
   COLONOGY_CLINICAL.forEach((label, i) => {
-    portrait.push(labelValue(`${i + 1} ${label}`, form.colonogyClinical[i] ?? '', { size: 26, bold: false }));
+    const value = form.colonogyClinical[i] ?? '';
+    if (!omitted(value)) portrait.push(labelValue(`${i + 1} ${label}`, value, { size: 26, bold: false }));
   });
   portrait.push(para('ด้านทั่วไป (สำหรับความเสี่ยงทั่วไป)', { bold: true, size: 26, before: 120, after: 40 }));
   COLONOGY_GENERAL.forEach((label, i) => {
-    portrait.push(labelValue(`${i + 1} ${label}`, form.colonogyGeneral[i] ?? '', { size: 26, bold: false }));
+    const value = form.colonogyGeneral[i] ?? '';
+    if (!omitted(value)) portrait.push(labelValue(`${i + 1} ${label}`, value, { size: 26, bold: false }));
   });
 
   // ============ หน้าถัดไป (แนวนอน) ============
@@ -379,7 +384,7 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
           centerCell('ข้อมูลที่ต้องการ', { width: 11597, bold: true, fill: HEAD_FILL }),
         ],
       }),
-      ...W5H1_ROWS.map((r, i) => {
+      ...W5H1_ROWS.filter(r => !omitted(form.w5h1[r.key])).map((r, i) => {
         const answer = form.w5h1[r.key];
         return new TableRow({
           height: filled(answer) ? undefined : { value: BLANK_ROW_HEIGHT, rule: HeightRule.ATLEAST },
@@ -400,7 +405,7 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
   );
   landscape.push(
     table([3000, 12420],
-      TIER_ROWS.map(t => {
+      TIER_ROWS.filter(t => !omitted(form.tiers[t.key])).map(t => {
         const value = form.tiers[t.key];
         return new TableRow({
           height: filled(value) ? undefined : { value: BLANK_ROW_HEIGHT, rule: HeightRule.ATLEAST },

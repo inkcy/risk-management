@@ -131,7 +131,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
     <div className="card" style={{ marginTop: 16 }}>
       <div className="card-header">
         <div className="card-title">
-          🤖 AI วิเคราะห์ RCA — 5-Tier Contributory Factor + Compassionate
+          🤖 AI สร้างร่าง RCA ตามแบบฟอร์มรายงาน
         </div>
         {!loading && !result && (
           <button
@@ -159,10 +159,10 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
             color: 'var(--text3)', fontSize: 12, lineHeight: 1.8,
           }}>
             <div style={{ marginBottom: 8 }}>
-              คลิกปุ่ม &quot;วิเคราะห์ด้วย AI&quot; เพื่อให้ Gemini วิเคราะห์เคสนี้
+              คลิกปุ่ม &quot;วิเคราะห์ด้วย AI&quot; เพื่อให้ Gemini จัดทำร่างตาม RCA_Report (3).doc
             </div>
             <div style={{ fontSize: 11 }}>
-              ใช้กรอบ 5-Tier Contributory Factor for Incident Analysis · Compassionate RCA (อ.สุรพล) · HRO 5 มิติ
+              ผลลัพธ์ประกอบด้วย Story/Timeline · Potential change · ปัจจัยเกื้อหนุน · RCA/มาตรการ · Process Management
             </div>
           </div>
         )}

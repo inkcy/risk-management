@@ -5,6 +5,10 @@ import type { ActionItem, CautiPatient, Incident, RcaBundle, RcaCase, RcaCause, 
 
 /** ค่าที่คืนเมื่อ query พัง — ว่างเปล่าจริง ๆ ไม่ใช่ข้อมูลตัวอย่าง */
 const EMPTY_RCA_BUNDLE: RcaBundle = { incident: null, case: null, timeline: [], causes: [] };
+export interface RcaPageData extends RcaBundle {
+  actions: ActionItem[];
+}
+const EMPTY_RCA_PAGE: RcaPageData = { ...EMPTY_RCA_BUNDLE, actions: [] };
 const EMPTY_STATS: Stats = {
   totals: { incidents: 0, severe: 0, rca_pending: 0, actions_done: 0, actions_in_progress: 0, actions_planned: 0 },
   by_category: [],
@@ -101,6 +105,66 @@ export function loadRcaBundle(id: string) {
 
     return { incident: inc, case: c, timeline: timeline.rows, causes: causes.rows };
   }, demoRcaBundle, EMPTY_RCA_BUNDLE);
+}
+
+/**
+ * ข้อมูลทั้งหมดที่หน้า RCA ใช้ในคำสั่งเดียว
+ * เดิมหน้าดังกล่าวต้องโหลดรายการอุบัติการณ์ก่อน แล้วจึงโหลด RCA และ actions ต่อ
+ * ทำให้เกิด database waterfall ทุกครั้งที่เปิดหน้า
+ */
+export function loadRcaPage(id?: string) {
+  return envelope<RcaPageData>(async () => {
+    const { rows } = await query<{
+      incident: Incident | null;
+      rca_case: RcaCase | null;
+      timeline: RcaTimelineEvent[] | null;
+      causes: RcaCause[] | null;
+      actions: ActionItem[] | null;
+    }>(`
+      WITH selected AS (
+        SELECT i.id, i.ir_code, i.occurred_at, i.title, i.description,
+               i.unit_id, u.name_th AS unit_name,
+               i.category, i.severity, i.rca_status, i.reported_by
+        FROM incidents i
+        LEFT JOIN units u ON u.id = i.unit_id
+        WHERE $1::text IS NULL OR i.ir_code = $1 OR i.id::text = $1
+        ORDER BY i.occurred_at DESC
+        LIMIT 1
+      ), rca AS (
+        SELECT rc.* FROM rca_cases rc JOIN selected s ON s.id = rc.incident_id
+      )
+      SELECT
+        (SELECT row_to_json(s) FROM selected s) AS incident,
+        (SELECT row_to_json(r) FROM rca r) AS rca_case,
+        COALESCE((
+          SELECT json_agg(row_to_json(t) ORDER BY t.sort_order ASC)
+          FROM rca_timeline t JOIN rca r ON r.id = t.rca_case_id
+        ), '[]'::json) AS timeline,
+        COALESCE((
+          SELECT json_agg(row_to_json(c))
+          FROM rca_causes c JOIN rca r ON r.id = c.rca_case_id
+        ), '[]'::json) AS causes,
+        COALESCE((
+          SELECT json_agg(row_to_json(a) ORDER BY a.due_date ASC NULLS LAST)
+          FROM (
+            SELECT a.id, a.incident_id, i.ir_code, a.title, a.description, a.owner,
+                   a.due_date::text AS due_date, a.status, a.progress
+            FROM actions a
+            JOIN selected i ON i.id = a.incident_id
+          ) a
+        ), '[]'::json) AS actions
+    `, [id?.trim() || null]);
+
+    const row = rows[0];
+    if (!row?.incident) return EMPTY_RCA_PAGE;
+    return {
+      incident: row.incident,
+      case: row.rca_case,
+      timeline: row.timeline ?? [],
+      causes: row.causes ?? [],
+      actions: row.actions ?? [],
+    };
+  }, { ...demoRcaBundle, actions: demoActions.filter(a => a.ir_code === demoRcaBundle.incident?.ir_code) }, EMPTY_RCA_PAGE);
 }
 
 export function loadStats() {

@@ -1,8 +1,7 @@
-import Link from 'next/link';
-import { getRcaByCode, getActions, getIncidents, categoryLabel } from '@/lib/api';
+import { getRcaPage, categoryLabel } from '@/lib/api';
 import { DemoBanner } from '@/components/DemoBanner';
 import { RcaAiPanel } from '@/components/RcaAiPanel';
-import { getSessionUser } from '@/lib/auth';
+import { dbConfigured } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,32 +37,7 @@ const actionStatus = (s: string) =>
 
 export default async function RcaPage({ searchParams }: { searchParams: Promise<{ ir?: string }> }) {
   const params = await searchParams;
-  const [{ data: incidents, error: incidentListError }, user] = await Promise.all([
-    getIncidents(),
-    getSessionUser(),
-  ]);
-  const irCode = params.ir?.trim() || incidents[0]?.ir_code;
-
-  if (!irCode) {
-    return (
-      <>
-        <DemoBanner error={incidentListError} />
-        <div className="card">
-          <div className="card-body" style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ marginBottom: 12, color: 'var(--text2)' }}>ยังไม่มีอุบัติการณ์สำหรับเริ่มวิเคราะห์ RCA</div>
-            {(user?.role === 'admin' || user?.role === 'editor') && (
-              <Link href="/report" className="tb-btn tb-btn-primary">+ รายงานอุบัติการณ์ใหม่</Link>
-            )}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  const [{ data: bundle, error }, { data: actions }] = await Promise.all([
-    getRcaByCode(irCode),
-    getActions(),
-  ]);
+  const { data: bundle, error } = await getRcaPage(params.ir);
 
   const { incident, case: rca, timeline, causes } = bundle;
 
@@ -71,7 +45,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
     return (
       <>
         <DemoBanner error={error} />
-        <div className="card"><div className="card-body">ไม่พบเคส {irCode}</div></div>
+        <div className="card"><div className="card-body">ไม่พบเคสสำหรับวิเคราะห์ RCA</div></div>
       </>
     );
   }
@@ -81,7 +55,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
     items: causes.filter(c => c.category === g),
   }));
 
-  const relatedActions = actions.filter(a => a.ir_code === incident.ir_code);
+  const relatedActions = bundle.actions;
 
   const exportHref = `/api/rca/${encodeURIComponent(incident.ir_code)}/export`;
 
@@ -120,7 +94,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
         </div>
       </div>
 
-      {user && <RcaAiPanel irCode={incident.ir_code} />}
+      {dbConfigured() && <RcaAiPanel irCode={incident.ir_code} />}
 
       <div className="grid-2">
         <div className="card">

@@ -52,7 +52,7 @@ export function AccountProfile({ user }: { user: SessionUser }) {
           <div className="profile-preview" aria-label="ตัวอย่างรูปโปรไฟล์">
             {previewUser.picture && !previewBroken ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={previewUser.picture} alt="รูปโปรไฟล์" onError={() => setPreviewBroken(true)} />
+              <img src={previewUser.picture} alt="รูปโปรไฟล์" referrerPolicy="no-referrer" onError={() => setPreviewBroken(true)} />
             ) : (
               <span>{initials(previewUser)}</span>
             )}

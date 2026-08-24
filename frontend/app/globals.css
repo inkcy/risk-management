@@ -68,12 +68,14 @@ html.light {
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'IBM Plex Sans Thai', 'Sarabun', system-ui, sans-serif;
+  /* ใช้ฟอนต์ในเครื่อง: ไม่ต้องรอ stylesheet จาก Google และไม่สลับฟอนต์หลัง paint แรก */
+  font-family: Tahoma, "Leelawadee UI", system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   line-height: 1.6;
-  transition: background 0.25s, color 0.25s;
+  font-synthesis: none;
+  scrollbar-gutter: stable;
 }
 
 .sidebar {
@@ -146,9 +148,10 @@ body {
 .topbar {
   position: sticky; top: 0; z-index: 90;
   background: var(--topbar-bg);
-  backdrop-filter: blur(12px);
+  /* blur บน sticky element ทำให้ browser repaint พื้นที่ใหญ่ทุกครั้งที่ scroll */
   padding: 0 28px; height: 68px;
   display: flex; align-items: center; justify-content: space-between;
+  contain: layout paint;
 }
 .topbar-left { display: flex; align-items: center; gap: 16px; }
 .page-title { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
@@ -203,6 +206,7 @@ body {
   position: relative; overflow: hidden;
   background: var(--tile-blue);
   transition: transform .18s, box-shadow .18s;
+  contain: layout paint;
 }
 .stat-card::before {
   content: ''; position: absolute;
@@ -248,6 +252,13 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   transition: background 0.25s, border-color 0.25s;
+  contain: layout paint;
+}
+
+/* รายการยาว (ตารางผู้ป่วย/อุบัติการณ์/มาตรการ) ไม่ต้องวาดแถวที่อยู่นอกหน้าจอ */
+.data-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 44px;
 }
 /* หัวการ์ดไม่มีเส้นคั่น ใช้ระยะห่างแยกแทนให้ดูโปร่งขึ้น */
 .card-header {

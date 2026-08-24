@@ -98,9 +98,9 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
             ))}
           </div>
         ))}
-        {isAdmin && <div style={{ marginTop: 8 }}>
+        {user && <div style={{ marginTop: 8 }}>
           <Link href="/settings" className={`nav-item ${isActive('/settings') ? 'active' : ''}`}>
-            <span className="nav-icon">⚙</span> ตั้งค่า
+            <span className="nav-icon">⚙</span> {isAdmin ? 'ตั้งค่าระบบ' : 'บัญชีของฉัน'}
             <NavPending />
           </Link>
         </div>}

@@ -80,26 +80,25 @@ export function Topbar({ user }: { user: SessionUser | null }) {
           </Link>
         )}
         {user && (
-          <div
-            title={`${user.email} · ${ROLE_LABEL[user.role] ?? user.role}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {user.picture && (
-              <img
-                src={user.picture}
-                alt=""
-                width={26}
-                height={26}
-                style={{ borderRadius: '50%', display: 'block' }}
-                referrerPolicy="no-referrer"
-              />
-            )}
-            <span className="user-name" style={{ fontSize: 12.5, lineHeight: 1.25 }}>
-              {user.name ?? user.email}
-              <br />
-              <span style={{ color: 'var(--text3)', fontSize: 11 }}>{ROLE_LABEL[user.role] ?? user.role}</span>
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
+            <Link href="/settings" className="topbar-profile-link" title="เปิดบัญชีของฉัน">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {user.picture && (
+                <img
+                  src={user.picture}
+                  alt=""
+                  width={26}
+                  height={26}
+                  style={{ borderRadius: '50%', display: 'block' }}
+                  referrerPolicy="no-referrer"
+                />
+              )}
+              <span className="user-name" style={{ fontSize: 12.5, lineHeight: 1.25 }}>
+                {user.name ?? user.email}
+                <br />
+                <span style={{ color: 'var(--text3)', fontSize: 11 }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+              </span>
+            </Link>
             <form action="/api/auth/logout" method="post">
               <button className="tb-btn tb-btn-ghost" type="submit" title="ออกจากระบบ" style={{ fontSize: 15, padding: '7px 10px' }}>
                 ⏻

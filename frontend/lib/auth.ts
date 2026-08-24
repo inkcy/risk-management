@@ -59,8 +59,6 @@ export async function upsertGoogleUser(profile: GoogleProfile): Promise<SessionU
      VALUES ($1, $2, $3, $4, $5, now())
      ON CONFLICT (email) DO UPDATE
        SET google_sub    = EXCLUDED.google_sub,
-           name          = EXCLUDED.name,
-           picture       = EXCLUDED.picture,
            last_login_at = now(),
            -- อีเมลใน ADMIN_EMAILS ถูกยกเป็น admin เสมอ กันกรณีตั้งสิทธิ์ผิดจนล็อกตัวเองออก
            role          = CASE WHEN $6 THEN 'admin' ELSE users.role END

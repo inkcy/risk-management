@@ -219,7 +219,7 @@ export async function buildRcaFormDocx(form: RcaFormData): Promise<Buffer> {
       new TableRow({
         children: [
           cell([labelValue('เรื่อง', form.subject)], { colSpan: 2 }),
-          cell([labelValue('RM No.', form.rmNo ? `${form.rmNo} / ${form.rmYear}` : `.................... / ${form.rmYear}`)]),
+          cell([labelValue('RM No.', form.rmNo)]),
         ],
       }),
       new TableRow({

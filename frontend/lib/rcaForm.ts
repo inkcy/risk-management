@@ -53,7 +53,6 @@ export interface RcaFormData {
   // ---- ส่วนหัวของแบบฟอร์ม ----
   subject: string;
   rmNo: string;
-  rmYear: string;
   reviewDate: string;
   eventDate: string;
   riskType: RiskType;
@@ -229,7 +228,6 @@ export const PROCESS_NOTES = [
 export const EXAMPLE = {
   subject: 'ตัวอย่าง: ทบทวนกระบวนการบริหารยาปฏิชีวนะ กรณีผู้ป่วยได้รับ Ertapenem ซ้ำซ้อน (double dose)',
   rmNo: '2505000007',
-  rmYear: '69',
   reviewDate: '14 พฤษภาคม 2569',
   eventDate: '7 พฤษภาคม 2569',
   unit: 'หอผู้ป่วยอายุรกรรม 22A / กลุ่มงานเภสัชกรรม',
@@ -338,7 +336,6 @@ export function emptyRcaForm(): RcaFormData {
   return {
     subject: '',
     rmNo: '',
-    rmYear: String(new Date().getFullYear() + 543).slice(-2),
     reviewDate: '',
     eventDate: '',
     riskType: '',
@@ -391,7 +388,6 @@ export function normalizeRcaForm(input: unknown): RcaFormData {
   return {
     subject: str(raw.subject),
     rmNo: str(raw.rmNo),
-    rmYear: str(raw.rmYear) || base.rmYear,
     reviewDate: str(raw.reviewDate),
     eventDate: str(raw.eventDate),
     riskType: riskType === 'clinic' || riskType === 'general' ? riskType : '',
@@ -430,7 +426,7 @@ export function normalizeRcaForm(input: unknown): RcaFormData {
 
 /**
  * แบบฟอร์มยังว่างอยู่หรือไม่ — ใช้ตัดสินว่าร่างที่เก็บไว้มีเนื้อหาจริง
- * (ไม่นับ rmYear และชื่อกระบวนการที่เติมมาให้ตั้งแต่ต้น)
+ * (ไม่นับชื่อกระบวนการที่เติมมาให้ตั้งแต่ต้น)
  */
 export function isBlankRcaForm(form: RcaFormData): boolean {
   const areas = new Set<string>([...CMP_CLINICAL_AREAS, ...CMP_GENERAL_AREAS]);

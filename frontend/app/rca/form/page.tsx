@@ -572,7 +572,6 @@ export default function RcaFormPage() {
         <Area label="เรื่อง" rows={2} value={form.subject} placeholder={EXAMPLE.subject} onChange={v => set('subject', v)} />
         <div className="rf-grid">
           <Field label="RM No." value={form.rmNo} placeholder={EXAMPLE.rmNo} onChange={v => set('rmNo', v)} />
-          <Field label="ปี (พ.ศ. 2 หลัก)" value={form.rmYear} placeholder={EXAMPLE.rmYear} onChange={v => set('rmYear', v)} />
           <Field label="วันที่ทบทวน" value={form.reviewDate} placeholder={EXAMPLE.reviewDate} onChange={v => set('reviewDate', v)} />
           <Field label="วันที่เกิดเหตุการณ์" value={form.eventDate} placeholder={EXAMPLE.eventDate} onChange={v => set('eventDate', v)} />
         </div>

@@ -1,7 +1,5 @@
 import { getRcaPage, categoryLabel } from '@/lib/api';
 import { DemoBanner } from '@/components/DemoBanner';
-import { RcaAiPanel } from '@/components/RcaAiPanel';
-import { dbConfigured } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,8 +91,6 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
           </div>
         </div>
       </div>
-
-      {dbConfigured() && <RcaAiPanel irCode={incident.ir_code} />}
 
       <div className="grid-2">
         <div className="card">

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { RcaAiPanel } from '@/components/RcaAiPanel';
 import {
   CMP_COLUMNS,
   COLONOGY_CLINICAL,
@@ -205,12 +206,14 @@ export default function RcaFormPage() {
   const [canEditCurrent, setCanEditCurrent] = useState(true);
   const [cloudForms, setCloudForms] = useState<CloudFormRow[]>([]);
   const [showCloud, setShowCloud] = useState(false);
+  const [irCode, setIrCode] = useState<string | null>(null);
   const irRef = useRef<string | null>(null);
 
   // โหลดร่างจากเบราว์เซอร์ หรือดึงข้อมูลจากเคสเมื่อเปิดด้วย ?ir=
   useEffect(() => {
     const ir = new URLSearchParams(window.location.search).get('ir');
     irRef.current = ir;
+    setIrCode(ir);
 
     // ใช้ร่างที่บันทึกไว้เฉพาะเมื่อมีเนื้อหาจริง ไม่เช่นนั้นปล่อยให้ดึงข้อมูลจากเคสได้
     const draft = localStorage.getItem(DRAFT_KEY);
@@ -372,6 +375,7 @@ export default function RcaFormPage() {
       setFormId(body.form.id);
       setCanEditCurrent(body.form.can_edit === true);
       irRef.current = body.form.ir_code ?? null;
+      setIrCode(body.form.ir_code ?? null);
       setShowCloud(false);
       setMsg({
         kind: body.form.can_edit ? 'ok' : 'info',
@@ -563,6 +567,12 @@ export default function RcaFormPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {irCode && (
+        <div style={{ marginBottom: 16 }}>
+          <RcaAiPanel irCode={irCode} />
         </div>
       )}
 

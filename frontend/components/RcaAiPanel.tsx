@@ -105,12 +105,29 @@ function renderInline(text: string): React.ReactNode {
   return parts;
 }
 
+function requestNotificationPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission === 'default') void Notification.requestPermission();
+}
+
+function sendNotification(title: string, body: string) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  try {
+    new Notification(title, { body, tag: 'rca-ai-analysis' });
+  } catch {
+    // การแจ้งเตือนไม่ควรทำให้การวิเคราะห์ล้มเหลว
+  }
+}
+
 export function RcaAiPanel({ irCode }: { irCode: string }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function analyze() {
+    requestNotificationPermission();
     setLoading(true);
     setError(null);
     try {
@@ -120,8 +137,11 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? res.statusText);
       setResult(json);
+      sendNotification('วิเคราะห์ RCA เสร็จแล้ว', `ผลวิเคราะห์ของเคส ${irCode} พร้อมให้ตรวจสอบแล้ว`);
     } catch (e) {
-      setError(String(e));
+      const message = String(e);
+      setError(message);
+      sendNotification('วิเคราะห์ RCA ไม่สำเร็จ', message.replace(/^Error:\s*/, '').slice(0, 140));
     } finally {
       setLoading(false);
     }

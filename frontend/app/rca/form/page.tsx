@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RcaAiPanel } from '@/components/RcaAiPanel';
 import {
   CMP_COLUMNS,
   COLONOGY_CLINICAL,
@@ -16,9 +15,9 @@ import {
   emptyRcaForm,
   emptySolutionRow,
   emptyTimelineRow,
+  cardiacArrestRcaForm,
   isBlankRcaForm,
   normalizeRcaForm,
-  sampleRcaForm,
   type CmpRow,
   type ProcessRow,
   type RcaFormData,
@@ -195,8 +194,144 @@ interface CloudFormRow {
   can_delete: boolean;
 }
 
+type AnalysisView = 'fishbone' | 'why' | 'swiss' | 'tiers' | 'report';
+
+const ANALYSIS_TABS: { key: AnalysisView; label: string; icon: string }[] = [
+  { key: 'fishbone', label: '1. Fishbone', icon: '⌁' },
+  { key: 'why', label: '2. 5 Why', icon: '◎' },
+  { key: 'swiss', label: '3. 2-axis Swiss cheese', icon: '♢' },
+  { key: 'tiers', label: '4. 5 Tiers', icon: '▱' },
+  { key: 'report', label: '5. วิเคราะห์ RCA', icon: '▤' },
+];
+
+const FISHBONE_GROUPS = [
+  {
+    key: 'people', title: 'PEOPLE (บุคลากร/ผู้เกี่ยวข้อง)',
+    items: [
+      'ผู้ป่วยมีภาวะ Anemia และ CA Cervix ซึ่งเพิ่มความเสี่ยงต่อภาวะลิ่มเลือดอุดตัน',
+      'ญาติช่วยพาผู้ป่วยเดินโดยอาจไม่ทราบความเสี่ยงของ Orthostatic hypotension หรือ PE',
+      'ควรทบทวนความครบถ้วนของการประเมินความพร้อมก่อนเคลื่อนไหว',
+    ],
+  },
+  {
+    key: 'process', title: 'PROCESS (กระบวนการ)',
+    items: [
+      'การประเมิน VTE risk และความพร้อมก่อนลุกเดินอาจไม่เชื่อมเป็นขั้นตอนเดียวกัน',
+      'Early Mobilization ควรเริ่มจาก Sitting → Standing → Walking',
+      'ระบบเฝ้าระวังผู้ป่วยกลุ่มเสี่ยงสูงระหว่างทำกิจกรรมควรกำหนดให้ชัดเจน',
+    ],
+  },
+  {
+    key: 'equipment', title: 'EQUIPMENT (เครื่องมือ)',
+    items: [
+      'ควรทบทวนการใช้อุปกรณ์ป้องกัน VTE เช่น Sequential Compression Device (SCD)',
+      'ควรมีอุปกรณ์ประเมินสัญญาณชีพพร้อมใช้ขณะผู้ป่วยเริ่มลุกเดินครั้งแรก',
+    ],
+  },
+  {
+    key: 'environment', title: 'ENVIRONMENT (สิ่งแวดล้อม)',
+    items: [
+      'สภาพแวดล้อมในหอผู้ป่วยควรส่งเสริมกิจกรรมกระตุ้นการเคลื่อนไหวอย่างปลอดภัย',
+      'ระยะทางและลักษณะทางเดินไปห้องน้ำอาจเพิ่มภาระในการลุกเดินครั้งแรก',
+    ],
+  },
+];
+
+const FIVE_WHYS = [
+  ['ทำไมผู้ป่วยจึงเกิด Cardiac Arrest?', 'สงสัยภาวะ Pulmonary Embolism (PE) เฉียบพลัน ส่งผลให้เกิด Acute Cor Pulmonale และระบบไหลเวียนล้มเหลว'],
+  ['ทำไมจึงสงสัยว่าเกิด Pulmonary Embolism?', 'ผู้ป่วยทรุดลงอย่างเฉียบพลันระหว่างลุกเดินครั้งแรกหลัง Bedrest เป็นเวลานาน ร่วมกับ O₂ saturation ต่ำและคลำชีพจรไม่ได้'],
+  ['ทำไมผู้ป่วยรายนี้จึงมีความเสี่ยงต่อ VTE/PE สูง?', 'มีปัจจัยเสี่ยงจากโรคมะเร็งปากมดลูก ภาวะซีด และการไม่ได้เคลื่อนไหวร่างกายเป็นเวลานาน'],
+  ['ทำไมความเสี่ยงอาจไม่ได้รับการป้องกันหรือค้นพบก่อนลุกเดิน?', 'ต้องทบทวนความครบถ้วนของ VTE risk reassessment, prophylaxis และ pre-ambulation assessment จากเวชระเบียน'],
+  ['ทำไมกระบวนการดังกล่าวอาจไม่ครบถ้วน?', 'ระบบอาจยังไม่มี checklist ที่เชื่อมการประเมิน VTE กับแผน early mobilization และเกณฑ์เฝ้าระวังผู้ป่วยความเสี่ยงสูงอย่างชัดเจน'],
+] as const;
+
+function FishboneView({ effect }: { effect: string }) {
+  return (
+    <section className="rca-method rca-fishbone">
+      <div className="rca-method-heading"><span>⌁</span> 1. Fishbone</div>
+      <p className="rca-method-subtitle">รายละเอียดการวิเคราะห์ปัจจัยเกื้อหนุน (Data Details)</p>
+      <div className="fishbone-board">
+        <div className="fishbone-causes">
+          {FISHBONE_GROUPS.map(group => (
+            <article className={`fishbone-card ${group.key}`} key={group.key}>
+              <h3><i />{group.title}</h3>
+              <ul>{group.items.map(item => <li key={item}>{item}</li>)}</ul>
+            </article>
+          ))}
+        </div>
+        <div className="fishbone-spine" aria-hidden="true"><span /></div>
+        <aside className="fishbone-effect">
+          <small>ปัญหาหลัก (EFFECT)</small>
+          <strong>{effect || 'Cardiac Arrest ระหว่างการลุกเดินครั้งแรก'}</strong>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function FiveWhyView() {
+  return (
+    <section className="rca-method rca-fivewhy">
+      <div className="rca-method-heading"><span>◎</span> 2. 5 Why</div>
+      <div className="fivewhy-list">
+        {FIVE_WHYS.map(([question, answer], index) => (
+          <article className="fivewhy-item" key={question}>
+            <div className="fivewhy-number">{index + 1}</div>
+            <div className="fivewhy-card">
+              <h3>ถาม: {question}</h3>
+              <p><span>›</span>{answer}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SwissCheeseView({ form }: { form: RcaFormData }) {
+  const rows = [
+    ['Tier 5: Ext. Environment', form.tiers.tier5],
+    ['Tier 4: Management', form.tiers.tier4],
+    ['Tier 3: Environment', form.tiers.tier3],
+    ['Tier 2: Work & Team', form.tiers.tier2],
+    ['Tier 1: Patient & Staff', form.tiers.tier1],
+  ];
+  return (
+    <section className="rca-method rca-swiss">
+      <div className="rca-method-heading"><span>♢</span> 3. 2-axis Swiss cheese</div>
+      <p className="rca-method-caption">Mapping the Anatomy of an Error — มองช่องโหว่ตั้งแต่ระดับผู้ป่วยจนถึงระบบภายนอก</p>
+      <div className="swiss-stack">
+        {rows.map(([label, value], index) => (
+          <div className={`swiss-row swiss-${5 - index}`} key={label}>
+            <strong>{label}</strong>
+            <p>{value || 'ประเด็นที่ต้องทบทวนและยืนยันจากเวชระเบียน/การสัมภาษณ์'}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FiveTiersView({ form }: { form: RcaFormData }) {
+  return (
+    <section className="rca-method rca-tiers-view">
+      <div className="rca-method-heading"><span>▱</span> 4. 5 Tiers</div>
+      <p className="rca-method-caption">5-Tier Contributory Factor for Incident Analysis</p>
+      <div className="tier-cards">
+        {(['tier5', 'tier4', 'tier3', 'tier2', 'tier1'] as const).map((key, index) => (
+          <article key={key}>
+            <span>{5 - index}</span>
+            <div><h3>{TIER_ROWS.find(row => row.key === key)?.label.replace(/\n/g, ' · ')}</h3><p>{form.tiers[key] || 'รอการทบทวน'}</p></div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function RcaFormPage() {
   const [form, setForm] = useState<RcaFormData>(emptyRcaForm);
+  const [activeView, setActiveView] = useState<AnalysisView>('fishbone');
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err' | 'info'; text: string } | null>(null);
@@ -206,14 +341,12 @@ export default function RcaFormPage() {
   const [canEditCurrent, setCanEditCurrent] = useState(true);
   const [cloudForms, setCloudForms] = useState<CloudFormRow[]>([]);
   const [showCloud, setShowCloud] = useState(false);
-  const [irCode, setIrCode] = useState<string | null>(null);
   const irRef = useRef<string | null>(null);
 
   // โหลดร่างจากเบราว์เซอร์ หรือดึงข้อมูลจากเคสเมื่อเปิดด้วย ?ir=
   useEffect(() => {
     const ir = new URLSearchParams(window.location.search).get('ir');
     irRef.current = ir;
-    setIrCode(ir);
 
     // ใช้ร่างที่บันทึกไว้เฉพาะเมื่อมีเนื้อหาจริง ไม่เช่นนั้นปล่อยให้ดึงข้อมูลจากเคสได้
     const draft = localStorage.getItem(DRAFT_KEY);
@@ -232,6 +365,7 @@ export default function RcaFormPage() {
     }
 
     if (!ir) {
+      setForm(cardiacArrestRcaForm());
       setLoaded(true);
       return;
     }
@@ -375,7 +509,6 @@ export default function RcaFormPage() {
       setFormId(body.form.id);
       setCanEditCurrent(body.form.can_edit === true);
       irRef.current = body.form.ir_code ?? null;
-      setIrCode(body.form.ir_code ?? null);
       setShowCloud(false);
       setMsg({
         kind: body.form.can_edit ? 'ok' : 'info',
@@ -415,9 +548,20 @@ export default function RcaFormPage() {
   };
 
   const loadSample = () => {
-    if (!confirm('แทนที่ข้อมูลปัจจุบันด้วยตัวอย่าง (กรณีให้เลือดผิดคน)?')) return;
-    setForm(sampleRcaForm());
-    setMsg({ kind: 'info', text: 'ใส่ข้อมูลตัวอย่างแล้ว — แก้ไขได้ตามต้องการ' });
+    if (!confirm('แทนที่ข้อมูลปัจจุบันด้วยตัวอย่าง Cardiac Arrest จากภาวะสงสัย PE?')) return;
+    setForm(cardiacArrestRcaForm());
+    setActiveView('fishbone');
+    setMsg({ kind: 'info', text: 'ใส่ข้อมูลตัวอย่างแล้ว — สามารถแก้ไขรายละเอียดในแท็บ วิเคราะห์ RCA' });
+  };
+
+  const startAnalysis = () => {
+    if (!form.story.trim()) {
+      setMsg({ kind: 'err', text: 'กรุณาบรรยายเหตุการณ์ที่ต้องการวิเคราะห์ก่อน' });
+      return;
+    }
+    setActiveView('fishbone');
+    setMsg({ kind: 'ok', text: 'จัดเตรียมผลวิเคราะห์ทั้ง 5 มุมมองแล้ว กรุณาทบทวนข้อเท็จจริงก่อนนำไปใช้' });
+    requestAnimationFrame(() => document.getElementById('rca-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
 
   const cmpBlock = (which: 'cmpClinical' | 'cmpGeneral', title: string) => (
@@ -456,55 +600,41 @@ export default function RcaFormPage() {
 
   return (
     <div className="rf">
-      <div className="glow-card" style={{ padding: 20, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-              {FORM_CODE}
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>{FORM_TITLE}</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-              กรอกข้อมูลในหน้านี้ แล้วกด “ส่งออก Word” เพื่อได้ไฟล์ .docx ตามรูปแบบแบบฟอร์มต้นฉบับ
-            </div>
-            <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 6, lineHeight: 1.6 }}>
-              ข้อความจาง ๆ ในช่องกรอกคือ<strong>ตัวอย่าง</strong>จากกรณีผู้ป่วยได้รับยาซ้ำซ้อน (double dose)
-              — พิมพ์ทับได้เลย ไม่ถูกบันทึกและไม่ติดไปกับไฟล์ Word
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="tb-btn tb-btn-ghost" onClick={toggleCloud}>
-                {showCloud ? 'ปิดรายการ' : '☁ ร่างที่บันทึกไว้'}
-              </button>
-              <button type="button" className="tb-btn tb-btn-ghost" onClick={loadSample}>ใส่ตัวอย่าง</button>
-              <button type="button" className="tb-btn tb-btn-ghost" onClick={clearForm}>ล้างฟอร์ม</button>
-              <button
-                type="button"
-                className="tb-btn tb-btn-primary"
-                onClick={saveToCloud}
-                disabled={busy || (!!formId && !canEditCurrent)}
-              >
-                {busy ? 'กำลังทำงาน...' : formId && !canEditCurrent ? 'ดูอย่างเดียว' : '💾 บันทึก'}
-              </button>
-            </div>
-            {savedAt && (
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>บันทึกร่างอัตโนมัติ {savedAt}</div>
-            )}
-          </div>
+      <header className="rca-ai-banner">
+        <div className="rca-pulse-mark" aria-hidden="true">⌁</div>
+        <div>
+          <h1>AI-driven Root Cause Analysis (RCA)</h1>
+          <p>ระบบช่วยวิเคราะห์สาเหตุรากสำหรับงานคุณภาพและความปลอดภัยผู้ป่วย</p>
         </div>
+      </header>
+
+      <section className="rca-story-card">
+        <label htmlFor="rca-story"><span className="story-target">◎</span> บรรยายเหตุการณ์ความเสี่ยงที่ต้องการทำ RCA <strong>(ระบุเหตุการณ์โดยละเอียด)</strong></label>
+        <textarea
+          id="rca-story"
+          rows={6}
+          value={form.story}
+          placeholder="ระบุลำดับเหตุการณ์ อาการสำคัญ การประเมิน การช่วยเหลือ และผลกระทบที่เกิดขึ้น"
+          onChange={event => set('story', event.target.value)}
+        />
+        <div className="rca-story-actions">
+          <span>ข้อมูลทางการแพทย์จาก AI เป็นร่างเพื่อการทบทวน ไม่ใช่ข้อสรุปทางคลินิก</span>
+          <button type="button" className="rca-analyze-button" onClick={startAnalysis}><b>⌁</b> คลิกเพื่อเริ่มวิเคราะห์ (AI RCA)</button>
+        </div>
+      </section>
+
+      <div className="rca-workbar">
+        <div>
+          <button type="button" className="tb-btn tb-btn-ghost" onClick={toggleCloud}>{showCloud ? 'ปิดรายการ' : '☁ ร่างที่บันทึกไว้'}</button>
+          <button type="button" className="tb-btn tb-btn-ghost" onClick={loadSample}>ใส่กรณีตัวอย่าง</button>
+          <button type="button" className="tb-btn tb-btn-ghost" onClick={clearForm}>ล้างฟอร์ม</button>
+          <button type="button" className="tb-btn tb-btn-primary" onClick={saveToCloud} disabled={busy || (!!formId && !canEditCurrent)}>
+            {busy ? 'กำลังทำงาน...' : formId && !canEditCurrent ? 'ดูอย่างเดียว' : '💾 บันทึก'}
+          </button>
+        </div>
+        {savedAt && <span>บันทึกร่างอัตโนมัติ {savedAt}</span>}
         {msg && (
-          <div
-            style={{
-              marginTop: 14,
-              padding: '10px 14px',
-              borderRadius: 6,
-              fontSize: 12,
-              background: msg.kind === 'ok' ? 'var(--green-bg)' : msg.kind === 'err' ? 'var(--red-bg)' : 'var(--blue-bg)',
-              color: msg.kind === 'ok' ? 'var(--green)' : msg.kind === 'err' ? 'var(--red)' : 'var(--accent)',
-            }}
-          >
-            {msg.text}
-          </div>
+          <div className={`rca-work-message ${msg.kind}`}>{msg.text}</div>
         )}
       </div>
 
@@ -570,13 +700,39 @@ export default function RcaFormPage() {
         </div>
       )}
 
-      {irCode && (
-        <div style={{ marginBottom: 16 }}>
-          <RcaAiPanel irCode={irCode} />
+      <section className="rca-results" id="rca-results">
+        <nav className="rca-analysis-tabs" aria-label="รูปแบบการวิเคราะห์ RCA">
+          {ANALYSIS_TABS.map(tab => (
+            <button
+              type="button"
+              key={tab.key}
+              className={`${tab.key} ${activeView === tab.key ? 'active' : ''}`}
+              onClick={() => setActiveView(tab.key)}
+            >
+              <span>{tab.icon}</span>{tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="rca-results-toolbar">
+          <span>ⓘ ระบบจะบันทึกข้อมูลอัตโนมัติเมื่อแก้ไขแบบฟอร์มในส่วนที่ 5</span>
+          <button type="button" onClick={exportWord} disabled={busy}>⇩ ดาวน์โหลดเอกสารการวิเคราะห์ความเสี่ยง</button>
         </div>
-      )}
+        {activeView === 'fishbone' && <FishboneView effect={form.subject} />}
+        {activeView === 'why' && <FiveWhyView />}
+        {activeView === 'swiss' && <SwissCheeseView form={form} />}
+        {activeView === 'tiers' && <FiveTiersView form={form} />}
+        {activeView === 'report' && (
+          <div className="rca-report-cover">
+            <div className="report-cross">✚</div>
+            <h2>โรงพยาบาลสมเด็จพระบรมราชเทวี ณ ศรีราชา</h2>
+            <p>สภากาชาดไทย</p>
+            <strong>{FORM_TITLE}</strong>
+            <small>{FORM_CODE}</small>
+          </div>
+        )}
+      </section>
 
-      <fieldset className="rf-edit-area" disabled={!!formId && !canEditCurrent}>
+      <fieldset className={`rf-edit-area ${activeView === 'report' ? '' : 'rf-hidden'}`} disabled={!!formId && !canEditCurrent}>
       {/* ---- ส่วนหัวแบบฟอร์ม ---- */}
       <Section title="ข้อมูลทั่วไป">
         <Area label="เรื่อง" rows={2} value={form.subject} placeholder={EXAMPLE.subject} onChange={v => set('subject', v)} />

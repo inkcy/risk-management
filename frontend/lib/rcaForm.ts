@@ -614,3 +614,95 @@ export function sampleRcaForm(): RcaFormData {
     ],
   };
 }
+
+/**
+ * ตัวอย่างเหตุการณ์สำหรับหน้า AI-driven RCA ตามกรณี Cardiac arrest ที่ผู้ใช้ให้มา
+ * แยกจาก sampleRcaForm เดิมเพื่อไม่กระทบข้อมูลตัวอย่างด้าน medication error
+ */
+export function cardiacArrestRcaForm(): RcaFormData {
+  const form = emptyRcaForm();
+  const story =
+    'ผู้ป่วยหญิงไทย อายุ 53 ปี มาด้วยอาการเลือดออกทางช่องคลอดเป็นลิ่มเลือดประมาณ 1 เดือน ' +
+    'ช่วงแรกใช้ผ้าอนามัย 1-3 แผ่น/วัน ต่อมา 2 สัปดาห์มีลิ่มเลือดประมาณ 7-8 ก้อน ' +
+    'เปลี่ยนผ้าอนามัย 4-5 แผ่น/วัน มีอาการปวดท้องน้อย เวียนศีรษะ เพลียเป็นบางครั้ง และเหนื่อยง่าย ' +
+    'วินิจฉัย CA cervix at least stage IIB with anemia ผู้ป่วยไม่สามารถเดินเองได้หลังนอน bedrest นาน ' +
+    'วันที่ 15/3/69 ผู้ป่วยลุกเดินครั้งแรก ขณะเดินเข้าห้องน้ำพร้อมญาติมีอาการหน้ามืดและวูบ ' +
+    'ประเมินอาการและแจ้งแพทย์ พบ O2 saturation 88% วัดความดันโลหิตไม่ได้ ให้ oxygen mask with bag 10 LPM ' +
+    'คลำชีพจรไม่ได้ จึงเริ่ม CPR และประกาศ Code Blue สงสัยสาเหตุ cardiac arrest จาก pulmonary embolism ' +
+    'ร่วมกับ acute cor pulmonale';
+
+  return {
+    ...form,
+    subject: 'Cardiac Arrest จากภาวะสงสัย PE ในผู้ป่วย CA Cervix หลังการลุกเดินครั้งแรก',
+    eventDate: '15/03/2569',
+    riskType: 'clinic',
+    severity: 'I',
+    story,
+    psWho: 'ผู้ป่วยหญิงไทย อายุ 53 ปี วินิจฉัย CA cervix at least stage IIB with anemia และนอน bedrest เป็นเวลานาน',
+    psWhat: 'เกิดอาการหน้ามืด วูบ ภาวะพร่องออกซิเจน และ cardiac arrest ขณะเดินเข้าห้องน้ำครั้งแรกหลัง bedrest',
+    psImpact: 'คลำชีพจรไม่ได้ ต้องทำ CPR และประกาศ Code Blue โดยสงสัย pulmonary embolism ร่วมกับ acute cor pulmonale',
+    colonogyClinical: [
+      '',
+      'ประเมินความเสี่ยง VTE และความพร้อมก่อนเริ่มเคลื่อนไหวหลัง bedrest',
+      'CA cervix at least stage IIB with anemia',
+      'แผนป้องกัน VTE และแผน early mobilization สำหรับผู้ป่วยความเสี่ยงสูง',
+      'ประเมินซ้ำก่อนและระหว่างลุกเดินครั้งแรก',
+      'สื่อสารแผนการลุกเดินและสัญญาณอันตรายแก่ทีม ผู้ป่วย และญาติ',
+      '',
+    ],
+    timeline: [
+      { day: 'ก่อน 15/03/2569', time: 'ไม่ระบุ', event: 'ผู้ป่วยนอน bedrest เป็นเวลานานและยังไม่สามารถเดินเองได้' },
+      { day: '15/03/2569', time: 'ไม่ระบุ', event: 'ลุกเดินครั้งแรกไปห้องน้ำพร้อมญาติ แล้วมีอาการหน้ามืดและวูบ' },
+      { day: '15/03/2569', time: 'ไม่ระบุ', event: 'O2 saturation 88% วัด BP ไม่ได้ ให้ oxygen mask with bag 10 LPM คลำชีพจรไม่ได้ เริ่ม CPR และประกาศ Code Blue' },
+    ],
+    cmpClinical: [
+      {
+        area: 'การประเมินความพร้อมก่อนลุกเดินครั้งแรก',
+        standard: 'ควรประเมินสัญญาณชีพ อาการ orthostatic intolerance และความเสี่ยง VTE ก่อน mobilization ตามแนวทางของหน่วยงาน',
+        unsafeAct: 'ยังไม่ยืนยันว่ามีการประเมินก่อนลุกเดินครบถ้วน ต้องตรวจสอบจากเวชระเบียนและการสัมภาษณ์',
+        constraint: 'ผู้ป่วยมีมะเร็ง โลหิตจาง และ prolonged immobilization ซึ่งเพิ่มความซับซ้อนและความเสี่ยง',
+        period: 'ก่อนและขณะลุกเดินครั้งแรก',
+        system: 'ระบบประเมินความพร้อมและ early mobilization',
+      },
+    ],
+    w5h1: {
+      what: 'Cardiac arrest ขณะลุกเดินครั้งแรกหลังนอน bedrest เป็นเวลานาน โดยสงสัย pulmonary embolism',
+      how: 'ผู้ป่วยวูบและมีภาวะไหลเวียนล้มเหลวระหว่างเดินเข้าห้องน้ำ ก่อนคลำชีพจรไม่ได้และต้อง CPR',
+      where: 'ระหว่างทางจากเตียงผู้ป่วยไปห้องน้ำ',
+      when: 'วันที่ 15/03/2569 ในการลุกเดินครั้งแรกหลัง bedrest',
+      why: 'มีปัจจัยเสี่ยง VTE หลายประการ และควรทบทวนระบบประเมิน VTE/ความพร้อมก่อน mobilization',
+      who: 'ผู้ป่วย ญาติที่พาเดิน ทีมพยาบาล แพทย์ และทีม Code Blue',
+    },
+    tiers: {
+      tier5: 'เกณฑ์การเบิกจ่ายหรือการเข้าถึงอุปกรณ์ป้องกัน VTE สำหรับผู้ป่วยสิทธิพื้นฐานอาจมีข้อจำกัด — ต้องตรวจสอบ',
+      tier4: 'การจัดสรรอุปกรณ์ป้องกัน DVT เช่น SCD และระบบกำกับการประเมิน VTE ในผู้ป่วย bedrest',
+      tier3: 'ขาด checklist ประเมินความพร้อมก่อนลงจากเตียง และแนวทาง early mobilization ที่เป็นขั้นตอน',
+      tier2: 'การสื่อสารระหว่างเวรเกี่ยวกับแผน mobilization และการเฝ้าระวังผู้ป่วยความเสี่ยงสูงอาจไม่ชัดเจน — ต้องทบทวน',
+      tier1: 'ผู้ป่วยมี CA cervix, anemia และ prolonged immobilization ซึ่งเป็นปัจจัยเสี่ยงต่อ VTE และการวูบขณะเปลี่ยนท่า',
+      cmp: 'ต้องทบทวนการประเมิน VTE prophylaxis และ pre-ambulation assessment ก่อนลุกเดินครั้งแรก',
+      flow: 'Bedrest นาน → ประเมิน VTE/ความพร้อม → Sitting → Standing → Walking พร้อมเฝ้าระวังสัญญาณชีพ',
+    },
+    solutions: [
+      {
+        rootCause: 'ระบบคัดกรองและประเมินความเสี่ยง VTE ซ้ำในผู้ป่วยมะเร็งที่นอน bedrest ยังไม่เชื่อมกับแผน mobilization อย่างชัดเจน',
+        prevention: 'กำหนด VTE risk reassessment และบันทึกแผน prophylaxis/ข้อห้ามก่อนเริ่ม mobilization พร้อมเกณฑ์แจ้งแพทย์',
+        owner: 'ทีมแพทย์ พยาบาล และคณะกรรมการ VTE',
+        timeframe: 'ภายใน 1 เดือน',
+      },
+      {
+        rootCause: 'ไม่มีเครื่องมือมาตรฐานยืนยันความพร้อมก่อนลุกเดินครั้งแรกในผู้ป่วยความเสี่ยงสูง',
+        prevention: 'จัดทำ Mobilization Safety Checklist และกำหนดขั้น Sitting → Standing → Walking พร้อมวัดสัญญาณชีพและมีบุคลากรช่วย',
+        owner: 'องค์กรพยาบาล / หอผู้ป่วย',
+        timeframe: 'ภายใน 1 เดือน',
+      },
+    ],
+    processes: [
+      {
+        process: 'การประเมิน VTE และเตรียมผู้ป่วยก่อน early mobilization',
+        requirement: 'ผู้ป่วยมะเร็งที่ bedrest ต้องได้รับการประเมิน VTE ซ้ำและผ่านเกณฑ์ความพร้อมก่อนลุกเดิน',
+        indicators: 'ร้อยละผู้ป่วยกลุ่มเสี่ยงที่มี VTE reassessment และ Mobilization Safety Checklist ครบถ้วน ≥ 95%',
+        design: 'เชื่อมแบบประเมิน VTE กับคำสั่งกิจกรรม ทำ checklist ในเวชระเบียน และกำหนด escalation criteria เมื่อพบอาการผิดปกติ',
+      },
+    ],
+  };
+}

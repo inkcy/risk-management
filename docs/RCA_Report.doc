@@ -1,0 +1,112 @@
+﻿
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>RCA Report</title>
+      <style>
+        body { font-family: 'TH SarabunPSK', 'TH Sarabun New', 'Sarabun', sans-serif; font-size: 16pt; line-height: 1.2; }
+        .text-center { text-align: center; } .bold { font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
+        th, td { border: 1px solid black; padding: 4px 6px; text-align: left; vertical-align: top; }
+        .bg-gray { background-color: #f2f2f2; } .no-border td { border: none; padding: 2px 5px; }
+        h1, h2, h3 { font-size: 18pt; margin-bottom: 5px; margin-top: 15px; }
+        .red-cross { color: red; font-size: 48pt; font-family: Arial, sans-serif; line-height: 0.8; margin-bottom: 0; }
+        .header-title { text-align: center; font-weight: bold; margin-top: 15px; margin-bottom: 15px; font-size: 18pt; }
+      </style>
+    </head>
+    <body>
+      <div class="text-center">
+        <div class="red-cross bold">+</div>
+        <div class="bold" style="font-size: 18pt;">โรงพยาบาลสมเด็จพระบรมราชเทวี ณ ศรีราชา</div>
+        <div class="bold" style="font-size: 18pt; border-bottom: 2px solid black; display: inline-block; padding-bottom: 2px;">สภากาชาดไทย</div>
+      </div>
+      
+      <div class="header-title">แบบฟอร์มแสดงการวิเคราะห์สาเหตุที่แท้จริง (RCA)</div>
+      
+      <table class="no-border" style="width: 100%; margin-bottom: 15px;">
+        <tr><td width="50%"><b>เรื่อง:</b> Cardiac Arrest จากภาวะ PE ในผู้ป่วย CA Cervix หลังการลุกเดินครั้งแรก</td><td width="50%"><b>RM No.:</b> </td></tr>
+        <tr><td><b>วันที่ทบทวน:</b> </td><td><b>วันที่เกิดเหตุการณ์:</b> 15/03/2069</td></tr>
+        <tr><td><b>ประเภทความเสี่ยง :</b> Clinical Risk</td><td><b>หน่วยงาน/ทีม:</b> </td></tr>
+        <tr><td colspan="2"><b>ระดับความรุนแรง ( A-I / 1-5 ):</b> </td></tr>
+        <tr><td colspan="2" style="padding-top:10px;"><b>สมาชิกผู้ร่วมทบทวน:</b><br/></td></tr>
+      </table>
+
+      <div class="bold" style="margin-bottom: 5px; text-decoration: underline;">ขั้นตอนการวิเคราะห์</div>
+      
+      <!-- Part 1 -->
+      <div><b>1. Story and Timeline :</b> (บรรยายเหตุการณ์ที่สำคัญสั้น ๆ บุคคลที่เกี่ยวข้องโดยไม่ระบุชื่อ)</div>
+      <div style="margin-left: 20px; margin-bottom: 15px;">ผู้ป่วย CA Cervix stage IIB พร้อมภาวะซีด นอน Bedrest นาน 15 วัน วันเกิดเหตุลุกเดินไปห้องน้ำครั้งแรกกับญาติ เกิดอาการหน้ามืด วูบ และหยุดหายใจ สงสัยภาวะ Pulmonary Embolism</div>
+      <div style="margin-left: 20px; margin-bottom: 5px;">ลำดับเหตุการณ์ ( จัดทำเป็นเอกสารแนบท้าย กรณีเป็นความเสี่ยงทั่วไปไม่ต้องระบุ Timeline)</div>
+      <table style="width: 90%; margin-left: 20px;">
+        <tr class="bg-gray"><th width="20%">Day</th><th width="20%">Time</th><th width="60%">เหตุการณ์ (Event)</th></tr>
+        <tr><td>15/03/69</td><td>เช้า</td><td>ผู้ป่วยลุกเดินครั้งแรกหลังนอน Bedrest มานาน</td></tr><tr><td>15/03/69</td><td>ขณะเดิน</td><td>หน้ามืด วูบ ประเมิน O2sat 88% วัด BP ไม่ได้</td></tr><tr><td>15/03/69</td><td>ทันที</td><td>คลำชีพจรไม่ได้ เริ่มทำ CPR และประกาศ Code Blue</td></tr>
+      </table>
+
+      <!-- Part 2 -->
+      <div style="margin-top: 20px;"><b>2. ค้นหาสาเหตุของปัญหา Potential change หาจุดเปลี่ยน</b> (ระบุเฉพาะกระบวนการ/ขั้นตอนที่เกิดความคลาดเคลื่อน)</div>
+      <table>
+        <tr class="bg-gray">
+          <th width="16%">ขั้นตอน/กระบวนการ</th><th width="16%">ปัญหา</th><th width="17%">แนวทางปฏิบัติ/กระบวนการทำงานที่กำหนด</th><th width="17%">สิ่งที่ปฏิบัติจริง(Unsafe act)</th><th width="17%">ข้อจำกัดของผู้ปฏิบัติงานในเวลานั้น</th><th width="17%">ช่วงเวลา/ระบบงานที่เกี่ยวข้อง</th>
+        </tr>
+        <tr>
+          <td class="bold">การประเมิน</td>
+          <td>ไม่ได้ประเมินความเสี่ยง VTE ก่อนลุกเดิน</td>
+          <td>ต้องมี VTE Risk Score ทุกราย</td>
+          <td>ไม่ได้บันทึกการประเมินความเสี่ยง</td>
+          <td>พยาบาลมีภาระงานมาก</td>
+          <td>ภายใน 24 ชม. หลัง Admit EMR Assessment Tool</td>
+        </tr>
+      </table>
+
+      <!-- Part 3 -->
+      <div style="margin-top: 20px;"><b>3. สรุปปัจจัยเกื้อหนุนทำให้เกิดความเสี่ยง</b></div>
+      <table>
+        <tr class="bg-gray">
+          <th width="20%">ปัจจัยที่เกี่ยวข้อง</th>
+          <th width="40%">Local Workplace Factors</th>
+          <th width="40%">Organizational Factors</th>
+        </tr>
+        <tr>
+          <td class="bold">ผู้ป่วย</td>
+          <td>มีภาวะ Hypercoagulability จากมะเร็งและนอนนาน</td>
+          <td>แนวทางการคัดกรองผู้ป่วย High Risk VTE</td>
+        </tr>
+        <tr>
+          <td class="bold">เจ้าหน้าที่</td>
+          <td>ขาดความตระหนักเรื่องอาการแสดงของ PE</td>
+          <td>การอบรมฟื้นฟูความรู้เรื่อง VTE/DVT</td>
+        </tr>
+        <tr>
+          <td class="bold">กระบวนการ</td>
+          <td>ลุกเดินครั้งแรกโดยไม่ได้ทำตามขั้นตอน Step-up mobilization</td>
+          <td>Nursing Standard for Early Mobilization</td>
+        </tr>
+        <tr>
+          <td class="bold">การสื่อสาร</td>
+          <td>ญาติพาเดินโดยไม่ได้แจ้งพยาบาลเข้าเฝ้าระวังใกล้ชิด</td>
+          <td>ระบบให้ข้อมูลผู้ป่วยและญาติ (Patient Education)</td>
+        </tr>
+        <tr>
+          <td class="bold">สิ่งแวดล้อมและเครื่องมือ</td>
+          <td>ไม่มีราวจับตลอดทางเดินที่ช่วยพยุง</td>
+          <td>การออกแบบสิ่งแวดล้อมเพื่อความปลอดภัย (Patient Safety Design)</td>
+        </tr>
+        <tr>
+          <td class="bold">ทีมนำและองค์กร</td>
+          <td>ขาดการนิเทศติดตามการลุกเดินของผู้ป่วยเสี่ยงสูง</td>
+          <td>วัฒนธรรมความปลอดภัยในการรายงานความเสี่ยง</td>
+        </tr>
+      </table>
+
+      <!-- Part 4 -->
+      <div style="margin-top: 20px;"><b>4. สรุป RCA แนวทางการป้องกัน/แก้ปัญหา</b></div>
+      <table>
+        <tr class="bg-gray"><th width="30%">สาเหตุที่แท้จริง (Root cause)</th><th width="40%">มาตรการการป้องกัน</th><th width="15%">ผู้รับผิดชอบ</th><th width="15%">ระยะเวลาดำเนินการ</th></tr>
+        <tr><td>ขาดระบบการประเมินและป้องกันภาวะ VTE/PE ในผู้ป่วยกลุ่ม Non-surgical ที่มีปัจจัยเสี่ยงสูง</td><td>จัดทำ VTE Prophylaxis Protocol และบังคับใช้การประเมินความเสี่ยงในผู้ป่วยมะเร็งทุกคน</td><td>คณะกรรมการ PCT สูตินรีเวชกรรม</td><td>30 วัน</td></tr>
+      </table>
+
+      <!-- Part 5 -->
+      <div style="margin-top: 20px;"><b>5. การจัดการกระบวนการ (Process Management)</b></div>
+      <table>
+        <tr class="bg-gray"><th width="25%">กระบวนการ</th><th width="25%">ข้อกำหนดของกระบวนการ (process requirement)</th><th width="25%">ตัวชี้วัดของกระบวนการ (process indicators)</th><th width="25%">การออกแบบกระบวนการ (process design)</th></tr>
+        <tr><td>Early Mobilization</td><td>ต้องผ่านการประเมินสัญญาณชีพตามขั้นตอน Sitting -> Standing ก่อนเดิน</td><td>ร้อยละของผู้ป่วย High Risk ที่ได้รับประเมินตามขั้นตอน</td><td>ปรับปรุงแบบบันทึกทางการพยาบาลให้มีช่องประเมินความพร้อมก่อน Ambulate</td></tr>
+      </table>
+    </body></html>

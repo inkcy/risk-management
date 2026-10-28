@@ -355,6 +355,19 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .risk-matrix-pick { width: 100%; min-height: 42px; border: 2px solid transparent; border-radius: 8px; color: var(--text); font: inherit; cursor: pointer; }
 .risk-matrix-pick[aria-pressed='true'] { border-color: var(--accent); outline: 2px solid var(--accent); }
 .risk-assessment-result { margin-top: 14px; font-size: 14px; color: var(--text); }
+.culture-chart { margin: 18px 0 24px; padding: 16px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg3); }
+.culture-chart-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; color: var(--text2); font-size: 12px; }
+.culture-chart-legend span { display: flex; align-items: center; gap: 6px; }
+.culture-chart-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.culture-chart-excellent { background: #7557e8; }
+.culture-chart-good { background: #60a5e8; }
+.culture-chart-rows { display: grid; gap: 12px; }
+.culture-chart-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) 52px; align-items: center; gap: 10px; font-size: 12px; }
+.culture-chart-year { color: var(--text2); }
+.culture-chart-track { height: 22px; display: flex; overflow: hidden; border-radius: 5px; background: var(--bg4); }
+.culture-chart-track span { display: block; height: 100%; }
+.culture-chart-row strong { color: var(--text); text-align: right; }
+.culture-chart-axis { display: flex; justify-content: space-between; margin: 6px 62px 0 52px; color: var(--text3); font-size: 10px; }
 
 @media (max-width: 768px) {
   .risk-assessment-fields { grid-template-columns: 1fr; }

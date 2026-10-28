@@ -13,7 +13,6 @@ const titles: Record<string, [string, string]> = {
   '/rca/form': ['แบบฟอร์ม RCA', 'บันทึกและส่งออกแบบวิเคราะห์สาเหตุ'],
   '/matrix': ['Risk Matrix', 'ประเมินความเสี่ยงองค์กร'],
   '/risk-profile': ['Risk Profile', 'ทะเบียนความเสี่ยงองค์กร'],
-  '/cauti': ['CAUTI QuickAlert', 'เฝ้าระวังผู้ป่วยใส่ Foley catheter · alert เมื่อใส่เกิน 3 วัน'],
   '/actions': ['มาตรการแก้ไข', 'ติดตามความคืบหน้า'],
   '/report': ['E-SAFE · รายงานอุบัติการณ์ใหม่', 'Just Culture · Patient Safety First'],
   '/culture': ['วัฒนธรรมความปลอดภัย', 'HRO · Safety Culture · System Thinking'],

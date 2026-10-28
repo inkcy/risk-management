@@ -259,8 +259,8 @@ export default function ReportPage() {
                       ◎ เริ่มวิเคราะห์ RCA
                     </Link>
                   )}
-                  <Link href="/incidents" className="tb-btn tb-btn-ghost">
-                    ดูรายการอุบัติการณ์
+                  <Link href="/home" className="tb-btn tb-btn-ghost">
+                    กลับหน้าหลัก
                   </Link>
                 </div>
               </div>

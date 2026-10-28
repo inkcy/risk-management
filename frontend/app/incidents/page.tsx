@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { getIncidents, categoryLabel } from '@/lib/api';
 import { DemoBanner } from '@/components/DemoBanner';
+import { getSessionUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +21,8 @@ const rcaLabel = (s: string) =>
   : s === 'not_required' ? 'ไม่ต้องทำ' : 'รอดำเนินการ';
 
 export default async function IncidentsPage() {
+  const user = await getSessionUser();
+  if (user?.role !== 'admin') redirect('/home');
   const { data: incidents, error } = await getIncidents();
 
   return (

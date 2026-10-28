@@ -31,7 +31,6 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
       { href: '/rca/form', icon: '▤', label: 'แบบฟอร์ม RCA' },
       { href: '/matrix', icon: '▦', label: 'Risk Matrix' },
       { href: '/risk-profile', icon: '▤', label: 'Risk Profile' },
-      { href: '/cauti', icon: '⚕', label: 'CAUTI QuickAlert' },
     ],
   },
   {
@@ -87,7 +86,7 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
         {groups.map((g) => (
           <div key={g.label}>
             <div className="nav-group-label">{g.label}</div>
-            {g.items.filter(it => it.href !== '/report' || canEdit).map((it) => (
+            {g.items.filter(it => (it.href !== '/report' || canEdit) && (it.href !== '/incidents' || isAdmin)).map((it) => (
               <Link
                 key={it.href}
                 href={it.href}

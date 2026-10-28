@@ -42,7 +42,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
     ],
   },
   {
-    label: 'ผลการสำรวจวัฒนธรรมความปลอดภัยของโรงพยาบาลออนไลน์',
+    label: 'Safety Culture Survey',
     items: [
       { href: '/culture', icon: '❖', label: 'วัฒนธรรมความปลอดภัย' },
       { href: '/compassion', icon: '♡', label: 'Compassionate RCA' },

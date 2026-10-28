@@ -354,6 +354,10 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .risk-assessment-table td { width: 12%; }
 .risk-matrix-pick { width: 100%; min-height: 42px; border: 2px solid transparent; border-radius: 8px; color: var(--text); font: inherit; cursor: pointer; }
 .risk-matrix-pick[aria-pressed='true'] { border-color: var(--accent); outline: 2px solid var(--accent); }
+.risk-matrix-pick.risk-color-green { background: #00ff00; color: #102510; }
+.risk-matrix-pick.risk-color-yellow { background: #ffff00; color: #252500; }
+.risk-matrix-pick.risk-color-orange { background: #ff6600; color: #251000; }
+.risk-matrix-pick.risk-color-red { background: #ff0000; color: #fff; }
 .risk-assessment-result { margin-top: 14px; font-size: 14px; color: var(--text); }
 .culture-chart { margin: 18px 0 24px; padding: 16px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg3); }
 .culture-chart-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; color: var(--text2); font-size: 12px; }

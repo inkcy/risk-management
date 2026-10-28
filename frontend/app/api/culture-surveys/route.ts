@@ -22,12 +22,12 @@ export async function POST(request: NextRequest) {
     let data: Buffer | null = null;
     let type: string | null = null;
     if (report instanceof File && report.size) {
-      if (report.size > 3 * 1024 * 1024 || !/\.(pptx|pdf)$/i.test(report.name)) return NextResponse.json({ error: 'รองรับไฟล์ PPTX หรือ PDF ขนาดไม่เกิน 3 MB' }, { status: 400 });
+      if (report.size > 3 * 1024 * 1024 || !/\.(pptx|pdf|docx)$/i.test(report.name)) return NextResponse.json({ error: 'รองรับไฟล์ PPTX, PDF หรือ DOCX ขนาดไม่เกิน 3 MB' }, { status: 400 });
       data = Buffer.from(await report.arrayBuffer());
       const isPdf = data.subarray(0, 5).toString() === '%PDF-';
       const isPptx = data.subarray(0, 4).toString('hex') === '504b0304';
       if (!(report.name.toLowerCase().endsWith('.pdf') ? isPdf : isPptx)) return NextResponse.json({ error: 'ไฟล์รายงานไม่ตรงกับชนิดที่เลือก' }, { status: 400 });
-      type = isPdf ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      type = isPdf ? 'application/pdf' : report.name.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
     }
     await query('INSERT INTO culture_surveys (year, counts, excellent_pct, very_good_pct, report_data, report_type, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7)', [year, counts, excellentPct, veryGoodPct, data, type, auth.user.id]);
     await audit(auth.user, 'culture_survey.create', 'culture_survey', year);

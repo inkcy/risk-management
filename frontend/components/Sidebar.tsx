@@ -25,7 +25,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
     label: 'หลัก',
     items: [
       { href: '/home', icon: '⌂', label: 'หน้าหลัก' },
-      { href: '/', icon: '⬡', label: 'แดชบอร์ด' },
+      { href: '/dashboard', icon: '⬡', label: 'แดชบอร์ด' },
       { href: '/incidents', icon: '⚠', label: 'อุบัติการณ์' },
       { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA' },
       { href: '/rca/form', icon: '▤', label: 'แบบฟอร์ม RCA' },

@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 
-export function RiskUnitAdmin({ units }: { units: { id: number; name: string; username: string }[] }) {
+export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: string; username: string }[]; pending: { id: number; name: string; username: string; requester: string | null }[] }) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -25,9 +26,29 @@ export function RiskUnitAdmin({ units }: { units: { id: number; name: string; us
       form.reset(); setNotice('เปลี่ยนรหัสผ่านแล้ว และออกจากระบบหน่วยงานเดิมทุกเครื่อง');
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
-  return <details className="card" style={{ marginBottom: 16, padding: 16 }}><summary>สร้างบัญชี Risk Profile สำหรับหน่วยงาน</summary>
+  async function approve(id: number) {
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/risk-units', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'approve' }) });
+      const body = await response.json(); if (!response.ok) throw new Error(body.error || 'อนุมัติไม่สำเร็จ');
+      setNotice('อนุมัติบัญชีแล้ว'); router.refresh();
+    } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
+  }
+  async function reject(id: number) {
+    if (!window.confirm('ยืนยันการปฏิเสธและลบคำขอสมัครนี้?')) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/risk-units', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'reject' }) });
+      const body = await response.json(); if (!response.ok) throw new Error(body.error || 'ปฏิเสธคำขอไม่สำเร็จ');
+      setNotice('ปฏิเสธคำขอแล้ว'); router.refresh();
+    } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
+  }
+  return <details className="card" style={{ marginBottom: 16, padding: 16 }}><summary>จัดการบัญชี Risk Profile {pending.length > 0 && `· คำขอรออนุมัติ ${pending.length} รายการ`}</summary>
+    {pending.length > 0 && <div style={{ marginTop: 16 }}><strong>คำขอรออนุมัติ ({pending.length})</strong>
+      {pending.map(unit => <div key={unit.id} className="unit-risk-list-item"><span>{unit.name} · {unit.username}<br /><small>ผู้ขอ: {unit.requester || 'ไม่ทราบ'}</small></span><div style={{ display: 'flex', gap: 8 }}><button type="button" className="tb-btn tb-btn-primary" disabled={busy} onClick={() => approve(unit.id)}>อนุมัติ</button><button type="button" className="tb-btn tb-btn-ghost" disabled={busy} onClick={() => reject(unit.id)}>ปฏิเสธ</button></div></div>)}
+    </div>}
     <form className="survey-form" onSubmit={submit} style={{ marginTop: 12 }}>
-      <label>ชื่อหน่วยงาน<input name="name" required maxLength={160} /></label>
+      <label>ชื่อหน่วยงาน<select name="name" required defaultValue=""><option value="" disabled>เลือกหน่วยงาน</option>{riskUnitDirectory.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
       <label>ชื่อผู้ใช้<input name="username" required minLength={3} maxLength={64} pattern="[A-Za-z0-9._-]+" autoComplete="off" /></label>
       <label>รหัสผ่าน<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" /><small>อย่างน้อย 12 ตัวอักษร</small></label>
       {error && <p className="announcement-error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}

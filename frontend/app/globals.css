@@ -368,6 +368,23 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .culture-chart-track span { display: block; height: 100%; }
 .culture-chart-row strong { color: var(--text); text-align: right; }
 .culture-chart-axis { display: flex; justify-content: space-between; margin: 6px 62px 0 52px; color: var(--text3); font-size: 10px; }
+.culture-bar-chart { margin: 18px 0 24px; padding: 18px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg3); }
+.culture-bar-heading { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.culture-bar-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 14px; font-size: 11px; color: var(--text2); }
+.culture-bar-legend span { display: flex; align-items: center; gap: 5px; }
+.culture-bar-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.culture-year-0 { background: #5084bd; }.culture-year-1 { background: #c54d50; }.culture-year-2 { background: #9dbb55; }.culture-year-3 { background: #8064a2; }
+.culture-bar-scroll { overflow-x: auto; }
+.culture-bar-layout { display: flex; min-width: 660px; }
+.culture-bar-yaxis { height: 250px; display: flex; flex-direction: column; justify-content: space-between; padding-right: 8px; color: var(--text3); font-size: 10px; text-align: right; }
+.culture-bar-groups { flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.culture-bar-group { min-width: 0; }
+.culture-bar-columns { height: 250px; display: flex; align-items: end; justify-content: center; padding: 0 10%; border-left: 1px solid var(--border); border-bottom: 1px solid var(--text3); background: repeating-linear-gradient(to top, transparent 0, transparent calc(20% - 1px), var(--border2) calc(20% - 1px), var(--border2) 20%); }
+.culture-bar-column { height: 100%; width: 25%; display: flex; align-items: end; }
+.culture-bar-fill { width: 100%; min-height: 1px; position: relative; }
+.culture-bar-fill span { position: absolute; left: 50%; bottom: calc(100% + 3px); transform: translateX(-50%); color: var(--text); font-size: 9px; }
+.culture-bar-label { text-align: center; color: var(--text2); font-size: 11px; padding: 8px 4px 0; }
+.culture-bar-note { margin-top: 12px; color: var(--text3); font-size: 11px; }
 
 @media (max-width: 768px) {
   .risk-assessment-fields { grid-template-columns: 1fr; }

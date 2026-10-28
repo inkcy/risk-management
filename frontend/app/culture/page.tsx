@@ -4,6 +4,13 @@ const results = [
   { year: '2566', excellent: '18.2', veryGood: '54.1', combined: '72.3' },
   { year: '2567', excellent: '18.2', veryGood: '56.8', combined: '75.0' },
 ];
+const chartGroups = [
+  { label: 'Excellent ดีเยี่ยม', values: [209, 192, 287, 289] },
+  { label: 'Very Good ดีมาก', values: [890, 701, 852, 903] },
+  { label: 'Acceptable ยอมรับได้', values: [459, 422, 459, 389] },
+  { label: 'Poor ไม่ดี', values: [9, 11, 13, 9] },
+  { label: 'Falling ตก', values: [1, 2, 3, 1] },
+];
 
 export default function CulturePage() {
   return <>
@@ -21,14 +28,18 @@ export default function CulturePage() {
       <div className="card-header"><div className="card-title">ระดับความปลอดภัยของผู้ป่วย ปี 2564–2567</div></div>
       <div className="card-body">
         <p style={{ color: 'var(--text2)', fontSize: 12, marginBottom: 12 }}>ร้อยละความคิดเห็นของผู้ตอบแบบสำรวจ จำแนกระดับดีเยี่ยมและดีมาก</p>
-        <div className="culture-chart" role="img" aria-label="กราฟร้อยละดีเยี่ยมและดีมากรวมกัน ปี 2564 ถึง 2567: 70.1, 67.3, 72.3 และ 75.0 ตามลำดับ">
-          <div className="culture-chart-legend"><span><i className="culture-chart-excellent" /> ดีเยี่ยม</span><span><i className="culture-chart-good" /> ดีมาก</span></div>
-          <div className="culture-chart-rows">{results.map(result => <div className="culture-chart-row" key={result.year}>
-            <span className="culture-chart-year">{result.year}</span>
-            <div className="culture-chart-track"><span className="culture-chart-excellent" style={{ width: `${result.excellent}%` }} title={`ดีเยี่ยม ${result.excellent}%`} /><span className="culture-chart-good" style={{ width: `${result.veryGood}%` }} title={`ดีมาก ${result.veryGood}%`} /></div>
-            <strong>{result.combined}%</strong>
-          </div>)}</div>
-          <div className="culture-chart-axis"><span>0%</span><span>50%</span><span>100%</span></div>
+        <div className="culture-bar-chart">
+          <div className="culture-bar-heading">จำนวนผู้ตอบจำแนกตามระดับความปลอดภัยของผู้ป่วย (คน)</div>
+          <div className="culture-bar-legend">{results.map((year, i) => <span key={year.year}><i className={`culture-year-${i}`} /> ปี {year.year}</span>)}</div>
+          <div className="culture-bar-scroll"><div className="culture-bar-layout">
+            <div className="culture-bar-yaxis">{[1000, 800, 600, 400, 200, 0].map(value => <span key={value}>{value}</span>)}</div>
+            <div className="culture-bar-groups">{chartGroups.map(group => <div className="culture-bar-group" key={group.label}>
+              <div className="culture-bar-columns">{group.values.map((value, i) => <div className="culture-bar-column" key={results[i].year}>
+                <div className={`culture-bar-fill culture-year-${i}`} style={{ height: `${value / 10}%` }}><span>{value}</span></div>
+              </div>)}</div><div className="culture-bar-label">{group.label}</div>
+            </div>)}</div>
+          </div></div>
+          <p className="culture-bar-note">จำนวนคนตามรายงานต้นฉบับ · ตารางด้านล่างแสดงร้อยละ</p>
         </div>
         <div className="data-table-wrap"><table className="data-table">
           <thead><tr><th>ปีงบประมาณ</th><th>ดีเยี่ยม</th><th>ดีมาก</th><th>รวมดีเยี่ยมและดีมาก</th></tr></thead>

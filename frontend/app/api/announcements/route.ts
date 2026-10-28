@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { audit, requireReadAccess, requireRole } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { audit, getSessionUser, requireReadAccess, requireRole } from '@/lib/auth';
+import { dbConfigured, query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 type Announcement = {
   id: number;
   title: string | null;
-  image_data: string;
+  image_data: string | null;
+  description: string | null;
+  publish_at: string;
   created_at: string;
   author_name: string | null;
 };
@@ -18,19 +20,22 @@ const MAX_IMAGE_LENGTH = 4_200_000; // ประมาณ 3 MB ก่อนเ�
 export async function GET() {
   const denied = await requireReadAccess();
   if (denied) return denied;
+  if (!dbConfigured()) return NextResponse.json({ announcements: [] });
+  const user = await getSessionUser();
 
   try {
     const { rows } = await query<Announcement>(`
-      SELECT a.id, a.title, a.image_data, a.created_at, u.name AS author_name
+      SELECT a.id, a.title, a.description, a.image_data, a.created_at, a.publish_at, COALESCE(u.name, u.email) AS author_name
       FROM announcements a
       LEFT JOIN users u ON u.id = a.created_by
-      ORDER BY a.created_at DESC
-      LIMIT 12
-    `);
+      WHERE a.publish_at <= now() OR $1::boolean
+      ORDER BY a.publish_at DESC, a.id DESC
+      LIMIT 100
+    `, [user?.role === 'admin']);
     return NextResponse.json({ announcements: rows });
   } catch (error) {
     console.error('load announcements failed:', error);
-    return NextResponse.json({ announcements: [] });
+    return NextResponse.json({ error: 'ไม่สามารถโหลดประกาศได้ กรุณาตรวจสอบฐานข้อมูล' }, { status: 500 });
   }
 }
 
@@ -41,17 +46,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
     const title = typeof body.title === 'string' ? body.title.trim().slice(0, 180) : null;
+    const description = typeof body.description === 'string' ? body.description.trim() : '';
     const imageData = typeof body.image_data === 'string' ? body.image_data : '';
+    const publishAt = typeof body.publish_at === 'string' && body.publish_at ? new Date(body.publish_at) : new Date();
 
-    if (!IMAGE_PATTERN.test(imageData) || imageData.length > MAX_IMAGE_LENGTH) {
+    if (imageData && (imageData.length > MAX_IMAGE_LENGTH || !IMAGE_PATTERN.test(imageData))) {
       return NextResponse.json({ error: 'กรุณาเลือกไฟล์ JPG, PNG หรือ WebP ขนาดไม่เกิน 3 MB' }, { status: 400 });
+    }
+    if ((!title && !description && !imageData) || description.length > 5000 || Number.isNaN(publishAt.getTime())) {
+      return NextResponse.json({ error: 'กรุณาใส่หัวข้อ คำอธิบาย หรือรูป และตรวจสอบเวลาเผยแพร่' }, { status: 400 });
     }
 
     const { rows } = await query<Announcement>(
-      `INSERT INTO announcements (title, image_data, created_by)
-       VALUES ($1, $2, $3)
-       RETURNING id, title, image_data, created_at, NULL::text AS author_name`,
-      [title || null, imageData, auth.user.id],
+      `INSERT INTO announcements (title, description, image_data, created_by, publish_at)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, title, description, image_data, created_at, publish_at, NULL::text AS author_name`,
+      [title || null, description || null, imageData || null, auth.user.id, publishAt.toISOString()],
     );
     await audit(auth.user, 'announcement.create', 'announcement', rows[0].id, { title: title || null });
     return NextResponse.json({ announcement: { ...rows[0], author_name: auth.user.name ?? auth.user.email } }, { status: 201 });

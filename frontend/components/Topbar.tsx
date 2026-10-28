@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { SessionUser } from '@/lib/auth';
 
 const titles: Record<string, [string, string]> = {
+  '/home': ['หน้าหลัก', 'ข่าวสารและประชาสัมพันธ์'],
   '/': ['แดชบอร์ด', 'ภาพรวมระบบบริหารความเสี่ยง'],
   '/incidents': ['รายการอุบัติการณ์', 'ทุกเหตุการณ์ที่บันทึกไว้'],
   '/rca': ['Root Cause Analysis', 'วิเคราะห์สาเหตุและติดตามมาตรการ'],

@@ -329,12 +329,28 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .announcement-meta span { margin-top: 3px; color: var(--text3); font-size: 10.5px; }
 .announcement-delete { padding: 4px 7px; border: 1px solid rgba(224,64,124,.25); border-radius: 6px; color: var(--red); background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
 .announcement-delete:hover:not(:disabled) { background: var(--red-bg); }
+.announcements-card { max-width: 820px; margin: 0 auto 20px; }
+.announcement-form { grid-template-columns: 1fr; }
+.announcement-form input[type='datetime-local'], .announcement-form textarea {
+  width: 100%; padding: 9px 10px; border: 1px solid var(--border2); border-radius: 8px;
+  color: var(--text); background: var(--bg2); font: inherit;
+}
+.announcement-form textarea { resize: vertical; }
+.announcement-form small { color: var(--text3); }
+.announcement-form .tb-btn { justify-self: end; }
+.announcement-feed { display: grid; gap: 16px; }
+.announcement-item { background: var(--bg2); }
+.announcement-item > img { height: auto; max-height: 650px; object-fit: contain; }
+.announcement-meta { padding: 15px 16px 8px; }
+.announcement-meta strong { font-size: 13px; }
+.announcement-title { margin: 4px 16px 8px; font-size: 16px; overflow-wrap: anywhere; }
+.announcement-description { margin: 4px 16px 16px; color: var(--text2); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
 
 @media (max-width: 768px) {
   .announcement-form { grid-template-columns: 1fr; }
   .announcement-form .tb-btn { width: fit-content; }
   .announcement-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; }
-  .announcement-item > img { height: 132px; }
+  .announcement-item > img { height: auto; }
 }
 
 .badge {

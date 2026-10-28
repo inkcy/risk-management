@@ -351,6 +351,7 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .risk-assessment-table-wrap { overflow-x: auto; }
 .risk-assessment-table { width: 100%; min-width: 560px; border-spacing: 5px; font-size: 12px; }
 .risk-assessment-table th { text-align: left; color: var(--text2); font-weight: 500; }
+.risk-assessment-table .risk-frequency-heading { text-align: center; vertical-align: top; line-height: 1.4; font-size: 11px; padding: 6px 3px; }
 .risk-assessment-table td { width: 12%; }
 .risk-matrix-pick { width: 100%; min-height: 42px; border: 2px solid transparent; border-radius: 8px; color: var(--text); font: inherit; cursor: pointer; }
 .risk-matrix-pick[aria-pressed='true'] { border-color: var(--accent); outline: 2px solid var(--accent); }

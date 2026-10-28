@@ -1,109 +1,39 @@
+const results = [
+  { year: '2564', excellent: '13.3', veryGood: '56.8', combined: '70.1' },
+  { year: '2565', excellent: '14.5', veryGood: '52.8', combined: '67.3' },
+  { year: '2566', excellent: '18.2', veryGood: '54.1', combined: '72.3' },
+  { year: '2567', excellent: '18.2', veryGood: '56.8', combined: '75.0' },
+];
+
 export default function CulturePage() {
-  return (
-    <>
-      <div className="glow-card" style={{ padding: 20, marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-          System &amp; Spirituality for Safety
-        </div>
-        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>วัฒนธรรมความปลอดภัย — High Reliability Organization</div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', maxWidth: 780 }}>
-          รากฐานของ Patient Safety ไม่ใช่เพียง SOP หรือ Checklist แต่คือวิธีคิดเชิงระบบ (Systems Thinking) และวัฒนธรรมที่บุคลากรทุกระดับรู้สึกปลอดภัยที่จะรายงานข้อผิดพลาด เรียนรู้ และปรับปรุงร่วมกัน
-        </div>
+  return <>
+    <div className="glow-card" style={{ padding: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: 18, fontWeight: 600 }}>ผลการสำรวจวัฒนธรรมความปลอดภัยของโรงพยาบาลออนไลน์</div>
+      <p style={{ marginTop: 6, color: 'var(--text2)', fontSize: 12 }}>Hospital Safety Culture Survey Online · ข้อมูลจากรายงานผลสำรวจปี 2566 และ 2567</p>
+    </div>
+    <div className="stats-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+      {[results[2], results[3]].map(result => <div className="stat-card blue" key={result.year}>
+        <div className="stat-label">ระดับความปลอดภัย ดีเยี่ยม + ดีมาก · ปี {result.year}</div>
+        <div className="stat-val">{result.combined}%</div>
+      </div>)}
+    </div>
+    <section className="card" style={{ marginBottom: 16 }}>
+      <div className="card-header"><div className="card-title">ระดับความปลอดภัยของผู้ป่วย ปี 2564–2567</div></div>
+      <div className="card-body">
+        <p style={{ color: 'var(--text2)', fontSize: 12, marginBottom: 12 }}>ร้อยละความคิดเห็นของผู้ตอบแบบสำรวจ จำแนกระดับดีเยี่ยมและดีมาก</p>
+        <div className="data-table-wrap"><table className="data-table">
+          <thead><tr><th>ปีงบประมาณ</th><th>ดีเยี่ยม</th><th>ดีมาก</th><th>รวมดีเยี่ยมและดีมาก</th></tr></thead>
+          <tbody>{results.map(result => <tr key={result.year}><td>{result.year}</td><td>{result.excellent}%</td><td>{result.veryGood}%</td><td><strong>{result.combined}%</strong></td></tr>)}</tbody>
+        </table></div>
+        <p style={{ color: 'var(--text3)', fontSize: 11, marginTop: 12 }}>ที่มา: สไลด์ผลการสำรวจ HSCS ปี 2567 หน้า 5 · ตัวเลขแสดงตามรายงานต้นฉบับ</p>
       </div>
-
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header"><div className="card-title">HRO 5 มิติ — High Reliability Organization</div></div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              { name: 'Preoccupation with Failure', pct: 70, badge: 'badge-green', desc: 'หมกมุ่นกับความล้มเหลว — มองทุกความสำเร็จเป็นโอกาสที่ความล้มเหลวจะเกิด ใส่ใจ near miss, small failure ก่อนกลายเป็นเหตุใหญ่ ใช้เครื่องมือเช่น FMEA' },
-              { name: 'Reluctance to Simplify', pct: 35, badge: 'badge-amber', desc: 'ไม่ลดทอนความซับซ้อน — ไม่ด่วนสรุปสาเหตุง่ายๆ ไม่ติด status quo หาคำอธิบายที่ลึกและรอบด้านกว่า' },
-              { name: 'Sensitivity to Operation', pct: 25, badge: 'badge-red', desc: 'ตื่นรู้ในหน้างาน — โฟกัสที่ Work-As-Done (ของจริง) ไม่ใช่ Work-As-Imagine (ตามตำรา) ฟัง qualitative knowledge จากผู้ปฏิบัติ' },
-              { name: 'Commitment to Resilience', pct: 80, badge: 'badge-green', desc: 'ยืดหยุ่นและฟื้นคืน — Elasticity (รับแรงกระแทกแล้วยังทำงานได้) + Recovery (ฟื้นจากวิกฤตได้)' },
-              { name: 'Deference to Expertise', pct: 20, badge: 'badge-red', desc: 'ยอมรับผู้เชี่ยวชาญในหน้างาน — Expertise = Knowledge + Credibility + Trust ไม่ใช่ตำแหน่ง; การตัดสินใจไหลไปหาคนที่รู้สถานการณ์จริง' },
-            ].map(d => (
-              <div key={d.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{d.name}</span>
-                  <span className={`badge ${d.badge}`}>{d.pct}%</span>
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.55 }}>{d.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="card">
-            <div className="card-header"><div className="card-title">5 องค์ประกอบของ Safety Culture (James Reason)</div></div>
-            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
-              {[
-                { abbr: 'IN', name: 'Informed Culture', desc: 'รู้สิ่งที่กำลังเกิดและสิ่งที่อาจเกิด — evidence-based', bg: 'var(--blue-bg)', color: 'var(--accent)' },
-                { abbr: 'RE', name: 'Reporting Culture', desc: 'กล้ารายงานเหตุการณ์และ near miss โดยไม่กลัวถูกลงโทษ', bg: 'var(--green-bg)', color: 'var(--green)' },
-                { abbr: 'FL', name: 'Flexible Culture', desc: 'ปรับโครงสร้างได้เมื่อสถานการณ์เปลี่ยน อำนาจไหลไปหาผู้เชี่ยวชาญ', bg: 'var(--amber-bg)', color: 'var(--amber)' },
-                { abbr: 'JU', name: 'Just Culture', desc: 'แยก human error ออกจาก reckless behavior — ลงโทษเฉพาะที่ตั้งใจ ไม่โทษคนที่พลาดจากระบบ', bg: 'var(--purple-bg)', color: '#a088f8' },
-                { abbr: 'LE', name: 'Learning Culture', desc: 'เรียนรู้และเปลี่ยนแปลงจากบทเรียน ไม่ทำ RCA แล้วเก็บใส่แฟ้ม', bg: 'var(--red-bg)', color: 'var(--red)' },
-            ].map(c => (
-              <div key={c.abbr} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <span style={{
-                  width: 36, height: 36, borderRadius: 8, background: c.bg, color: c.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, fontWeight: 600, flexShrink: 0,
-                }}>{c.abbr}</span>
-                <div>
-                  <div style={{ fontWeight: 600, marginBottom: 2 }}>{c.name}</div>
-                  <div style={{ color: 'var(--text3)', fontSize: 11, lineHeight: 1.5 }}>{c.desc}</div>
-                </div>
-              </div>
-            ))}
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header"><div className="card-title">Psychological Safety — Mayo Clinic Model</div></div>
-            <div className="card-body" style={{ fontSize: 12, lineHeight: 1.7, color: 'var(--text2)' }}>
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ color: 'var(--text)', fontWeight: 600 }}>นิยาม:</span> การรับรู้ของคนในทีมว่าสามารถพูดความเห็น ตั้งคำถาม หรือยอมรับความผิดพลาดได้โดยไม่ถูกลงโทษหรืออับอาย
-              </div>
-              <ul style={{ margin: '8px 0 0 16px', padding: 0, color: 'var(--text3)', fontSize: 11, lineHeight: 1.7 }}>
-                <li>Mutual respect — Professional tone of communication</li>
-                <li>Flattened hierarchy ระหว่างวิชาชีพ</li>
-                <li>Management of disruptive behavior</li>
-                <li>Encourage concerns และ feedback อย่างจริงจัง</li>
-                <li>Celebrate &amp; praise new ideas</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+    </section>
+    <section className="card">
+      <div className="card-header"><div className="card-title">รายงานผลสำรวจฉบับเต็ม</div></div>
+      <div className="card-body" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        <a className="tb-btn tb-btn-ghost" href="/culture/survey-2566.pptx" download>ดาวน์โหลดรายงานปี 2566</a>
+        <a className="tb-btn tb-btn-ghost" href="/culture/survey-2567.pptx" download>ดาวน์โหลดรายงานปี 2567</a>
       </div>
-
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="card-header"><div className="card-title">System Thinking — เปลี่ยนกระบวนทัศน์การมองปัญหา</div></div>
-        <div className="card-body">
-          <div className="grid-3">
-            {[
-              ['The Parts', 'The Whole'],
-              ['Objects', 'Relationship'],
-              ['Hierarchy', 'Multileveled Network'],
-              ['Structure', 'Process'],
-              ['Analysis', 'Context'],
-            ].map(([from, to]) => (
-              <div key={from} style={{ padding: 14, border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg3)' }}>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>เดิม</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--red)' }}>{from}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>→</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>ใหม่</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>{to}</div>
-              </div>
-            ))}
-            <div style={{ padding: 14, border: '1px solid rgba(79,142,247,0.3)', borderRadius: 'var(--r-sm)', background: 'var(--blue-bg)' }}>
-              <div style={{ fontSize: 11, color: 'var(--accent)', marginBottom: 4 }}>หัวใจ</div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--accent)' }}>เห็นทั้งระบบ</div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>เห็นความสัมพันธ์ ไม่หาคนผิด — หา process ที่ปล่อยให้ผิดได้</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+    </section>
+  </>;
 }

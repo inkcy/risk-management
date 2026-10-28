@@ -24,7 +24,7 @@ function renderMarkdown(text: string) {
   const flushBuf = () => {
     if (buf.length === 0) return;
     blocks.push(
-      <p key={blocks.length} style={{ margin: '6px 0', fontSize: 13, lineHeight: 1.75 }}>
+      <p key={blocks.length} style={{ margin: '6px 0', fontSize: 15, lineHeight: 1.75 }}>
         {renderInline(buf.join(' '))}
       </p>,
     );
@@ -37,7 +37,7 @@ function renderMarkdown(text: string) {
       flushBuf();
       blocks.push(
         <h3 key={blocks.length} style={{
-          fontSize: 15, fontWeight: 600, color: 'var(--accent)',
+          fontSize: 17.3, fontWeight: 600, color: 'var(--accent)',
           marginTop: 18, marginBottom: 8, paddingBottom: 4,
           borderBottom: '1px solid var(--border)',
         }}>
@@ -48,7 +48,7 @@ function renderMarkdown(text: string) {
       flushBuf();
       blocks.push(
         <h4 key={blocks.length} style={{
-          fontSize: 13, fontWeight: 600, color: 'var(--text)',
+          fontSize: 15, fontWeight: 600, color: 'var(--text)',
           marginTop: 12, marginBottom: 6,
         }}>
           {line.replace(/^###\s+/, '')}
@@ -59,7 +59,7 @@ function renderMarkdown(text: string) {
       blocks.push(
         <div key={blocks.length} style={{
           paddingLeft: 16, position: 'relative',
-          margin: '3px 0', fontSize: 13, lineHeight: 1.7,
+          margin: '3px 0', fontSize: 15, lineHeight: 1.7,
         }}>
           <span style={{ position: 'absolute', left: 4, color: 'var(--text3)' }}>•</span>
           {renderInline(line.replace(/^[-*]\s+/, ''))}
@@ -71,7 +71,7 @@ function renderMarkdown(text: string) {
       blocks.push(
         <div key={blocks.length} style={{
           paddingLeft: 22, position: 'relative',
-          margin: '3px 0', fontSize: 13, lineHeight: 1.7,
+          margin: '3px 0', fontSize: 15, lineHeight: 1.7,
         }}>
           <span style={{ position: 'absolute', left: 0, color: 'var(--accent)', fontWeight: 600 }}>{num}.</span>
           {renderInline(line.replace(/^\d+\.\s+/, ''))}
@@ -176,12 +176,12 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
         {!result && !loading && !error && (
           <div style={{
             padding: '20px 0', textAlign: 'center',
-            color: 'var(--text3)', fontSize: 12, lineHeight: 1.8,
+            color: 'var(--text3)', fontSize: 13.8, lineHeight: 1.8,
           }}>
             <div style={{ marginBottom: 8 }}>
               คลิกปุ่ม &quot;วิเคราะห์ด้วย AI&quot; เพื่อให้ Gemini จัดทำร่างตาม RCA_Report (3).doc
             </div>
-            <div style={{ fontSize: 11 }}>
+            <div style={{ fontSize: 12.6 }}>
               ผลลัพธ์ประกอบด้วย Story/Timeline · Potential change · ปัจจัยเกื้อหนุน · RCA/มาตรการ · Process Management
             </div>
           </div>
@@ -192,7 +192,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
             <div className="loading-skeleton" style={{ height: 12, marginBottom: 10, borderRadius: 4 }} />
             <div className="loading-skeleton" style={{ height: 12, marginBottom: 10, borderRadius: 4, width: '85%', marginInline: 'auto' }} />
             <div className="loading-skeleton" style={{ height: 12, borderRadius: 4, width: '70%', marginInline: 'auto' }} />
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 14 }}>
+            <div style={{ fontSize: 12.6, color: 'var(--text3)', marginTop: 14 }}>
               กำลังให้ AI วิเคราะห์… อาจใช้เวลา 10-30 วินาที
             </div>
           </div>
@@ -202,7 +202,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
           <div style={{
             padding: 12, borderRadius: 6,
             background: 'var(--red-bg)', color: 'var(--red)',
-            fontSize: 12,
+            fontSize: 13.8,
           }}>
             ✗ {error}
           </div>
@@ -214,7 +214,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
               <div style={{
                 marginBottom: 12, padding: '8px 12px',
                 background: 'var(--amber-bg)', color: 'var(--amber)',
-                borderRadius: 4, fontSize: 11, lineHeight: 1.6,
+                borderRadius: 4, fontSize: 12.6, lineHeight: 1.6,
               }}>
                 <strong>Demo mode</strong> — ยังไม่ได้ตั้งค่า <code>GEMINI_API_KEY</code> ใน <code>frontend/.env.local</code> · กำลังแสดงผลตัวอย่าง
               </div>
@@ -226,7 +226,7 @@ export function RcaAiPanel({ irCode }: { irCode: string }) {
               <div style={{
                 marginTop: 18, paddingTop: 12,
                 borderTop: '1px solid var(--border)',
-                fontSize: 10, color: 'var(--text3)',
+                fontSize: 11.5, color: 'var(--text3)',
                 display: 'flex', gap: 12, flexWrap: 'wrap',
               }}>
                 <span>โมเดล: <code>{result.model ?? '—'}</code></span>

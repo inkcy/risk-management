@@ -13,7 +13,7 @@ export function DemoBanner({ error }: Props) {
       border: isDemo ? '1px solid rgba(245,165,36,0.35)' : '1px solid rgba(226,81,74,0.35)',
       background: isDemo ? 'rgba(245,165,36,0.08)' : 'var(--red-bg)',
       color: isDemo ? 'var(--amber)' : 'var(--red)',
-      fontSize: 12,
+      fontSize: 13.8,
       lineHeight: 1.55,
     }}>
       {isDemo ? (

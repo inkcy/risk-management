@@ -43,7 +43,7 @@ export function RiskMatrixAssessment() {
         {[5,4,3,2,1].map(i => <tr key={i}><th>{impacts[i-1]}</th>{[1,2,3,4,5].map(l => { const color = matrixColors[type][i-1][l-1]; return <td key={l}><button type="button" aria-label={`${impacts[i-1]}, ${frequency[l-1]}, สี${colorLabels[color]}`} aria-pressed={impact === i && likelihood === l} className={`risk-matrix-pick risk-color-${color}`} onClick={() => { setImpact(i); setLikelihood(l); }}>{colorLabels[color]}</button></td>; })}</tr>)}
       </tbody><tfoot><tr><th>ผลกระทบ / ความถี่</th>{frequency.map((f, i) => <th key={f} className="risk-frequency-heading"><strong>{i + 1}</strong><br />{f}</th>)}</tr></tfoot></table></div>
       <p className="risk-assessment-result">ผลการจับคู่: <strong>สี{colorLabels[selectedColor]}</strong> · {impacts[impact - 1]} · {frequency[likelihood - 1]}</p>
-      <p style={{ color: 'var(--text3)', fontSize: 11, marginTop: 8 }}>สีตามแบบฟอร์ม FM-QPS-QSMH-007/04 ซึ่งไม่ได้ระบุคะแนนตัวเลขในแต่ละช่อง · ผลประเมินนี้ยังไม่ได้บันทึกลงทะเบียน</p>
+      <p style={{ color: 'var(--text3)', fontSize: 12.6, marginTop: 8 }}>สีตามแบบฟอร์ม FM-QPS-QSMH-007/04 ซึ่งไม่ได้ระบุคะแนนตัวเลขในแต่ละช่อง · ผลประเมินนี้ยังไม่ได้บันทึกลงทะเบียน</p>
     </div>
   </section>;
 }

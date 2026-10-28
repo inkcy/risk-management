@@ -158,7 +158,7 @@ function Section({
           {no && <span style={{ color: 'var(--accent)', marginRight: 6 }}>{no}</span>}
           {title}
         </div>
-        {sub && <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 12.6, color: 'var(--text3)', lineHeight: 1.6 }}>{sub}</div>}
       </div>
       <div className="card-body">{children}</div>
     </div>
@@ -642,11 +642,11 @@ export default function RcaFormPage() {
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-header">
             <div className="card-title">☁ ร่างที่บันทึกไว้บนระบบ</div>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>เปิดต่อได้จากทุกเครื่อง</span>
+            <span style={{ fontSize: 12.6, color: 'var(--text3)' }}>เปิดต่อได้จากทุกเครื่อง</span>
           </div>
           <div className="card-body">
             {cloudForms.length === 0 ? (
-              <div style={{ fontSize: 12.5, color: 'var(--text2)' }}>
+              <div style={{ fontSize: 14.4, color: 'var(--text2)' }}>
                 ยังไม่มีร่างที่บันทึกไว้ — กรอกฟอร์มแล้วกดปุ่ม <strong>บันทึก</strong> ได้เลย
               </div>
             ) : (
@@ -671,7 +671,7 @@ export default function RcaFormPage() {
                           {new Date(f.updated_at).toLocaleString('th-TH', {
                             day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit',
                           })}
-                          <div style={{ fontSize: 10.5, color: 'var(--text3)' }}>
+                          <div style={{ fontSize: 12.1, color: 'var(--text3)' }}>
                             {f.updated_by_name ?? f.updated_by_email ?? '—'}
                           </div>
                         </td>
@@ -770,7 +770,7 @@ export default function RcaFormPage() {
         <div className="sub-label" style={{ marginTop: 18 }}>
           COLONOGY OF EVENT (WORK FLOW) — กระบวนการทำงานที่เกี่ยวข้องกับเหตุการณ์
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>ด้านกระบวนการดูแลผู้ป่วย (สำหรับความเสี่ยงด้านคลินิก) — กรอกเฉพาะขั้นตอนที่เกี่ยวข้อง</div>
+        <div style={{ fontSize: 12.6, color: 'var(--text3)', marginBottom: 10 }}>ด้านกระบวนการดูแลผู้ป่วย (สำหรับความเสี่ยงด้านคลินิก) — กรอกเฉพาะขั้นตอนที่เกี่ยวข้อง</div>
         {COLONOGY_CLINICAL.map((label, i) => (
           <Area
             key={label}
@@ -781,7 +781,7 @@ export default function RcaFormPage() {
             onChange={v => set('colonogyClinical', form.colonogyClinical.map((x, j) => (j === i ? v : x)))}
           />
         ))}
-        <div style={{ fontSize: 11, color: 'var(--text3)', margin: '14px 0 10px' }}>ด้านทั่วไป (สำหรับความเสี่ยงทั่วไป)</div>
+        <div style={{ fontSize: 12.6, color: 'var(--text3)', margin: '14px 0 10px' }}>ด้านทั่วไป (สำหรับความเสี่ยงทั่วไป)</div>
         {COLONOGY_GENERAL.map((label, i) => (
           <Area
             key={label}
@@ -919,7 +919,7 @@ export default function RcaFormPage() {
             ⤓ ส่งออก Word (.docx)
           </button>
           <Link href="/rca" className="tb-btn tb-btn-ghost">← กลับหน้า RCA</Link>
-          <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+          <span style={{ fontSize: 12.6, color: 'var(--text3)' }}>
             {formId
               ? `บันทึกบนระบบแล้ว (ใบที่ ${formId}) — เปิดต่อจากเครื่องไหนก็ได้`
               : 'ยังไม่ได้บันทึกลงระบบ — ตอนนี้ร่างอยู่ในเบราว์เซอร์นี้เท่านั้น'}

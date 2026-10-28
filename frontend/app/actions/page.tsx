@@ -78,7 +78,7 @@ export default async function ActionsPage() {
                       <div style={{ flex: 1, height: 4, background: 'var(--bg4)', borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{ width: `${a.progress}%`, height: '100%', background: progressColor(a.progress), borderRadius: 2 }} />
                       </div>
-                      <span style={{ fontSize: 10, color: progressColor(a.progress) }}>{a.progress}%</span>
+                      <span style={{ fontSize: 11.5, color: progressColor(a.progress) }}>{a.progress}%</span>
                     </div>
                   </td>
                   <td><span className={`badge ${statusBadge[a.status] ?? 'badge-blue'}`}>{statusLabel[a.status] ?? a.status}</span></td>

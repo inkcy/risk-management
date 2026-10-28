@@ -64,17 +64,17 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
       <div className="glow-card" style={{ padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
+            <div style={{ fontSize: 12.6, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
               Root Cause Analysis
             </div>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>{incident.ir_code} — {incident.title}</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+            <div style={{ fontSize: 20.7, fontWeight: 600, marginBottom: 4 }}>{incident.ir_code} — {incident.title}</div>
+            <div style={{ fontSize: 13.8, color: 'var(--text3)' }}>
               {new Date(incident.occurred_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
               {' · '}{incident.unit_name ?? '—'}{' · '}{categoryLabel[incident.category] ?? incident.category}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-            <span className={`badge ${sevBadge(incident.severity)}`} style={{ fontSize: 13, padding: '6px 12px' }}>
+            <span className={`badge ${sevBadge(incident.severity)}`} style={{ fontSize: 15, padding: '6px 12px' }}>
               ระดับ {incident.severity}
             </span>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -154,7 +154,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
                       <div key={d.key}>
                         <div className="hro-top">
                           <span className="hro-name">{d.label}</span>
-                          <span style={{ fontSize: 11, color: scoreColor(val) }}>{val}%</span>
+                          <span style={{ fontSize: 12.6, color: scoreColor(val) }}>{val}%</span>
                         </div>
                         <div className="hro-track">
                           <div className="hro-fill-bar" style={{ width: `${val}%`, background: scoreColor(val) }} />
@@ -183,7 +183,7 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
                     <div className="action-desc">{a.description}</div>
                     <div className="action-footer">
                       <span className={`badge ${s.badge}`}>{s.label}</span>
-                      <span style={{ fontSize: 10, color: 'var(--text3)' }}>{a.due_date ?? '—'}</span>
+                      <span style={{ fontSize: 11.5, color: 'var(--text3)' }}>{a.due_date ?? '—'}</span>
                     </div>
                   </div>
                 );

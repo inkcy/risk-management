@@ -70,7 +70,7 @@ export function Topbar({ user }: { user: SessionUser | null }) {
           className="tb-btn tb-btn-ghost"
           onClick={toggleTheme}
           title="เปลี่ยนธีม"
-          style={{ fontSize: 15, padding: '7px 10px' }}
+          style={{ fontSize: 17.3, padding: '7px 10px' }}
         >
           {isLight ? '☀️' : '🌙'}
         </button>
@@ -94,14 +94,14 @@ export function Topbar({ user }: { user: SessionUser | null }) {
                   referrerPolicy="no-referrer"
                 />
               )}
-              <span className="user-name" style={{ fontSize: 12.5, lineHeight: 1.25 }}>
+              <span className="user-name" style={{ fontSize: 14.4, lineHeight: 1.25 }}>
                 {user.name ?? user.email}
                 <br />
-                <span style={{ color: 'var(--text3)', fontSize: 11 }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+                <span style={{ color: 'var(--text3)', fontSize: 12.6 }}>{ROLE_LABEL[user.role] ?? user.role}</span>
               </span>
             </Link>
             <form action="/api/auth/logout" method="post">
-              <button className="tb-btn tb-btn-ghost" type="submit" title="ออกจากระบบ" style={{ fontSize: 15, padding: '7px 10px' }}>
+              <button className="tb-btn tb-btn-ghost" type="submit" title="ออกจากระบบ" style={{ fontSize: 17.3, padding: '7px 10px' }}>
                 ⏻
               </button>
             </form>

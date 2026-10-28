@@ -244,10 +244,10 @@ export default function ReportPage() {
                 marginTop: 14, padding: '14px 16px', borderRadius: 8,
                 background: 'var(--green-bg)', border: '1px solid rgba(62,207,142,0.25)',
               }}>
-                <div style={{ color: 'var(--green)', fontWeight: 600, marginBottom: 6, fontSize: 13 }}>
+                <div style={{ color: 'var(--green)', fontWeight: 600, marginBottom: 6, fontSize: 15 }}>
                   ✓ ระบบรับรายงานเรียบร้อย — {lastIrCode}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 10, lineHeight: 1.7 }}>
+                <div style={{ fontSize: 12.6, color: 'var(--text2)', marginBottom: 10, lineHeight: 1.7 }}>
                   ทีมบริหารความเสี่ยงจะติดตามต่อ · คุณสามารถดูสถานะหรือเริ่มทำ RCA ได้เลย
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -266,12 +266,12 @@ export default function ReportPage() {
               </div>
             )}
             {status === 'error' && (
-              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', fontSize: 12 }}>
+              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--red-bg)', color: 'var(--red)', fontSize: 13.8 }}>
                 ✗ {message}
               </div>
             )}
             {status === 'draft' && (
-              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--blue-bg)', color: 'var(--accent)', fontSize: 12 }}>
+              <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 6, background: 'var(--blue-bg)', color: 'var(--accent)', fontSize: 13.8 }}>
                 {message}
               </div>
             )}
@@ -302,21 +302,21 @@ export default function ReportPage() {
                   >
                     <span className={`badge ${sevCls}`} style={{ flexShrink: 0 }}>{r.severity}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 13.8, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {r.title}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>
+                      <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>
                         {r.ir_code} · {new Date(r.submitted_at).toLocaleString('th-TH', {
                           day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                           hour12: false, timeZone: 'Asia/Bangkok',
                         })}
                       </div>
                     </div>
-                    <span style={{ color: 'var(--text3)', fontSize: 14 }}>›</span>
+                    <span style={{ color: 'var(--text3)', fontSize: 16.1 }}>›</span>
                   </Link>
                 );
               })}
-              <div style={{ paddingTop: 8, fontSize: 10, color: 'var(--text3)', textAlign: 'center' }}>
+              <div style={{ paddingTop: 8, fontSize: 11.5, color: 'var(--text3)', textAlign: 'center' }}>
                 บันทึกอยู่ในเบราว์เซอร์ของคุณ (localStorage)
               </div>
             </div>
@@ -325,7 +325,7 @@ export default function ReportPage() {
 
         <div className="card">
           <div className="card-header"><div className="card-title">เกณฑ์การรายงาน</div></div>
-          <div className="card-body" style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.8 }}>
+          <div className="card-body" style={{ fontSize: 13.8, color: 'var(--text2)', lineHeight: 1.8 }}>
             <div style={{ marginBottom: 10 }}><span style={{ color: 'var(--red)', fontWeight: 600 }}>ระดับ E–I</span> — ต้องทำ RCA ภายใน 7 วัน รายงานคณะกรรมการ</div>
             <div style={{ marginBottom: 10 }}><span style={{ color: 'var(--amber)', fontWeight: 600 }}>ระดับ C–D</span> — วิเคราะห์สาเหตุภายใน 30 วัน</div>
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>ระดับ A–B</span> — บันทึกและติดตามรายเดือน</div>
@@ -350,11 +350,11 @@ export default function ReportPage() {
                   <span style={{
                     width: 24, height: 24, borderRadius: 6, background: 'var(--red-bg)',
                     color: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, flexShrink: 0,
+                    fontSize: 13.8, flexShrink: 0,
                   }}>!</span>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 500 }}>{title}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sub}</div>
+                    <div style={{ fontSize: 13.8, fontWeight: 500 }}>{title}</div>
+                    <div style={{ fontSize: 12.6, color: 'var(--text3)' }}>{sub}</div>
                   </div>
                 </div>
               ))}

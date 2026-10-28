@@ -85,7 +85,7 @@ export default async function DashboardPage() {
             <div className="card-title">เหตุการณ์ด่วน</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div className="notif-dot"></div>
-              <span style={{ fontSize: 11, color: 'var(--text3)' }}>{recent.length} รายการ</span>
+              <span style={{ fontSize: 12.6, color: 'var(--text3)' }}>{recent.length} รายการ</span>
             </div>
           </div>
           <div className="card-body" style={{ paddingTop: 8 }}>
@@ -134,16 +134,16 @@ export default async function DashboardPage() {
           <div className="card-body">
             <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
               <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--green)' }}>{stats.totals.actions_done}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>เสร็จแล้ว</div>
+                <div style={{ fontSize: 29.9, fontWeight: 600, color: 'var(--green)' }}>{stats.totals.actions_done}</div>
+                <div style={{ fontSize: 12.6, color: 'var(--text3)', marginTop: 2 }}>เสร็จแล้ว</div>
               </div>
               <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--amber)' }}>{stats.totals.actions_in_progress}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>กำลังดำเนินการ</div>
+                <div style={{ fontSize: 29.9, fontWeight: 600, color: 'var(--amber)' }}>{stats.totals.actions_in_progress}</div>
+                <div style={{ fontSize: 12.6, color: 'var(--text3)', marginTop: 2 }}>กำลังดำเนินการ</div>
               </div>
               <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--accent)' }}>{stats.totals.actions_planned}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>วางแผนแล้ว</div>
+                <div style={{ fontSize: 29.9, fontWeight: 600, color: 'var(--accent)' }}>{stats.totals.actions_planned}</div>
+                <div style={{ fontSize: 12.6, color: 'var(--text3)', marginTop: 2 }}>วางแผนแล้ว</div>
               </div>
             </div>
             <div className="progress-item">
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
               </div>
             </div>
             {remainingAction && (
-              <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
+              <div style={{ marginTop: 16, fontSize: 12.6, color: 'var(--text3)', lineHeight: 1.6 }}>
                 คงเหลือ &quot;{remainingAction.title}&quot; — กำหนดเสร็จ {remainingAction.due_date ?? '—'}
               </div>
             )}

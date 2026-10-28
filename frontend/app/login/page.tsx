@@ -67,10 +67,10 @@ export default async function LoginPage({
             <ShieldMark />
           </div>
 
-          <h1 style={{ fontSize: 21, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 7px' }}>
+          <h1 style={{ fontSize: 24.2, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 7px' }}>
             ระบบบริหารความเสี่ยง
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 26px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: 'var(--text2)', margin: '0 0 26px', lineHeight: 1.6 }}>
             Hospital Risk Management
             <br />
             เข้าสู่ระบบด้วยบัญชีของโรงพยาบาล
@@ -82,7 +82,7 @@ export default async function LoginPage({
               background: 'var(--red-bg)',
               color: 'var(--red)',
               borderRadius: 12, padding: '11px 13px',
-              fontSize: 12.5, lineHeight: 1.6, textAlign: 'left',
+              fontSize: 14.4, lineHeight: 1.6, textAlign: 'left',
               marginBottom: 18,
             }}>
               <span aria-hidden="true" style={{ lineHeight: 1.45 }}>⚠</span>
@@ -100,10 +100,10 @@ export default async function LoginPage({
               background: 'var(--bg3)', borderRadius: 14,
               padding: '15px 16px', textAlign: 'left',
             }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>
+              <div style={{ fontSize: 14.4, fontWeight: 600, marginBottom: 4 }}>
                 ยังเปิดใช้งานการเข้าสู่ระบบไม่ได้
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.65, marginBottom: 11 }}>
+              <div style={{ fontSize: 13.8, color: 'var(--text2)', lineHeight: 1.65, marginBottom: 11 }}>
                 ผู้ดูแลระบบต้องตั้งค่าตัวแปรต่อไปนี้ก่อน (ขั้นตอนอยู่ใน README)
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -111,7 +111,7 @@ export default async function LoginPage({
                   <code
                     key={name}
                     style={{
-                      fontSize: 11, padding: '4px 9px', borderRadius: 999,
+                      fontSize: 12.6, padding: '4px 9px', borderRadius: 999,
                       background: 'var(--red-bg)', color: 'var(--red)',
                       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                     }}
@@ -125,7 +125,7 @@ export default async function LoginPage({
         </div>
 
         <p style={{
-          fontSize: 11.5, color: 'var(--text3)',
+          fontSize: 13.2, color: 'var(--text3)',
           margin: '18px auto 0', maxWidth: 360,
           lineHeight: 1.75, textAlign: 'center',
         }}>

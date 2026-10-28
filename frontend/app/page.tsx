@@ -53,6 +53,8 @@ export default async function DashboardPage() {
     <>
       <DemoBanner error={statsErr} />
 
+      <Announcements isAdmin={user?.role === 'admin'} />
+
       <div className="stats-row">
         <div className="stat-card blue">
           <div className="stat-label">อุบัติการณ์ทั้งหมด</div>
@@ -164,7 +166,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <Announcements isAdmin={user?.role === 'admin'} />
     </>
   );
 }

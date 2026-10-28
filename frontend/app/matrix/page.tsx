@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { getStats } from '@/lib/api';
 import { DemoBanner } from '@/components/DemoBanner';
+import { RiskMatrixAssessment } from '@/components/RiskMatrixAssessment';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,8 @@ export default async function MatrixPage() {
   return (
     <>
       <DemoBanner error={error} />
+
+      <RiskMatrixAssessment />
 
       <div className="grid-2">
         <div className="card">

@@ -30,6 +30,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
       { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA' },
       { href: '/rca/form', icon: '▤', label: 'แบบฟอร์ม RCA' },
       { href: '/matrix', icon: '▦', label: 'Risk Matrix' },
+      { href: '/risk-profile', icon: '▤', label: 'Risk Profile' },
       { href: '/cauti', icon: '⚕', label: 'CAUTI QuickAlert' },
     ],
   },

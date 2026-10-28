@@ -345,8 +345,19 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .announcement-meta strong { font-size: 13px; }
 .announcement-title { margin: 4px 16px 8px; font-size: 16px; overflow-wrap: anywhere; }
 .announcement-description { margin: 4px 16px 16px; color: var(--text2); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.risk-assessment-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.risk-assessment-fields label { display: grid; gap: 6px; color: var(--text2); font-size: 12px; }
+.risk-assessment-fields select { width: 100%; padding: 9px; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg3); color: var(--text); font: inherit; }
+.risk-assessment-table-wrap { overflow-x: auto; }
+.risk-assessment-table { width: 100%; min-width: 560px; border-spacing: 5px; font-size: 12px; }
+.risk-assessment-table th { text-align: left; color: var(--text2); font-weight: 500; }
+.risk-assessment-table td { width: 12%; }
+.risk-matrix-pick { width: 100%; min-height: 42px; border: 2px solid transparent; border-radius: 8px; color: var(--text); font: inherit; cursor: pointer; }
+.risk-matrix-pick[aria-pressed='true'] { border-color: var(--accent); outline: 2px solid var(--accent); }
+.risk-assessment-result { margin-top: 14px; font-size: 14px; color: var(--text); }
 
 @media (max-width: 768px) {
+  .risk-assessment-fields { grid-template-columns: 1fr; }
   .announcement-form { grid-template-columns: 1fr; }
   .announcement-form .tb-btn { width: fit-content; }
   .announcement-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; }

@@ -38,7 +38,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
     label: 'การจัดการ',
     items: [
       { href: '/actions', icon: '✓', label: 'มาตรการแก้ไข' },
-      { href: '/report', icon: '+', label: 'รายงานใหม่' },
+      { href: '/report', icon: '+', label: 'รายงานอุบัติการณ์ใหม่' },
     ],
   },
   {

@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getStats, getActions, getIncidents, categoryLabel } from '@/lib/api';
 import { BarChart } from '@/components/BarChart';
 import { DemoBanner } from '@/components/DemoBanner';
+import { Announcements } from '@/components/Announcements';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +18,11 @@ const sevBadge = (s: string) =>
   : ['C', 'D'].includes(s) ? 'badge-amber' : 'badge-blue';
 
 export default async function DashboardPage() {
-  const [{ data: stats, error: statsErr }, { data: actions }, { data: incidents }] = await Promise.all([
+  const [{ data: stats, error: statsErr }, { data: actions }, { data: incidents }, user] = await Promise.all([
     getStats(),
     getActions(),
     getIncidents(),
+    getSessionUser(),
   ]);
 
   const recent = incidents.slice(0, 3);
@@ -160,6 +163,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <Announcements isAdmin={user?.role === 'admin'} />
     </>
   );
 }

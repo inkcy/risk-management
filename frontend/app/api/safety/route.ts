@@ -11,6 +11,16 @@ export async function PUT(request:NextRequest) {
     if (!Number.isInteger(body.revision)||body.revision<0||!data||!strings(data.periods)||!Array.isArray(data.indicators)||data.indicators.length<1||data.indicators.length>200||JSON.stringify(data).length>500000||!Array.isArray(data.notes)||typeof data.source!=='string'||typeof data.sourceNote!=='string') return NextResponse.json({error:'รูปแบบข้อมูลไม่ถูกต้อง'},{status:400});
     const ids=new Set();
     for (const item of data.indicators) {
+      if (item?.measurements !== undefined) {
+        const seen=new Set();
+        if (!Array.isArray(item.measurements)||item.measurements.length>5000) return NextResponse.json({error:'ข้อมูลช่วงเวลาไม่ถูกต้อง'},{status:400});
+        for (const r of item.measurements) {
+          if (!r||!['month','quarter','year'].includes(r.mode)||!Number.isInteger(r.year)||r.year<2400||r.year>2800||!Number.isInteger(r.period)||r.period<1||r.period>(r.mode==='month'?12:r.mode==='quarter'?4:1)||(r.value!==null&&(typeof r.value!=='number'||!Number.isFinite(r.value)||r.value<0))) return NextResponse.json({error:'กรุณาตรวจสอบปี ช่วงเวลา และค่าตัวเลข'},{status:400});
+          const key=`${r.mode}:${r.year}:${r.period}`;
+          if(seen.has(key)) return NextResponse.json({error:'พบช่วงเวลาซ้ำ'},{status:400});
+          seen.add(key);
+        }
+      }
       if (!item||!['id','group','name','unit','targetText','benchmark','note'].every(k=>typeof item[k]==='string'&&item[k].length<=5000)||ids.has(item.id)||!['lt','gt','eq','none'].includes(item.comparison)||!Number.isFinite(item.target)||item.target<0||!Number.isInteger(item.slide)||!Array.isArray(item.raw)||!item.raw.every((v:unknown)=>typeof v==='string')||(item.periods&&!strings(item.periods))||!Array.isArray(item.values)||item.values.length!==(item.periods??data.periods).length||!item.values.every((v:unknown)=>v===null||(typeof v==='number'&&Number.isFinite(v)&&v>=0))) return NextResponse.json({error:'กรุณาตรวจสอบตัวชี้วัดและค่าตัวเลข (ต้องไม่ติดลบ)'},{status:400});
       ids.add(item.id);
     }

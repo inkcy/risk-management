@@ -1,6 +1,7 @@
 import seed from './data/safety.json';
 import { dbConfigured, query } from './db';
-export type SafetyIndicator = { id:string; group:string; name:string; targetText:string; target:number; comparison:string; unit:string; values:(number|null)[]; raw:string[]; periods?:string[]; benchmark:string; slide:number; note:string };
+export type SafetyMeasurement = { year:number; mode:'month'|'quarter'|'year'; period:number; value:number|null };
+export type SafetyIndicator = { id:string; group:string; name:string; targetText:string; target:number; comparison:string; unit:string; values:(number|null)[]; raw:string[]; periods?:string[]; benchmark:string; slide:number; note:string; measurements?:SafetyMeasurement[] };
 export type SafetyData = { periods:string[]; indicators:SafetyIndicator[]; notes:{slide:number;text:string}[]; source:string; sourceNote:string };
 export async function loadSafety():Promise<{data:SafetyData; revision:number; error?:string}> {
   if (!dbConfigured()) return {data:seed,revision:0};

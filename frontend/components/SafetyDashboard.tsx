@@ -1,13 +1,14 @@
 'use client';
 import { useState } from 'react';
 import type { SafetyData, SafetyIndicator } from '@/lib/safety';
+import { periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 
 function Trend({item,periods}:{item:SafetyIndicator;periods:string[]}) {
   const max=Math.max(...item.values.filter((v):v is number=>v!==null),item.comparison==='none'?0:item.target,0.01)*1.2;
   const x=(i:number)=>50+i*450/Math.max(periods.length-1,1);
   const y=(v:number)=>155-v/max*115;
   const count=item.unit==='ครั้ง';
-  return <svg viewBox="0 0 550 210" role="img" aria-label={`${item.name}: ${item.values.map((v,i)=>`${periods[i]} ${v??'ไม่มีข้อมูล'}`).join(', ')}`} style={{width:'100%',display:'block'}}>
+  return <svg viewBox="0 0 550 210" role="img" aria-label={`${item.name}: ${item.values.map((v,i)=>`${periods[i]} ${v??'ไม่มีข้อมูล'}`).join(', ')}`} style={{width:'100%',minWidth:periods.length>6?660:undefined,display:'block'}}>
     {[0,0.5,1].map(p=><g key={p}><line x1="45" x2="520" y1={y(max*p)} y2={y(max*p)} stroke="var(--border2)"/><text x="40" y={y(max*p)+4} textAnchor="end" fill="var(--text3)" fontSize="11">{Number((max*p).toPrecision(3))}</text></g>)}
     {item.comparison!=='none'&&<line x1="45" x2="520" y1={y(item.target)} y2={y(item.target)} stroke="var(--amber)" strokeWidth="2" strokeDasharray="6 5"/>}
     {!count&&item.values.map((v,i)=>v!==null&&i>0&&item.values[i-1]!==null?<line key={i} x1={x(i-1)} y1={y(item.values[i-1]!)} x2={x(i)} y2={y(v)} stroke="var(--accent)" strokeWidth="3"/>:null)}
@@ -21,6 +22,7 @@ function Trend({item,periods}:{item:SafetyIndicator;periods:string[]}) {
 
 export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{initial:SafetyData;initialRevision:number;canEdit:boolean;loadError?:string}) {
   const [data,setData]=useState(initial),[draft,setDraft]=useState(initial),[revision,setRevision]=useState(initialRevision);
+  const [mode,setMode]=useState<PeriodMode>('year'),[year,setYear]=useState(2568);
   const [group,setGroup]=useState(initial.indicators[0].group),[editing,setEditing]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState('');
   const groups=Array.from(new Set(data.indicators.map(i=>i.group)));
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
@@ -39,18 +41,30 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       {loadError&&<p role="alert">{loadError}</p>}{message&&<p role="status" style={{marginBottom:16}}>{message}</p>}
       <p style={{fontSize:13,color:'var(--text2)',marginBottom:16}}>{data.sourceNote}</p>
       <label style={{display:'block',marginBottom:20}}>หมวดตัวชี้วัด <select value={group} onChange={e=>setGroup(e.target.value)} style={{padding:10,maxWidth:'100%',background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}>{groups.map(g=><option key={g}>{g}</option>)}</select></label>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',marginBottom:12}}>
+        <div role="group" aria-label="รูปแบบช่วงเวลา" style={{display:'flex',gap:6}}>{([['month','รายเดือน'],['quarter','รายไตรมาส'],['year','รายปี']] as const).map(([value,label])=><button key={value} className={`tb-btn ${mode===value?'tb-btn-primary':'tb-btn-ghost'}`} aria-pressed={mode===value} onClick={()=>setMode(value)}>{label}</button>)}</div>
+        <label>ปีงบประมาณ <input aria-label="ปีงบประมาณ" type="number" min="2400" max="2800" value={year} onChange={e=>{const value=Number(e.target.value);if(Number.isInteger(value)&&value>=2400&&value<=2800)setYear(value);}} style={{width:100,padding:8,background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}/></label>
+      </div>
+      <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>ปีงบประมาณเริ่ม ต.ค. ของปีก่อน ถึง ก.ย. ของปีที่เลือก · Q1 ต.ค.–ธ.ค. · Q2 ม.ค.–มี.ค. · Q3 เม.ย.–มิ.ย. · Q4 ก.ค.–ก.ย.<br/>ข้อมูลรายเดือน ไตรมาส และปีบันทึกแยกกัน ไม่มีการเฉลี่ยหรือรวมอัตราอัตโนมัติ ข้อมูลรายปีที่ระบุ Q1–Q3 เป็นผลระหว่างปีตามต้นฉบับ</p>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>เส้นประสีส้ม = เป้าหมาย · สีเขียว = ผ่าน · สีแดง = ไม่ผ่าน · — = ไม่มีข้อมูล</p>
-      <div className="safety-grid">{visible.map(item=><article key={item.id} style={{padding:18,border:'1px solid var(--border2)',borderRadius:14,background:'var(--bg2)',minWidth:0}}>
+      <div className="safety-grid">{visible.map(item=>{
+        const series=periodSeries(item,data.periods,mode,year);
+        return <article key={item.id} style={{padding:18,border:'1px solid var(--border2)',borderRadius:14,background:'var(--bg2)',minWidth:0}}>
         <h3 style={{fontSize:16,lineHeight:1.6}}>{item.name}</h3><p style={{fontSize:12,color:'var(--text2)',marginTop:6}}>หน่วย: {item.unit} · เป้าหมาย: {item.targetText} · สไลด์ {item.slide}</p>
-        <Trend item={item} periods={item.periods??data.periods}/>
+        <p style={{fontSize:12,color:'var(--text2)',marginTop:6}}>{mode==='year'?'รายปี (รวมผลระหว่างปีที่ต้นฉบับระบุ)':`${mode==='month'?'รายเดือน':'รายไตรมาส'} ปีงบประมาณ ${year}`}</p>
+        <div style={{overflowX:'auto'}}><Trend item={{...item,values:series.map(r=>r.value)}} periods={series.map(r=>r.label)}/></div>
+        {series.every(r=>r.value===null)&&<p style={{fontSize:13,color:'var(--text2)',marginBottom:12}}>ยังไม่มีข้อมูลในช่วงเวลานี้{canEdit?' แอดมินสามารถกดแก้ไขเพื่อกรอกข้อมูลได้':''}</p>}
         {item.benchmark&&<p style={{fontSize:12}}>Benchmark: {item.benchmark} (ตามต้นฉบับ)</p>}{item.note&&<p style={{fontSize:12,color:'var(--amber)'}}>{item.note}</p>}
         {editing?<fieldset disabled={saving} style={{border:0,display:'grid',gap:10}}>
           <label>ชื่อตัวชี้วัด<input value={item.name} onChange={e=>patch(item.id,{name:e.target.value})}/></label>
-          <div className="safety-inputs">{(item.periods??data.periods).map((period,index)=><label key={period}>{period}<input type="number" min="0" step="any" value={item.values[index]??''} placeholder="ไม่มีข้อมูล" onChange={e=>patch(item.id,{values:item.values.map((v,j)=>j===index?(e.target.value===''?null:Number(e.target.value)):v)})}/></label>)}</div>
+          <p style={{fontSize:12}}>กรอกค่า{mode==='month'?'รายเดือน':mode==='quarter'?'รายไตรมาส':'รายปีเต็ม'} ช่องว่าง = ไม่มีข้อมูล</p>
+          <div className="safety-inputs">{series.map(row=><label key={`${row.year}-${row.period}`}>{row.label}{mode!=='year'?` ${year}`:''}<input type="number" min="0" step="any" value={row.value??''} placeholder="ไม่มีข้อมูล" onChange={e=>patch(item.id,{measurements:updateMeasurement(item,mode,row.year,row.period,e.target.value===''?null:Number(e.target.value))})}/></label>)}</div>
+          {mode==='year'&&<p style={{fontSize:12,color:'var(--amber)'}}>การกรอกค่าในช่องปีที่มีผล Q1–Q3 จะใช้ค่าที่กรอกเป็นผลรายปีเต็ม ข้อความต้นฉบับยังอยู่ในรายละเอียดอ้างอิง</p>}
           <div className="safety-inputs"><label>เกณฑ์<select value={item.comparison} onChange={e=>patch(item.id,{comparison:e.target.value})}><option value="eq">เท่ากับ</option><option value="lt">น้อยกว่า</option><option value="gt">มากกว่า</option><option value="none">ไม่ประเมิน</option></select></label><label>ค่าเป้าหมาย<input type="number" min="0" step="any" value={item.target} onChange={e=>{const target=Number(e.target.value);patch(item.id,{target,targetText:`${item.comparison==='lt'?'< ':item.comparison==='gt'?'> ':''}${target}`});}}/></label></div>
           <label>ข้อความเป้าหมาย<input value={item.targetText} onChange={e=>patch(item.id,{targetText:e.target.value})}/></label><label>หน่วย<input value={item.unit} onChange={e=>patch(item.id,{unit:e.target.value})}/></label><label>Benchmark<input value={item.benchmark} onChange={e=>patch(item.id,{benchmark:e.target.value})}/></label><label>หมายเหตุ<textarea value={item.note} onChange={e=>patch(item.id,{note:e.target.value})}/></label>
-        </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าข้อมูลและข้อความต้นฉบับ</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th><th>ต้นฉบับ</th></tr></thead><tbody>{(item.periods??data.periods).map((p,i)=><tr key={p}><td>{p}</td><td>{item.values[i]??'ไม่มีข้อมูล'}</td><td style={{maxWidth:200,overflowWrap:'anywhere'}}>{item.raw[i]||'ไม่มีข้อมูล'}</td></tr>)}</tbody></table></details>}
-      </article>)}</div>
+        </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{r.label}{mode==='year'?'':` ${r.year}`}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table></details>}
+        <details style={{fontSize:12,marginTop:8}}><summary>ข้อมูลอ้างอิงเดิม</summary>{(item.periods??data.periods).map((p,i)=><p key={`${p}-${i}`}>{p}: {item.raw[i]||'ไม่มีข้อมูล'}</p>)}</details>
+      </article>;})}</div>
       <details style={{marginTop:20}}><summary>ข้อมูลประกอบและรายละเอียดจากต้นฉบับ</summary><p style={{fontSize:13}}>แหล่งข้อมูล: {data.source} · ข้อความต้นฉบับเก็บไว้สำหรับตรวจสอบ และไม่เปลี่ยนตามค่าที่แอดมินแก้ไข</p><img src="/safety-source-slide6.png" alt="สไลด์ 6: กระบวนการป้องกันและแนวโน้มการแพ้ยาซ้ำ" style={{width:'100%',height:'auto',marginTop:12}}/>{data.notes.map(n=><div key={n.slide} style={{marginTop:16}}><h4>สไลด์ {n.slide}</h4><p style={{whiteSpace:'pre-wrap',fontSize:13}}>{n.text}</p></div>)}</details>
     </div>
   </section>;

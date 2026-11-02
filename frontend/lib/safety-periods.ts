@@ -37,10 +37,11 @@ export function periodSeries(item:SafetyIndicator,defaults:string[],mode:PeriodM
   }
   const reference=mode==='quarter'?referenceQuarters(item,defaults):[];
   return Array.from({length:mode==='month'?12:4},(_,i)=>{
-    const period=i+1;
+    // Display January–December, retaining the existing fiscal-period storage keys.
+    const period=mode==='month'?(i+3)%12+1:i+1;
     const record=records.find(r=>r.mode===mode&&r.year===year&&r.period===period);
     const fallback=reference.find(r=>r.year===year&&r.period===period);
-    return {label:mode==='month'?fiscalMonths[i]:`Q${period}`,value:record?record.value:fallback?.value??null,year,period};
+    return {label:mode==='month'?fiscalMonths[period-1]:`Q${period}`,value:record?record.value:fallback?.value??null,year,period};
   });
 }
 

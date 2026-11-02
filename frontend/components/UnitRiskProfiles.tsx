@@ -94,7 +94,7 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
       {error && <p className="announcement-error" role="alert">{error}</p>}
       <div style={{marginTop:20}}>
         <h3>นำเข้าตารางความเสี่ยงจาก Word</h3>
-        <p>เลือกไฟล์ .doc หรือ .docx ที่มีตารางจำนวนครั้งและระดับ A–I (ไม่เกิน 5 MB) ระบบจะแสดงตัวอย่างในตารางสีด้านบน</p>
+        <p>เลือกไฟล์ .doc หรือ .docx ที่มีตารางจำนวนครั้งและระดับ A–I รองรับทั้งจำนวนและเครื่องหมายเลือกผลกระทบ (ไม่เกิน 5 MB) ระบบจะคำนวณสีตามเกณฑ์หน้า Risk Matrix และแสดงตัวอย่างด้านบน</p>
         <input aria-label="เลือกไฟล์ความเสี่ยง Word" type="file" accept=".doc,.docx" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void readFile(file);e.target.value='';}} />
         {busy&&<p role="status">กำลังดำเนินการ…</p>}
         {importMessage&&<p role="status">{importMessage}</p>}

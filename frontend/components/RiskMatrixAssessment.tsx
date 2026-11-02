@@ -1,27 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { unitRiskColors as matrixColors } from '@/lib/unitRiskMatrix';
 
 const frequency = ['Remote · ยากที่จะเกิด (0 ครั้ง)', 'Uncommon · ทุกปี (1 ครั้ง)', 'Occasional · ทุกเดือน (2–3 ครั้ง)', 'Probable · ทุกสัปดาห์ (4–12 ครั้ง)', 'Frequent · ทุกวัน (มากกว่า 12 ครั้ง)'];
 const clinical = ['A–B · อันตรายเล็กน้อย', 'C–D · อันตรายเล็กน้อย แก้ไขได้ง่าย', 'E · อันตรายปานกลาง ต้องรักษา', 'F · อันตรายรุนแรง อาจสูญเสียอวัยวะ', 'G–I · เสียชีวิตหรือทุพพลภาพถาวร'];
 const nonClinical = ['1 · 0–10,000 บาท', '2 · 10,001–50,000 บาท', '3 · 50,001–250,000 บาท', '4 · 250,001–10,000,000 บาท', '5 · มากกว่า 10 ล้านบาท'];
-// แถวเรียงจากผลกระทบระดับ 1 ถึง 5; คอลัมน์เรียงจาก Remote ถึง Frequent
-const matrixColors = {
-  clinical: [
-    ['green', 'green', 'green', 'yellow', 'yellow'],
-    ['green', 'yellow', 'yellow', 'orange', 'orange'],
-    ['yellow', 'yellow', 'orange', 'red', 'red'],
-    ['orange', 'orange', 'red', 'red', 'red'],
-    ['red', 'red', 'red', 'red', 'red'],
-  ],
-  nonclinical: [
-    ['green', 'green', 'green', 'yellow', 'yellow'],
-    ['green', 'yellow', 'yellow', 'yellow', 'orange'],
-    ['green', 'yellow', 'orange', 'orange', 'orange'],
-    ['yellow', 'yellow', 'orange', 'orange', 'red'],
-    ['yellow', 'orange', 'orange', 'red', 'red'],
-  ],
-} as const;
 const colorLabels = { green: 'เขียว', yellow: 'เหลือง', orange: 'ส้ม', red: 'แดง' };
 
 export function RiskMatrixAssessment() {

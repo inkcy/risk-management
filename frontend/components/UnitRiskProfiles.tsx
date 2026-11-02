@@ -8,6 +8,12 @@ type Unit = { id: number; name: string };
 type Risk = { id: number; unit_id: number; year: number; quarter: number; category: RiskType; title: string; occurrence_count: number; impact: number };
 const impacts = ['Negligible · A–B / 1', 'Minor · C–D / 2', 'Moderate · E / 3', 'Major · F / 4', 'Catastrophic · G–I / 5'];
 const frequencies = ['Remote', 'Uncommon', 'Occasional', 'Probable', 'Frequent'];
+const analysisLevels = [
+  { color: 'green', label: 'ต่ำ' },
+  { color: 'yellow', label: 'ปานกลาง' },
+  { color: 'orange', label: 'สูง' },
+  { color: 'red', label: 'สูงมาก' },
+] as const;
 
 export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; risks: Risk[]; canLogout: boolean }) {
   const router = useRouter();
@@ -42,6 +48,11 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
     } catch(err) {setError((err as Error).message);} finally {setBusy(false);}
   }
   const selected = risks.filter(r => r.unit_id === unitId && r.year === year && r.quarter === quarter && r.category === category);
+  const matrixItems = preview.length ? preview.map((r,index)=>({...r,id:-index-1,year,quarter})) : selected;
+  const analysisItems = matrixItems.map(r => ({
+    ...r,
+    color: unitRiskColors[category][r.impact - 1][riskFrequency(r.occurrence_count, r.year, r.quarter).column - 1],
+  }));
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const values = new FormData(form);
     setBusy(true); setError('');
@@ -67,11 +78,17 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
       </div>
       <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table"><tbody>
         {[5,4,3,2,1].map(i => <tr key={i}><th>{impacts[i-1]}</th>{[1,2,3,4,5].map(col => {
-          const matrixItems = preview.length ? preview.map((r,index)=>({...r,id:-index-1,year,quarter})) : selected;
           const items = matrixItems.filter(r => r.impact === i && riskFrequency(r.occurrence_count, r.year, r.quarter).column === col);
           return <td key={col} className={`risk-color-${unitRiskColors[category][i-1][col-1]}`}><ul>{items.map(r => <li key={r.id}>{r.title}<small>{r.occurrence_count} ครั้ง · {riskFrequency(r.occurrence_count,r.year,r.quarter).annualRate.toFixed(1)} ครั้ง/ปี</small></li>)}</ul></td>;
         })}</tr>)}
       </tbody><tfoot><tr><th>ผลกระทบ / ความถี่</th>{frequencies.map(f => <th key={f} className="risk-frequency-heading">{f}</th>)}</tr></tfoot></table></div>
+      <h3 style={{ marginTop: 20 }}>การวิเคราะห์ความเสี่ยง (Risk Analysis)</h3>
+      <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table">
+        <thead><tr>{analysisLevels.map(level => <th key={level.color} scope="col">{level.label}</th>)}</tr></thead>
+        <tbody><tr>{analysisLevels.map(level => <td key={level.color} className={`risk-color-${level.color}`}>
+          <ul>{analysisItems.filter(r => r.color === level.color).map(r => <li key={r.id}>{r.title}<small>{r.occurrence_count} ครั้ง · ผลกระทบ {r.impact}</small></li>)}</ul>
+        </td>)}</tr></tbody>
+      </table></div>
       <p style={{ color: 'var(--text2)', marginTop: 12, fontSize: 13 }}>คำนวณจำนวนครั้ง ÷ จำนวนวันในไตรมาส × 365.2425 วัน: 0 = Remote, มากกว่า 0 ถึง 1 ครั้ง/ปี = Uncommon, มากกว่า 1 ถึง 36 ครั้ง/ปี = Occasional, มากกว่า 36 ถึง 624 ครั้ง/ปี = Probable, มากกว่า 624 ครั้ง/ปี = Frequent</p>
       <p style={{ color: 'var(--text3)', marginTop: 6, fontSize: 12 }}>ช่วงที่ต้นฉบับไม่ได้ระบุใช้การจัดเข้าช่วงถัดไปที่ครอบคลุม และสมมติอัตราเฉลี่ยคงที่ตลอดปี · โปรดทบทวนผลก่อนนำไปใช้</p>
       {error && <p className="announcement-error" role="alert">{error}</p>}

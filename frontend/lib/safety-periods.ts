@@ -1,6 +1,7 @@
 import type { SafetyIndicator, SafetyMeasurement } from './safety';
 export type PeriodMode = SafetyMeasurement['mode'];
 export const fiscalMonths = ['ตุลาคม','พฤศจิกายน','ธันวาคม','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน'];
+export const calendarQuarters = ['Q1 (ม.ค.–มี.ค.)','Q2 (เม.ย.–มิ.ย.)','Q3 (ก.ค.–ก.ย.)','Q4 (ต.ค.–ธ.ค.)'];
 export function periodLabel(label:string,mode:PeriodMode,year:number,period:number):string {
   return mode==='month'?fiscalMonths[period-1]??label:mode==='year'?label:`${label} ${year}`;
 }
@@ -38,10 +39,13 @@ export function periodSeries(item:SafetyIndicator,defaults:string[],mode:PeriodM
   const reference=mode==='quarter'?referenceQuarters(item,defaults):[];
   return Array.from({length:mode==='month'?12:4},(_,i)=>{
     // Display January–December, retaining the existing fiscal-period storage keys.
-    const period=mode==='month'?(i+3)%12+1:i+1;
-    const record=records.find(r=>r.mode===mode&&r.year===year&&r.period===period);
-    const fallback=reference.find(r=>r.year===year&&r.period===period);
-    return {label:mode==='month'?fiscalMonths[period-1]:`Q${period}`,value:record?record.value:fallback?.value??null,year,period};
+    const period=mode==='month'?(i+3)%12+1:(i+1)%4+1;
+    // Fiscal Q1 is Oct–Dec of the previous calendar year. Keep persisted
+    // keys unchanged and read/write the matching fiscal year for calendar Q4.
+    const storageYear=mode==='quarter'&&i===3?year+1:year;
+    const record=records.find(r=>r.mode===mode&&r.year===storageYear&&r.period===period);
+    const fallback=reference.find(r=>r.year===storageYear&&r.period===period);
+    return {label:mode==='month'?fiscalMonths[period-1]:calendarQuarters[i],value:record?record.value:fallback?.value??null,year:storageYear,period};
   });
 }
 

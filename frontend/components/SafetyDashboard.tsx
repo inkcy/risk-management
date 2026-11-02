@@ -9,14 +9,14 @@ function Trend({item,periods}:{item:SafetyIndicator;periods:string[]}) {
   const x=(i:number)=>50+i*450/Math.max(periods.length-1,1);
   const y=(v:number)=>155-v/max*115;
   const count=item.unit==='ครั้ง';
-  return <svg viewBox="0 0 550 210" role="img" aria-label={`${item.name}: ${item.values.map((v,i)=>`${periods[i]} ${v??'ไม่มีข้อมูล'}`).join(', ')}`} style={{width:'100%',minWidth:periods.length>6?660:undefined,display:'block'}}>
+  return <svg viewBox={`0 0 550 ${periods.length>6?250:210}`} role="img" aria-label={`${item.name}: ${item.values.map((v,i)=>`${periods[i]} ${v??'ไม่มีข้อมูล'}`).join(', ')}`} style={{width:'100%',minWidth:periods.length>6?660:undefined,display:'block'}}>
     {[0,0.5,1].map(p=><g key={p}><line x1="45" x2="520" y1={y(max*p)} y2={y(max*p)} stroke="var(--border2)"/><text x="40" y={y(max*p)+4} textAnchor="end" fill="var(--text3)" fontSize="11">{Number((max*p).toPrecision(3))}</text></g>)}
     {item.comparison!=='none'&&<line x1="45" x2="520" y1={y(item.target)} y2={y(item.target)} stroke="var(--amber)" strokeWidth="2" strokeDasharray="6 5"/>}
     {!count&&item.values.map((v,i)=>v!==null&&i>0&&item.values[i-1]!==null?<line key={i} x1={x(i-1)} y1={y(item.values[i-1]!)} x2={x(i)} y2={y(v)} stroke="var(--accent)" strokeWidth="3"/>:null)}
     {item.values.map((v,i)=>{
       const ok=v!==null&&(item.comparison==='lt'?v<item.target:item.comparison==='gt'?v>item.target:v===item.target);
       const color=item.comparison==='none'?'var(--accent)':ok?'var(--green)':'var(--red)';
-      return <g key={i}>{v!==null&&(count?<rect x={x(i)-13} y={y(v)} width="26" height={Math.max(2,155-y(v))} rx="4" fill={color}/>:<circle cx={x(i)} cy={y(v)} r="5" fill={color}/>)}<text x={x(i)} y={v===null?145:y(v)-10} textAnchor="middle" fill="var(--text)" fontSize="13">{v??'—'}</text><text x={x(i)} y="181" textAnchor="middle" fill="var(--text2)" fontSize="11">{periods[i]}</text></g>;
+      return <g key={i}>{v!==null&&(count?<rect x={x(i)-13} y={y(v)} width="26" height={Math.max(2,155-y(v))} rx="4" fill={color}/>:<circle cx={x(i)} cy={y(v)} r="5" fill={color}/>)}<text x={x(i)} y={v===null?145:y(v)-10} textAnchor="middle" fill="var(--text)" fontSize="13">{v??'—'}</text><text x={x(i)} y="181" textAnchor={periods.length>6?'end':'middle'} transform={periods.length>6?`rotate(-45 ${x(i)} 181)`:undefined} fill="var(--text2)" fontSize="11">{periods[i]}</text></g>;
     })}
   </svg>;
 }

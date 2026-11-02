@@ -1,6 +1,9 @@
 import type { SafetyIndicator, SafetyMeasurement } from './safety';
 export type PeriodMode = SafetyMeasurement['mode'];
 export const fiscalMonths = ['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.'];
+export function periodLabel(label:string,mode:PeriodMode,year:number,period:number):string {
+  return mode==='year'?label:`${label} ${mode==='month'&&period<=3?year-1:year}`;
+}
 
 /** Keep source totals separate: rates cannot be summed or averaged without denominators. */
 export function referenceQuarters(item:SafetyIndicator, defaults:string[]):SafetyMeasurement[] {

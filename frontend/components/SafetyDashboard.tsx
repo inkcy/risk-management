@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { SafetyData, SafetyIndicator } from '@/lib/safety';
-import { periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
+import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 import { formatSafetyText } from '@/lib/safety-text';
 
 function Trend({item,periods}:{item:SafetyIndicator;periods:string[]}) {
@@ -57,15 +57,25 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
         <div style={{overflowX:'auto'}}><Trend item={{...item,values:series.map(r=>r.value)}} periods={series.map(r=>r.label)}/></div>
         {series.every(r=>r.value===null)&&<p style={{fontSize:13,color:'var(--text2)',marginBottom:12}}>ยังไม่มีข้อมูลในช่วงเวลานี้{canEdit?' แอดมินสามารถกดแก้ไขเพื่อกรอกข้อมูลได้':''}</p>}
         {item.benchmark&&<p style={{fontSize:12}}>Benchmark: {item.benchmark} (ตามต้นฉบับ)</p>}{item.note&&<p style={{fontSize:12,color:'var(--amber)'}}>{item.note}</p>}
+        {canEdit&&!editing&&<button className="tb-btn tb-btn-ghost" style={{margin:'12px 0'}} aria-label={`แก้ไขข้อมูล ${item.name}`} onClick={startEditing}>แก้ไขข้อมูล</button>}
         {editing?<fieldset disabled={saving} style={{border:0,display:'grid',gap:10}}>
           <label>ชื่อตัวชี้วัด<input value={item.name} onChange={e=>patch(item.id,{name:e.target.value})}/></label>
           <p style={{fontSize:12}}>กรอกค่า{mode==='month'?'รายเดือน':mode==='quarter'?'รายไตรมาส':'รายปีเต็ม'} ช่องว่าง = ไม่มีข้อมูล</p>
-          <div className="safety-inputs">{series.map(row=><label key={`${row.year}-${row.period}`}>{row.label}{mode!=='year'?` ${year}`:''}<input type="number" min="0" step="any" value={row.value??''} placeholder="ไม่มีข้อมูล" onChange={e=>patch(item.id,{measurements:updateMeasurement(item,mode,row.year,row.period,e.target.value===''?null:Number(e.target.value))})}/></label>)}</div>
+          <div className="safety-inputs">{series.map(row=><label key={`${row.year}-${row.period}`}>{periodLabel(row.label,mode,row.year,row.period)}<input type="number" min="0" step="any" value={row.value??''} placeholder="ไม่มีข้อมูล" onChange={e=>patch(item.id,{measurements:updateMeasurement(item,mode,row.year,row.period,e.target.value===''?null:Number(e.target.value))})}/></label>)}</div>
           {mode==='year'&&<p style={{fontSize:12,color:'var(--amber)'}}>การกรอกค่าในช่องปีที่มีผล Q1–Q3 จะใช้ค่าที่กรอกเป็นผลรายปีเต็ม ข้อความต้นฉบับยังอยู่ในรายละเอียดอ้างอิง</p>}
           <div className="safety-inputs"><label>เกณฑ์<select value={item.comparison} onChange={e=>patch(item.id,{comparison:e.target.value})}><option value="eq">เท่ากับ</option><option value="lt">น้อยกว่า</option><option value="gt">มากกว่า</option><option value="none">ไม่ประเมิน</option></select></label><label>ค่าเป้าหมาย<input type="number" min="0" step="any" value={item.target} onChange={e=>{const target=Number(e.target.value);patch(item.id,{target,targetText:`${item.comparison==='lt'?'< ':item.comparison==='gt'?'> ':''}${target}`});}}/></label></div>
           <label>ข้อความเป้าหมาย<input value={item.targetText} onChange={e=>patch(item.id,{targetText:e.target.value})}/></label><label>หน่วย<input value={item.unit} onChange={e=>patch(item.id,{unit:e.target.value})}/></label><label>Benchmark<input value={item.benchmark} onChange={e=>patch(item.id,{benchmark:e.target.value})}/></label><label>หมายเหตุ<textarea value={item.note} onChange={e=>patch(item.id,{note:e.target.value})}/></label>
-        </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{r.label}{mode==='year'?'':` ${r.year}`}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table></details>}
-        <details style={{fontSize:12,marginTop:8}}><summary>ข้อมูลอ้างอิงเดิม</summary>{(item.periods??data.periods).map((p,i)=><p key={`${p}-${i}`}>{p}: {item.raw[i]||'ไม่มีข้อมูล'}</p>)}</details>
+        </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{periodLabel(r.label,mode,r.year,r.period)}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table></details>}
+        <details style={{fontSize:12,marginTop:8}} open={editing?true:undefined}><summary>ข้อมูลอ้างอิงเดิม{editing?' (แก้ไขได้)':''}</summary>
+          {editing?<fieldset disabled={saving} style={{border:0,display:'grid',gap:12,marginTop:12}}>
+            <p>แก้ไขข้อมูลอ้างอิงแยกจากค่ารายเดือน/ไตรมาส/ปีที่กรอกด้านบน</p>
+            {(item.periods??data.periods).map((p,i)=><div key={`${p}-${i}`} style={{display:'grid',gap:6}}>
+              <label>ค่าตัวเลขอ้างอิง {p}<input type="number" min="0" step="any" value={item.values[i]??''} placeholder="ไม่มีข้อมูล" onChange={e=>patch(item.id,{values:item.values.map((v,j)=>j===i?(e.target.value===''?null:Number(e.target.value)):v)})}/></label>
+              <label>ข้อความอ้างอิง {p}<textarea maxLength={5000} rows={2} value={item.raw[i]??''} onChange={e=>patch(item.id,{raw:item.values.map((_,j)=>j===i?e.target.value:item.raw[j]??'')})}/></label>
+            </div>)}
+          </fieldset>:(item.periods??data.periods).map((p,i)=><p key={`${p}-${i}`} style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{p}: {item.raw[i]||'ไม่มีข้อมูล'}</p>)}
+        </details>
+        {editing&&<div style={{marginTop:16}}><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>{message&&<p role="status" style={{fontSize:13,marginTop:8}}>{message}</p>}</div>}
       </article>;})}</div>
       <details style={{marginTop:20}}><summary>ข้อมูลประกอบและรายละเอียด</summary>
         <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',marginTop:16}}><p style={{fontSize:13}}>แหล่งข้อมูล: {data.source}</p>{canEdit&&!editing&&<button className="tb-btn tb-btn-ghost" onClick={startEditing}>แก้ไขข้อความประกอบ</button>}</div>

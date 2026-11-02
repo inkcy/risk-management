@@ -25,15 +25,14 @@ export function referenceQuarters(item:SafetyIndicator, defaults:string[]):Safet
   return result;
 }
 
-export function periodSeries(item:SafetyIndicator,defaults:string[],mode:PeriodMode,year:number) {
+export function periodSeries(item:SafetyIndicator,defaults:string[],mode:PeriodMode,year:number,addedYears:number[]=[]) {
   const records=item.measurements??[];
   if(mode==='year') {
-    const source=(item.periods??defaults).map((label,i)=>({label,value:item.values[i],year:Number(label.match(/^\d{4}/)?.[0])})).filter(r=>/^\d{4}(?:$| Q1[–-]Q3$| \(ไม่ระบุช่วง\)$)/.test(r.label));
-    const years=Array.from(new Set([...source.map(r=>r.year),...records.filter(r=>r.mode==='year').map(r=>r.year),year])).sort((a,b)=>a-b);
+    const sourceYears=(item.periods??defaults).map(label=>Number(label.match(/^\d{4}/)?.[0])).filter(Number.isFinite);
+    const years=Array.from(new Set([...sourceYears,...addedYears,...records.filter(r=>r.mode==='year'&&r.basis==='calendar').map(r=>r.year),year])).sort((a,b)=>a-b);
     return years.map(y=>{
-      const record=records.find(r=>r.mode==='year'&&r.year===y);
-      const original=source.find(r=>r.year===y);
-      return {label:record?`${y}`:original?.label??`${y}`,value:record?record.value:original?.value??null,year:y,period:1};
+      const record=records.find(r=>r.mode==='year'&&r.basis==='calendar'&&r.year===y);
+      return {label:`${y}`,value:record?.value??null,year:y,period:1};
     });
   }
   const reference=mode==='quarter'?referenceQuarters(item,defaults):[];
@@ -42,7 +41,7 @@ export function periodSeries(item:SafetyIndicator,defaults:string[],mode:PeriodM
     const period=mode==='month'?(i+3)%12+1:(i+1)%4+1;
     // Fiscal Q1 is Oct–Dec of the previous calendar year. Keep persisted
     // keys unchanged and read/write the matching fiscal year for calendar Q4.
-    const storageYear=mode==='quarter'&&i===3?year+1:year;
+    const storageYear=(mode==='quarter'&&i===3)||(mode==='month'&&i>=9)?year+1:year;
     const record=records.find(r=>r.mode===mode&&r.year===storageYear&&r.period===period);
     const fallback=reference.find(r=>r.year===storageYear&&r.period===period);
     return {label:mode==='month'?fiscalMonths[period-1]:calendarQuarters[i],value:record?record.value:fallback?.value??null,year:storageYear,period};
@@ -50,5 +49,5 @@ export function periodSeries(item:SafetyIndicator,defaults:string[],mode:PeriodM
 }
 
 export function updateMeasurement(item:SafetyIndicator,mode:PeriodMode,year:number,period:number,value:number|null):SafetyMeasurement[] {
-  return [...(item.measurements??[]).filter(r=>!(r.mode===mode&&r.year===year&&r.period===period)),{mode,year,period,value}];
+  return [...(item.measurements??[]).filter(r=>!(r.mode===mode&&r.year===year&&r.period===period&&(mode!=='year'||r.basis==='calendar'))),{mode,year,period,value,...(mode==='year'?{basis:'calendar' as const}:{})}];
 }

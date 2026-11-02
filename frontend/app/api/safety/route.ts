@@ -9,6 +9,7 @@ export async function PUT(request:NextRequest) {
     const data=body.data;
     const strings=(a:unknown):a is string[]=>Array.isArray(a)&&a.length>0&&a.length<=30&&a.every(v=>typeof v==='string'&&v.length<=3000);
     if (!Number.isInteger(body.revision)||body.revision<0||!data||!strings(data.periods)||!Array.isArray(data.indicators)||data.indicators.length<1||data.indicators.length>200||JSON.stringify(data).length>500000||!Array.isArray(data.notes)||typeof data.source!=='string'||typeof data.sourceNote!=='string') return NextResponse.json({error:'รูปแบบข้อมูลไม่ถูกต้อง'},{status:400});
+    if (data.years!==undefined&&(!Array.isArray(data.years)||data.years.length>200||!data.years.every((y:unknown)=>typeof y==='number'&&Number.isInteger(y)&&y>=2400&&y<=2800)||new Set(data.years).size!==data.years.length)) return NextResponse.json({error:'รายการปีไม่ถูกต้อง'},{status:400});
     const noteSlides=new Set();
     if (data.sourceNote.length>10000||data.notes.length>100) return NextResponse.json({error:'ข้อความยาวเกินกำหนด'},{status:400});
     for (const note of data.notes) {
@@ -22,7 +23,8 @@ export async function PUT(request:NextRequest) {
         if (!Array.isArray(item.measurements)||item.measurements.length>5000) return NextResponse.json({error:'ข้อมูลช่วงเวลาไม่ถูกต้อง'},{status:400});
         for (const r of item.measurements) {
           if (!r||!['month','quarter','year'].includes(r.mode)||!Number.isInteger(r.year)||r.year<2400||r.year>2800||!Number.isInteger(r.period)||r.period<1||r.period>(r.mode==='month'?12:r.mode==='quarter'?4:1)||(r.value!==null&&(typeof r.value!=='number'||!Number.isFinite(r.value)||r.value<0))) return NextResponse.json({error:'กรุณาตรวจสอบปี ช่วงเวลา และค่าตัวเลข'},{status:400});
-          const key=`${r.mode}:${r.year}:${r.period}`;
+          if (r.basis!==undefined&&!['calendar','fiscal'].includes(r.basis)) return NextResponse.json({error:'ประเภทปีไม่ถูกต้อง'},{status:400});
+          const key=`${r.mode}:${r.year}:${r.period}:${r.mode==='year'?r.basis??'fiscal':''}`;
           if(seen.has(key)) return NextResponse.json({error:'พบช่วงเวลาซ้ำ'},{status:400});
           seen.add(key);
         }

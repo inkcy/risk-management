@@ -71,16 +71,7 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
       <div className="sidebar-backdrop" onClick={closeSidebar} aria-hidden="true" />
       <aside className="sidebar">
       <Link href="/" className="logo" aria-label="RiskGuard หน้าแรก">
-        <div className="logo-mark">
-          <div className="logo-icon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none" focusable="false">
-              <path d="M16 3.4 26 7.6v7.2c0 6.3-4.1 11.1-10 13.8C10.1 25.9 6 21.1 6 14.8V7.6l10-4.2Z" fill="white" fillOpacity=".96" />
-              <path d="M11.3 16.1h3.1v-3.2h3.2v3.2h3.1v3.1h-3.1v3.2h-3.2v-3.2h-3.1v-3.1Z" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="logo-name"><span>Risk</span><strong>Guard</strong></div>
-        </div>
-        <div className="logo-sub">HOSPITAL RISK MANAGEMENT</div>
+        <img className="logo-image" src="/hospital-risk-logo.png" alt="Hospital Risk Management" />
       </Link>
       <nav className="nav">
         {groups.map((g) => (

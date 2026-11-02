@@ -20,6 +20,15 @@ const sevBadge = (s: string) =>
 
 export default async function DashboardPage() {
   const [safety, user] = await Promise.all([loadSafety(), getSessionUser()]);
+  const safetyDashboard = (
+    <SafetyDashboard initial={safety.data} initialRevision={safety.revision} canEdit={user?.role === 'admin'} loadError={safety.error} />
+  );
+
+  // Keep incident summaries and details out of the viewer's server response.
+  if (user?.role !== 'admin' && user?.role !== 'editor') {
+    return safetyDashboard;
+  }
+
   const [{ data: stats, error: statsErr }, { data: actions }, { data: incidents }] = await Promise.all([
     getStats(),
     getActions(),
@@ -53,7 +62,7 @@ export default async function DashboardPage() {
   return (
     <>
       <DemoBanner error={statsErr} />
-      <SafetyDashboard initial={safety.data} initialRevision={safety.revision} canEdit={user?.role === 'admin'} loadError={safety.error} />
+      {safetyDashboard}
 
       <div className="stats-row">
         <div className="stat-card blue">

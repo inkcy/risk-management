@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import type { SafetyData, SafetyIndicator } from '@/lib/safety';
 import { periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
+import { formatSafetyText } from '@/lib/safety-text';
 
 function Trend({item,periods}:{item:SafetyIndicator;periods:string[]}) {
   const max=Math.max(...item.values.filter((v):v is number=>v!==null),item.comparison==='none'?0:item.target,0.01)*1.2;
@@ -27,6 +28,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const groups=Array.from(new Set(data.indicators.map(i=>i.group)));
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
   const visible=(editing?draft:data).indicators.filter(i=>i.group===group);
+  const startEditing=()=>{setDraft({...data,notes:data.notes.map(n=>({...n,text:formatSafetyText(n.text)}))});setEditing(true);setMessage('');};
   async function save(){
     setSaving(true);setMessage('');
     try {
@@ -36,10 +38,10 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     }catch(error){setMessage(error instanceof Error?error.message:'บันทึกไม่สำเร็จ');}finally{setSaving(false);}
   }
   return <section className="card" style={{marginBottom:24}}>
-    <div className="card-header" style={{flexWrap:'wrap',gap:12}}><div><div className="card-title">มาตรฐานสำคัญต่อความปลอดภัย 9 ด้าน</div><p style={{fontSize:13,color:'var(--text2)'}}>แนวโน้มตัวชี้วัดจากปีงบประมาณ 2564–2568</p></div>{canEdit&&!editing&&<button className="tb-btn tb-btn-primary" onClick={()=>{setDraft(data);setEditing(true);setMessage('');}}>แก้ไขข้อมูลตัวชี้วัด</button>}{editing&&<div style={{display:'flex',gap:8}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>}</div>
+    <div className="card-header" style={{flexWrap:'wrap',gap:12}}><div><div className="card-title">มาตรฐานสำคัญต่อความปลอดภัย 9 ด้าน</div><p style={{fontSize:13,color:'var(--text2)'}}>แนวโน้มตัวชี้วัดจากปีงบประมาณ 2564–2568</p></div>{canEdit&&!editing&&<button className="tb-btn tb-btn-primary" onClick={startEditing}>แก้ไขข้อมูลตัวชี้วัดและข้อความ</button>}{editing&&<div style={{display:'flex',gap:8}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>}</div>
     <div className="card-body">
       {loadError&&<p role="alert">{loadError}</p>}{message&&<p role="status" style={{marginBottom:16}}>{message}</p>}
-      <p style={{fontSize:13,color:'var(--text2)',marginBottom:16}}>{data.sourceNote}</p>
+      {editing?<label className="safety-note-label">คำอธิบายและหมายเหตุข้อมูล<textarea className="safety-note-input" rows={4} maxLength={10000} disabled={saving} value={draft.sourceNote} onChange={e=>setDraft(d=>({...d,sourceNote:e.target.value}))}/></label>:<p style={{fontSize:13,color:'var(--text2)',marginBottom:16,whiteSpace:'pre-wrap'}}>{data.sourceNote}</p>}
       <label style={{display:'block',marginBottom:20}}>หมวดตัวชี้วัด <select value={group} onChange={e=>setGroup(e.target.value)} style={{padding:10,maxWidth:'100%',background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}>{groups.map(g=><option key={g}>{g}</option>)}</select></label>
       <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',marginBottom:12}}>
         <div role="group" aria-label="รูปแบบช่วงเวลา" style={{display:'flex',gap:6}}>{([['month','รายเดือน'],['quarter','รายไตรมาส'],['year','รายปี']] as const).map(([value,label])=><button key={value} className={`tb-btn ${mode===value?'tb-btn-primary':'tb-btn-ghost'}`} aria-pressed={mode===value} onClick={()=>setMode(value)}>{label}</button>)}</div>
@@ -65,7 +67,17 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
         </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{r.label}{mode==='year'?'':` ${r.year}`}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table></details>}
         <details style={{fontSize:12,marginTop:8}}><summary>ข้อมูลอ้างอิงเดิม</summary>{(item.periods??data.periods).map((p,i)=><p key={`${p}-${i}`}>{p}: {item.raw[i]||'ไม่มีข้อมูล'}</p>)}</details>
       </article>;})}</div>
-      <details style={{marginTop:20}}><summary>ข้อมูลประกอบและรายละเอียดจากต้นฉบับ</summary><p style={{fontSize:13}}>แหล่งข้อมูล: {data.source} · ข้อความต้นฉบับเก็บไว้สำหรับตรวจสอบ และไม่เปลี่ยนตามค่าที่แอดมินแก้ไข</p><img src="/safety-source-slide6.png" alt="สไลด์ 6: กระบวนการป้องกันและแนวโน้มการแพ้ยาซ้ำ" style={{width:'100%',height:'auto',marginTop:12}}/>{data.notes.map(n=><div key={n.slide} style={{marginTop:16}}><h4>สไลด์ {n.slide}</h4><p style={{whiteSpace:'pre-wrap',fontSize:13}}>{n.text}</p></div>)}</details>
+      <details style={{marginTop:20}}><summary>ข้อมูลประกอบและรายละเอียด</summary>
+        <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',marginTop:16}}><p style={{fontSize:13}}>แหล่งข้อมูล: {data.source}</p>{canEdit&&!editing&&<button className="tb-btn tb-btn-ghost" onClick={startEditing}>แก้ไขข้อความประกอบ</button>}</div>
+        <img src="/safety-source-slide6.png" alt="สไลด์ 6: กระบวนการป้องกันและแนวโน้มการแพ้ยาซ้ำ" style={{width:'100%',height:'auto',marginTop:12}}/>
+        {(editing?draft:data).notes.map((n,index)=><article key={n.slide} className="safety-note">
+          {editing?<fieldset disabled={saving} style={{border:0,display:'grid',gap:12}}>
+            <label className="safety-note-label">หัวข้อสไลด์ {n.slide}<input className="safety-note-input" maxLength={300} value={n.title??`สไลด์ ${n.slide}`} onChange={e=>setDraft(d=>({...d,notes:d.notes.map((note,i)=>i===index?{...note,title:e.target.value}:note)}))}/></label>
+            <label className="safety-note-label">ข้อความประกอบ (กด Enter เพื่อขึ้นบรรทัดใหม่)<textarea className="safety-note-input" rows={20} maxLength={50000} value={n.text} onChange={e=>setDraft(d=>({...d,notes:d.notes.map((note,i)=>i===index?{...note,text:e.target.value}:note)}))}/></label>
+          </fieldset>:<><h4>{n.title??`สไลด์ ${n.slide}`}</h4><div className="safety-note-text">{formatSafetyText(n.text)}</div></>}
+        </article>)}
+        {editing&&<div style={{display:'flex',gap:8,marginTop:16}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>}
+      </details>
     </div>
   </section>;
 }

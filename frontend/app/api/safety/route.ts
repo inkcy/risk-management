@@ -9,6 +9,12 @@ export async function PUT(request:NextRequest) {
     const data=body.data;
     const strings=(a:unknown):a is string[]=>Array.isArray(a)&&a.length>0&&a.length<=30&&a.every(v=>typeof v==='string'&&v.length<=3000);
     if (!Number.isInteger(body.revision)||body.revision<0||!data||!strings(data.periods)||!Array.isArray(data.indicators)||data.indicators.length<1||data.indicators.length>200||JSON.stringify(data).length>500000||!Array.isArray(data.notes)||typeof data.source!=='string'||typeof data.sourceNote!=='string') return NextResponse.json({error:'รูปแบบข้อมูลไม่ถูกต้อง'},{status:400});
+    const noteSlides=new Set();
+    if (data.sourceNote.length>10000||data.notes.length>100) return NextResponse.json({error:'ข้อความยาวเกินกำหนด'},{status:400});
+    for (const note of data.notes) {
+      if (!note||!Number.isInteger(note.slide)||note.slide<1||noteSlides.has(note.slide)||typeof note.text!=='string'||note.text.length>50000||(note.title!==undefined&&(typeof note.title!=='string'||note.title.length>300))) return NextResponse.json({error:'กรุณาตรวจสอบหัวข้อและข้อความประกอบ (ข้อความไม่เกิน 50,000 ตัวอักษร)'},{status:400});
+      noteSlides.add(note.slide);
+    }
     const ids=new Set();
     for (const item of data.indicators) {
       if (item?.measurements !== undefined) {

@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS safety_dashboard (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  data JSONB NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 1,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

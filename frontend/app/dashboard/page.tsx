@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { getStats, getActions, getIncidents, categoryLabel } from '@/lib/api';
 import { BarChart } from '@/components/BarChart';
 import { DemoBanner } from '@/components/DemoBanner';
+import { SafetyDashboard } from '@/components/SafetyDashboard';
+import { loadSafety } from '@/lib/safety';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +19,7 @@ const sevBadge = (s: string) =>
   : ['C', 'D'].includes(s) ? 'badge-amber' : 'badge-blue';
 
 export default async function DashboardPage() {
+  const [safety, user] = await Promise.all([loadSafety(), getSessionUser()]);
   const [{ data: stats, error: statsErr }, { data: actions }, { data: incidents }] = await Promise.all([
     getStats(),
     getActions(),
@@ -49,6 +53,7 @@ export default async function DashboardPage() {
   return (
     <>
       <DemoBanner error={statsErr} />
+      <SafetyDashboard initial={safety.data} initialRevision={safety.revision} canEdit={user?.role === 'admin'} loadError={safety.error} />
 
       <div className="stats-row">
         <div className="stat-card blue">

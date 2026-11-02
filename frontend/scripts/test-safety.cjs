@@ -1,0 +1,30 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const ts=require('typescript');
+const seed=require('../lib/data/safety.json');
+let role='viewer', stored=null, calls=0;
+const moduleMock={exports:{}};
+const json=(body,options={})=>({status:options.status??200,body});
+const auth={requireRole:async minimum=>role===minimum?{ok:true,user:{id:1}}:{ok:false,response:json({error:'Forbidden'},{status:role?403:401})},audit:async()=>{}};
+const db={query:async(sql,params)=>{calls++;if(sql.startsWith('CREATE'))return {rows:[]};if(sql.startsWith('INSERT')){if(stored)return {rows:[]};stored={data:JSON.parse(params[0]),revision:1};return {rows:[{revision:1}]};}if(sql.startsWith('UPDATE')){if(!stored||stored.revision!==params[1])return {rows:[]};stored={data:JSON.parse(params[0]),revision:stored.revision+1};return {rows:[{revision:stored.revision}]};}throw Error(sql);}};
+const compiled=ts.transpileModule(fs.readFileSync('app/api/safety/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
+vm.runInNewContext(compiled,{exports:moduleMock.exports,require:name=>name==='next/server'?{NextResponse:{json}}:name==='@/lib/auth'?auth:db,console});
+const put=body=>moduleMock.exports.PUT({json:async()=>body});
+(async()=>{
+  assert.equal(seed.indicators.length,46);
+  assert.deepEqual(seed.indicators.find(i=>i.id==='s3-10').values,[5,0,2,1,2]);
+  assert.equal(seed.indicators.find(i=>i.id==='s5-26').values[4],null);
+  assert.deepEqual(seed.indicators.find(i=>i.id==='mmu-16').values,[4]);
+  for(const user of [null,'viewer','editor']){role=user;assert.equal((await put({data:seed,revision:0})).status,user?403:401);}
+  assert.equal(calls,0);
+  role='admin';assert.equal((await put({data:seed,revision:0})).status,200);
+  assert.equal((await put({data:seed,revision:0})).status,409);
+  const changed=structuredClone(seed);changed.indicators[0].values[4]=7;
+  assert.equal((await put({data:changed,revision:1})).status,200);
+  assert.equal(stored.data.indicators[0].values[4],7);
+  assert.equal((await put({data:seed,revision:1})).status,409);
+  changed.indicators[0].values[4]=-1;
+  assert.equal((await put({data:changed,revision:2})).status,400);
+  console.log('PASS: reference data, missing values, role enforcement, save/update, conflict and invalid value checks');
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,0 +1,1261 @@
+{
+  "periods": [
+    "2564",
+    "2565",
+    "2566",
+    "2567",
+    "2568 Q1–Q3"
+  ],
+  "indicators": [
+    {
+      "id": "s2-1",
+      "group": "การผ่าตัดและการติดเชื้อ",
+      "name": "อุบัติการณ์การผ่าตัดผิดคน ผิดข้าง ผิด Procedure",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        2,
+        0,
+        2,
+        0
+      ],
+      "raw": [
+        "0",
+        "2",
+        "0",
+        "2",
+        "0"
+      ],
+      "benchmark": "NA",
+      "slide": 2,
+      "note": ""
+    },
+    {
+      "id": "s2-2",
+      "group": "การผ่าตัดและการติดเชื้อ",
+      "name": "ร้อยละการติดเชื้อตำแหน่งผ่าตัดชนิดแผลสะอาด (Surgical Site Infection in Clean Wound :SSI)",
+      "targetText": "< 0.2",
+      "target": 0.2,
+      "comparison": "lt",
+      "unit": "%",
+      "values": [
+        0,
+        0,
+        0.02,
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0",
+        "0.02",
+        "0",
+        "0"
+      ],
+      "benchmark": "NA",
+      "slide": 2,
+      "note": ""
+    },
+    {
+      "id": "s2-3",
+      "group": "การผ่าตัดและการติดเชื้อ",
+      "name": "อัตราการติดเชื้อระบบทางเดินปัสสาวะจากการคาสายสวนปัสสาวะ(CAUTI : Catheter Associated Urinary Tract Infection)",
+      "targetText": "< 2 ครั้ง /1,000 Catheter-days",
+      "target": 2,
+      "comparison": "lt",
+      "unit": "ต่อ 1,000 Catheter-days",
+      "values": [
+        2.6,
+        2.19,
+        1.12,
+        1.46,
+        1.25
+      ],
+      "raw": [
+        "2.60",
+        "2.19",
+        "1.12",
+        "1.46",
+        "1.25"
+      ],
+      "benchmark": "THIP : P25 = 0.47 / 0.78",
+      "slide": 2,
+      "note": ""
+    },
+    {
+      "id": "s2-4",
+      "group": "การผ่าตัดและการติดเชื้อ",
+      "name": "อัตราการติดเชื้อจากภาวะปอดอักเสบในผู้ป่วยที่มีการใช้เครื่องช่วยหายใจ (VAP : Ventilator-Associated Pneumonia)",
+      "targetText": "< 2 ครั้ง /1,000 Ventilation-days",
+      "target": 2,
+      "comparison": "lt",
+      "unit": "ต่อ 1,000 Ventilation-days",
+      "values": [
+        0.76,
+        1.2,
+        0.75,
+        1.06,
+        1.67
+      ],
+      "raw": [
+        "0.76",
+        "1.20",
+        "0.75",
+        "1.06",
+        "1.67"
+      ],
+      "benchmark": "THIP : P25 = 1.17 / 1.47",
+      "slide": 2,
+      "note": ""
+    },
+    {
+      "id": "s2-5",
+      "group": "การผ่าตัดและการติดเชื้อ",
+      "name": "อัตราการติดเชื้อในผู้ป่วยที่มีการใช้สายสวนหลอดเลือดดำส่วนกลาง(CLABSI : Central Line-Associated Bloodstream Infection)",
+      "targetText": "< 1 ครั้ง /1,000 Catheter-days",
+      "target": 1,
+      "comparison": "lt",
+      "unit": "ต่อ 1,000 Catheter-days",
+      "values": [
+        0.79,
+        0.43,
+        1.4,
+        1.81,
+        0.99
+      ],
+      "raw": [
+        "0.79",
+        "0.43",
+        "1.40",
+        "1.81",
+        "0.99"
+      ],
+      "benchmark": "THIP : P25 = 0.48 / 0.71",
+      "slide": 2,
+      "note": ""
+    },
+    {
+      "id": "s2-6",
+      "group": "การผ่าตัดและการติดเชื้อ",
+      "name": "จำนวนอุบัติการณ์บุคลากรติดเชื้อจากการปฏิบัติหน้าที่",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        3,
+        1,
+        0,
+        2,
+        5
+      ],
+      "raw": [
+        "3",
+        "1",
+        "0",
+        "2",
+        "5"
+      ],
+      "benchmark": "NA",
+      "slide": 2,
+      "note": ""
+    },
+    {
+      "id": "s3-7",
+      "group": "ความปลอดภัยด้านยา",
+      "name": "จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการสั่งใช้ยาผู้ป่วยนอกระดับ E ขึ้นไป (Medication error : Prescribing) – OPD , Level E up",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        4,
+        1,
+        0,
+        0,
+        1
+      ],
+      "raw": [
+        "4",
+        "1",
+        "0",
+        "0",
+        "ไตร1=1heparin/ไตร2=0ไตร3=0"
+      ],
+      "benchmark": "",
+      "slide": 3,
+      "note": ""
+    },
+    {
+      "id": "s3-8",
+      "group": "ความปลอดภัยด้านยา",
+      "name": "จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการจ่ายยาผู้ป่วยนอกระดับ E ขึ้นไป (Medication error: Dispensing)  - OPD , Level E up",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        2,
+        0,
+        1,
+        0
+      ],
+      "raw": [
+        "0",
+        "2",
+        "0",
+        "1",
+        "ไตร1-3=0"
+      ],
+      "benchmark": "",
+      "slide": 3,
+      "note": ""
+    },
+    {
+      "id": "s3-9",
+      "group": "ความปลอดภัยด้านยา",
+      "name": "จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการบริหารยาผู้ป่วยนอกระดับ E ขึ้นไป (Medication error : Administration)  - OPD , Level E up",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        2,
+        1,
+        1,
+        0,
+        0
+      ],
+      "raw": [
+        "2",
+        "1",
+        "1",
+        "0",
+        "ไตร1-3=0"
+      ],
+      "benchmark": "",
+      "slide": 3,
+      "note": ""
+    },
+    {
+      "id": "s3-10",
+      "group": "ความปลอดภัยด้านยา",
+      "name": "จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการสั่งใช้ยาผู้ป่วยใน  ระดับ E ขึ้นไป (Medication error: Prescribing) – IPD , Level E up",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        5,
+        0,
+        2,
+        1,
+        2
+      ],
+      "raw": [
+        "5",
+        "0",
+        "2",
+        "1",
+        "ไตร1=1diazepam overdose pt esrd/ไตร2=1แพ้ ibuprofen ฉีดketololac ไตร3=0 ครั้ง"
+      ],
+      "benchmark": "",
+      "slide": 3,
+      "note": ""
+    },
+    {
+      "id": "s3-11",
+      "group": "ความปลอดภัยด้านยา",
+      "name": "จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการจ่ายยาผู้ป่วยใน ระดับ E ขึ้นไป (Medication error: Dispensing)  - IPD , Level E up",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        2,
+        0,
+        3,
+        1,
+        1
+      ],
+      "raw": [
+        "2",
+        "0",
+        "3",
+        "1",
+        "ไตร1=0/ ไตร2 = 1 ibu เรื่องเดียว  ไตร3=0 ครั้ง"
+      ],
+      "benchmark": "",
+      "slide": 3,
+      "note": ""
+    },
+    {
+      "id": "s3-12",
+      "group": "ความปลอดภัยด้านยา",
+      "name": "จำนวนอุบัติการณ์คลาดเคลื่อนจากการบริหารยาผู้ป่วยใน ระดับ E ขึ้นไป (Medication error : Administration)  - IPD , Level E up",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        0,
+        3,
+        5,
+        3
+      ],
+      "raw": [
+        "0",
+        "0",
+        "3",
+        "5",
+        "ไตร1=1 cloxe overdoseไตร2=1ibu profen เรื่องเดียวกันไตร3=1 ผสม RIใน nss ผิดคน"
+      ],
+      "benchmark": "",
+      "slide": 3,
+      "note": ""
+    },
+    {
+      "id": "s4-13",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "อุบัติการณ์การให้เลือดผิด (Incorrect blood component transfused, IBCT) หรือ Wrong blood transfused",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        2,
+        2,
+        4,
+        5,
+        1
+      ],
+      "raw": [
+        "2",
+        "2",
+        "4",
+        "5",
+        "ไตรมาส1=0ไตรมาส2=1 pcผิดคนไตร3=0"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": ""
+    },
+    {
+      "id": "s4-14",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "จำนวนอุบัติการณ์การระบุตัวผู้ป่วยผิดพลาด (Patient Identification error) ความรุนแรง ≥  D",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        0,
+        1,
+        0,
+        3
+      ],
+      "raw": [
+        "0",
+        "0",
+        "1",
+        "0",
+        "ไตรมาส1= 1 controlocไตรมาส2=0ไตรมาส3=2 ห้องคลอด/บันทึกผิดเพศ,ป้ายข้อมือผิดสี"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": ""
+    },
+    {
+      "id": "s4-15",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "จำนวนอุบัติการณ์ Misdiagnosis or delayed diagnosis จนเกิดความรุนแรงระดับ E ขึ้นไป",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        5,
+        3,
+        4,
+        4,
+        6
+      ],
+      "raw": [
+        "5",
+        "3",
+        "4",
+        "4",
+        "6 ไตร1-3"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": ""
+    },
+    {
+      "id": "s4-16",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "ร้อยละการรายงานผลตรวจทางห้องปฏิบัติการคลาดเคลื่อนหมายเหตุ : เปลี่ยนชื่อตัวชี้วัดและเป้าหมาย ในปีงบประมาณ 2567 (ตัวชี้วัดเดิม อัตราการรายงานผลการตรวจทางห้องปฏิบัติการคลาดเคลื่อน เป้าหมาย <1:50,000)",
+      "targetText": "ร้อยละ 0",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "%",
+      "values": [
+        0.54,
+        0.29,
+        0.26,
+        0.00033,
+        0.00041
+      ],
+      "raw": [
+        "0.54",
+        "0.29",
+        "0.26",
+        "0.00033",
+        "ไตรมาส1-3=0.00041 (9/2,192,795 test )"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": "ปี 2567 เปลี่ยนชื่อตัวชี้วัดและเป้าหมาย ข้อมูลก่อนและหลังอาจเปรียบเทียบโดยตรงไม่ได้"
+    },
+    {
+      "id": "s4-17",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "ร้อยละการรายงานผลการตรวจทางพยาธิวิทยาคลาดเคลื่อน",
+      "targetText": "<1",
+      "target": 1,
+      "comparison": "lt",
+      "unit": "%",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": ""
+    },
+    {
+      "id": "s4-18",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "ร้อยละ Under triage",
+      "targetText": "< 5",
+      "target": 5,
+      "comparison": "lt",
+      "unit": "%",
+      "values": [
+        6.28,
+        1.49,
+        0.05,
+        0.06,
+        0.06
+      ],
+      "raw": [
+        "6.28",
+        "1.49",
+        "0.05",
+        "0.06",
+        "0.06"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": ""
+    },
+    {
+      "id": "s4-19",
+      "group": "การดูแลและการวินิจฉัย",
+      "name": "ร้อยละ Over triage",
+      "targetText": "< 15",
+      "target": 15,
+      "comparison": "lt",
+      "unit": "%",
+      "values": [
+        0.48,
+        0.48,
+        1.94,
+        1.14,
+        0.37
+      ],
+      "raw": [
+        "0.48",
+        "0.48",
+        "1.94",
+        "1.14",
+        "0.37"
+      ],
+      "benchmark": "",
+      "slide": 4,
+      "note": ""
+    },
+    {
+      "id": "s5-20",
+      "group": "Never Event และ Harm Free Care",
+      "name": "1. การผ่าตัดผิดคน ผิดข้าง ผิดตำแหน่ง ผิดหัตถการ",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        2,
+        0,
+        2,
+        0
+      ],
+      "raw": [
+        "0",
+        "2(D = 1,E=1)",
+        "0",
+        "2(E=2)",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "s5-21",
+      "group": "Never Event และ Harm Free Care",
+      "name": "2. การแพ้ยาซ้ำ ความรุนแรงตั้งแต่ระดับ G",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "s5-22",
+      "group": "Never Event และ Harm Free Care",
+      "name": "3. การให้เลือดผิด กลุ่ม ABO",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "raw": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "1"
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "s5-23",
+      "group": "Never Event และ Harm Free Care",
+      "name": "4. การส่งทารกผิดคน",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        null
+      ],
+      "raw": [
+        "0",
+        "0",
+        "0",
+        "0",
+        ""
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "s5-24",
+      "group": "Never Event และ Harm Free Care",
+      "name": "5. การมีสิ่งตกค้างในร่างกายผู้ป่วย",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "raw": [
+        "0",
+        "1(E = 1 ortho)",
+        "0",
+        "1 (E = 1 สูติ)",
+        "1 (E = 1 สูติballoon tamponade)"
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "s5-25",
+      "group": "Never Event และ Harm Free Care",
+      "name": "6. การฆ่าตัวตายในโรงพยาบาล",
+      "targetText": "0 ครั้ง",
+      "target": 0,
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "values": [
+        0,
+        1,
+        0,
+        0,
+        3
+      ],
+      "raw": [
+        "0",
+        "1 (I = 1)",
+        "0",
+        "0",
+        "3"
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "s5-26",
+      "group": "Never Event และ Harm Free Care",
+      "name": "ร้อยละ Harm Free Care",
+      "targetText": "> 98%",
+      "target": 98,
+      "comparison": "gt",
+      "unit": "%",
+      "values": [
+        null,
+        null,
+        99.58,
+        99.47,
+        null
+      ],
+      "raw": [
+        "NA",
+        "NA",
+        "99.58",
+        "99.47",
+        ""
+      ],
+      "benchmark": "",
+      "slide": 5,
+      "note": "",
+      "periods": [
+        "2564",
+        "2565",
+        "2566",
+        "2567",
+        "2568 (ไม่ระบุช่วง)"
+      ]
+    },
+    {
+      "id": "mmu-1",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Prescribing OPD (อัตรา)",
+      "target": 1.5,
+      "targetText": "< 1.5",
+      "comparison": "lt",
+      "unit": "อัตราตามต้นฉบับ (ไม่ระบุฐาน)",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0.53,
+        0.74
+      ],
+      "raw": [
+        "0.53",
+        "0.74"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-2",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Prescribing OPD ระดับ E ขึ้นไป",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        1,
+        0
+      ],
+      "raw": [
+        "1",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-3",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Prescribing IPD (อัตรา)",
+      "target": 2,
+      "targetText": "< 2",
+      "comparison": "lt",
+      "unit": "อัตราตามต้นฉบับ (ไม่ระบุฐาน)",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        4.76,
+        7.01
+      ],
+      "raw": [
+        "4.76",
+        "7.01"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-4",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Prescribing IPD ระดับ E ขึ้นไป",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        1,
+        1
+      ],
+      "raw": [
+        "1",
+        "1"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-5",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Dispensing OPD (อัตรา)",
+      "target": 0.1,
+      "targetText": "< 0.1",
+      "comparison": "lt",
+      "unit": "อัตราตามต้นฉบับ (ไม่ระบุฐาน)",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0.01,
+        0.06
+      ],
+      "raw": [
+        "0.01",
+        "0.06"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-6",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Dispensing OPD ระดับ E ขึ้นไป",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-7",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Dispensing IPD (อัตรา)",
+      "target": 1,
+      "targetText": "< 1",
+      "comparison": "lt",
+      "unit": "อัตราตามต้นฉบับ (ไม่ระบุฐาน)",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0.68,
+        2.29
+      ],
+      "raw": [
+        "0.68",
+        "2.29"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-8",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Dispensing IPD ระดับ E ขึ้นไป",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "raw": [
+        "0",
+        "1"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-9",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration OPD ระดับ A–B",
+      "target": 0.5,
+      "targetText": "< 0.5",
+      "comparison": "lt",
+      "unit": "ครั้ง / 1,000 ใบสั่งยา",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-10",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration OPD ระดับ C–I ยาทั่วไป",
+      "target": 0.1,
+      "targetText": "< 0.1",
+      "comparison": "lt",
+      "unit": "ครั้ง / 1,000 ใบสั่งยา",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0,
+        0.03
+      ],
+      "raw": [
+        "0",
+        "0.03"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-11",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration OPD ระดับ E–I ยาทั่วไป",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-12",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration OPD ระดับ C–I ยา HAD",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-13",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration IPD ระดับ A–B",
+      "target": 3,
+      "targetText": "< 3",
+      "comparison": "lt",
+      "unit": "ครั้ง / 1,000 วันนอน",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        3.77,
+        3.29
+      ],
+      "raw": [
+        "3.77",
+        "3.29"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-14",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration IPD ระดับ C–D ยาทั่วไป",
+      "target": 1,
+      "targetText": "< 1",
+      "comparison": "lt",
+      "unit": "ครั้ง / 1,000 วันนอน",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        1.06,
+        1.3
+      ],
+      "raw": [
+        "1.06",
+        "1.3"
+      ],
+      "benchmark": "",
+      "slide": 7,
+      "note": ""
+    },
+    {
+      "id": "mmu-15",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration IPD ระดับ E–I ยาทั่วไป",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2568 Q1",
+        "2568 Q2"
+      ],
+      "values": [
+        1,
+        1
+      ],
+      "raw": [
+        "1",
+        "1"
+      ],
+      "benchmark": "",
+      "slide": 8,
+      "note": ""
+    },
+    {
+      "id": "mmu-16",
+      "group": "ข้อมูลยา MMU รายไตรมาส",
+      "name": "Administration IPD ระดับ C–I ยา HAD",
+      "target": 0,
+      "targetText": "0",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "ม.ค.–มี.ค. 2568"
+      ],
+      "values": [
+        4
+      ],
+      "raw": [
+        "4"
+      ],
+      "benchmark": "",
+      "slide": 8,
+      "note": "ต้นฉบับรายงานรวม 4 ครั้ง ช่วงมกราคม–มีนาคม 2568 โดยไม่ได้แยกเป็นไตรมาส จึงไม่ลงค่าใน Q1/Q2"
+    },
+    {
+      "id": "allergy-0",
+      "group": "การแพ้ยาซ้ำ",
+      "name": "เกือบแพ้ยาซ้ำ (Near miss)",
+      "target": 0,
+      "targetText": "ไม่กำหนด",
+      "comparison": "none",
+      "unit": "ครั้ง",
+      "periods": [
+        "2563",
+        "2564",
+        "2565",
+        "2566",
+        "2567"
+      ],
+      "values": [
+        63,
+        31,
+        26,
+        33,
+        10
+      ],
+      "raw": [
+        "63",
+        "31",
+        "26",
+        "33",
+        "10"
+      ],
+      "benchmark": "",
+      "slide": 6,
+      "note": "จำนวน Near miss เป็นการตรวจพบก่อนเกิดเหตุ ไม่ควรแปลผลว่าค่าน้อยกว่าดีกว่า"
+    },
+    {
+      "id": "allergy-1",
+      "group": "การแพ้ยาซ้ำ",
+      "name": "แพ้ยาซ้ำ ระดับ C–D",
+      "target": 0,
+      "targetText": "0 ครั้ง",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2563",
+        "2564",
+        "2565",
+        "2566",
+        "2567"
+      ],
+      "values": [
+        1,
+        0,
+        1,
+        1,
+        0
+      ],
+      "raw": [
+        "1",
+        "0",
+        "1",
+        "1",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 6,
+      "note": ""
+    },
+    {
+      "id": "allergy-2",
+      "group": "การแพ้ยาซ้ำ",
+      "name": "แพ้ยาซ้ำ ระดับ E ขึ้นไป",
+      "target": 0,
+      "targetText": "0 ครั้ง",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2563",
+        "2564",
+        "2565",
+        "2566",
+        "2567"
+      ],
+      "values": [
+        0,
+        2,
+        0,
+        0,
+        1
+      ],
+      "raw": [
+        "0",
+        "2",
+        "0",
+        "0",
+        "1"
+      ],
+      "benchmark": "",
+      "slide": 6,
+      "note": ""
+    },
+    {
+      "id": "allergy-3",
+      "group": "การแพ้ยาซ้ำ",
+      "name": "แพ้ยาซ้ำ ระดับ G ขึ้นไป",
+      "target": 0,
+      "targetText": "0 ครั้ง",
+      "comparison": "eq",
+      "unit": "ครั้ง",
+      "periods": [
+        "2563",
+        "2564",
+        "2565",
+        "2566",
+        "2567"
+      ],
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "raw": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "benchmark": "",
+      "slide": 6,
+      "note": ""
+    }
+  ],
+  "notes": [
+    {
+      "slide": 7,
+      "text": "ปี68(ข้อมูลจาก mmu) 1.อัตราความคลาดเคลื่อนจากการสั่งใช้ยาผู้ป่วยนอก (Medication error : Prescribing) – OPD เป้าหมาย < 1.5    ไตรมาส 1 = 0.53 ,ไตรมาส2=0.742.จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการสั่งใช้ยาผู้ป่วยนอก (Medication error: Prescribing) - OPD ระดับ E ขึ้นไป  เป้าหมาย 0 ครั้ง ไตรมาส1= 1 ครั้ง ( บริหารยา Heparin Overdose จากการให้ Heparin 8000 unit แทน NSS ระหว่างทำหัตถการที่ไตเทียม,  ไตรมาส 2=0 ครั้ง3.อัตราความคลาดเคลื่อนจากการสั่งใช้ยาผู้ป่วยใน (Medication error: Prescribing) – IPD เป้าหมาย < 2  ไตรมาส 1 = 4.76 , ไตรมาส 2 = 7.014.จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการสั่งใช้ยาผู้ป่วยใน (Medication error: Prescribing) - IPD ระดับ E ขึ้นไป เป้าหมาย 0 ครั้ง ไตรมาส1= 1 ครั้ง (สั่งยา Diazepam inj Overdose ในผู้ป่วย ESRD  ต้อง CPR และ ลง ICU สาเหตุจาก competency ของแพทย์ Extern ที่สั่งยาโดยยังไม่ได้ปรึกษาแพทย์ Intern โดยเฉพาะเคสที่มีความซับซ้อนไตรมาส2 = 1 ครั้ง (แพ้ยาซ้ำโครงสร้างคล้ายกัน มีประวัติแพ้ Ibuprofen สั่ง Ketorolac  inj ที่วิสัญญี มีผื่นขึ้นที่หอผู้ป่วยเนื่องจาก แพทย์ซักประวัติการแพ้ยาไม่พบ ) 5. อัตราความคลาดเคลื่อนจากการจ่ายยาผู้ป่วยนอก (Medication error: Dispensing)  - OPD เป้าหมาย< 0.1  ไตรมาส1 = 0.01 , ไตรมาส2= 0.066. จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการจ่ายยาผู้ป่วยนอก (Medication error: Dispensing)  - OPD ระดับ E ขึ้นไป เป้าหมาย 0 ครั้ง ไตรมาส1= 0 ครั้ง  , ไตรมาส2= 0 คร้ง7. อัตราความคลาดเคลื่อนจากการจ่ายยาผู้ป่วยใน (Medication error: Dispensing)  - IPD เป้าหมาย< 1  ไตรมาส1 = 0.68, ไตรมาส2 = 2.298. จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการจ่ายยาผู้ป่วยใน (Medication error: Dispensing)  - IPD ระดับ E ขึ้นไป เป้าหมาย 0 ครั้ง ไตรมาส1= 0 ครั้ง , ไตรมาส 2= 1 ครั้ง(แพ้ยาซ้ำโครงสร้างคล้ายกัน มีประวัติแพ้ Ibuprofen สั่ง Ketorolac  inj ที่วิสัญญี มีผื่นขึ้นที่หอผู้ป่วยเนื่องจาก เภสัชกรที่ทำ Medication Reconciliation ก่อนผ่าตัด ไม่ได้ลงประวัติการแพ้ยาในระบบ HIS (แต่ลง Alert) เนื่องจากไม่แน่ใจว่าผู้ป่วยแพ้ยาจริงหรือไม่ ทำให้เภสัชกรที่จ่ายยาผู้ป่วยใน (IPD) ไม่ทราบประวัติยาที่ผู้ป่วยแพ้ ) 9. อัตราความคลาดเคลื่อนจากการบริหารยาผู้ป่วยนอก (Medication error : Administration)  - OPD level A-B  เป้าหมาย < 0.5 ครั้ง: 1000 ใบสั่งยา ไตรมาส1= 0 , ไตรมาส 2=010. อัตราความคลาดเคลื่อนจากการบริหารยาผู้ป่วยนอก (Medication error : Administration)  - OPD level C-I (กลุ่มยาทั่วไป) เป้าหมาย < 0.1 ครั้ง: 1000 ใบสั่งยา ไตรมาส 1=0ไตรมาส 2 =0.0311. จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการบริหารยาผู้ป่วยนอก (Medication error : Administration)  - OPD level E-I (กลุ่มยาทั่วไป) เป้าหมาย 0 ครั้ง ไตรมาส1= 0 ครั้ง ไตรมาส2 = 0 ครั้ง12. จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการบริหารยาผู้ป่วยนอก (Medication error : Administration)  - OPD level C-I (กลุ่มยา HAD) เป้าหมาย 0 ครั้ง ไตรมาส1= 0 ครั้ง ไตรมาส 2 = 0 ครั้ง13. อัตราความคลาดเคลื่อนจากการบริหารยาผู้ป่วยใน (Medication error : Administration)  - IPD level A-B เป้าหมาย < 3 ครั้ง: 1000 วันนอน     ไตรมาม 1= 3.77 ,ไตรมาส 2 = 3.2914. อัตราความคลาดเคลื่อนจากการบริหารยาผู้ป่วยใน (Medication error : Administration)  - IPD level C-D (กลุ่มยาทั่วไป) เป้าหมาย < 1ครั้ง: 1000 วันนอน  ไตรมาส1= 1.06ไตรมาส 2= 1.3"
+    },
+    {
+      "slide": 8,
+      "text": "15. จำนวนอุบัติการณ์ความคลาดเคลื่อนจากการบริหารยาผู้ป่วยใน (Medication error : Administration)  - IPD level E-I (กลุ่มยาทั่วไป) เป้าหมาย 0 ครั้ง ไตรมาส1=1 cloxa inj overdose ในเด็กจากการเขียนฉลากผิด10เท่าติดตามlab  ไตรมาส 2= 1 (แพ้ยาซ้ำโครงสร้างคล้ายกัน มีประวัติแพ้ Ibuprofen สั่ง Ketorolac  inj ที่วิสัญญี มีผื่นขึ้นที่หอผู้ป่วย เนื่องจากพยาบาลวิสัญญีไม่ทราบประวัติที่ผู้ป่วยแพ้ เพราะผู้ป่วยแจ้งว่าไม่แพ้เมื่อพยาบาลวิสัญญีทำการซักประวัติ16. จำนวนอุบัติการณ์คลาดเคลื่อนจากการบริหารยาผู้ป่วยใน (Medication error : Administration)  - IPD level C-I (กลุ่มยา HAD) เป้าหมาย 0 ครั้ง = 4 (ดือนมกราคม 2568 18 B HAD D Adenosine ให้ยา ADENOSINE 12 mg  แพทย์สั่ง 6 mg , เดือนกุมภาพันธ์ 2568 MICU HAD D  ปิด Adrenaline&Nicardipine ได้รับยาน้อยกว่าคำสั่งการรักษา พบ clamp สาย IV Adrenaline&NTG   , เดือนกุมภาพันธ์ 2568 22B HAD D ให้ยาผิดชนิด  ฉีด RI 4 U แพทย์ Order NPH , เดือนมีนาคม 2568 20B HAD D แพทย์สั่ง Valium 5 mg for seizure แต่ฉีด 10 mg  )"
+    }
+  ],
+  "source": "มาตรฐานจำเป็น 9 ด้าน ปีงบ 64-68.pptx",
+  "sourceNote": "ข้อมูลปี 2568 เป็นข้อมูลระหว่างปีตามที่ระบุในต้นฉบับ ไม่ใช่ผลทั้งปี ช่องว่าง/NA หมายถึงไม่มีข้อมูล ไม่ใช่ศูนย์ จำนวนเหตุการณ์แต่ละตัวชี้วัดอาจเป็นเหตุการณ์เดียวกัน จึงไม่ควรรวมยอดข้ามตัวชี้วัด Benchmark อ้างอิงปี 2567 ตามต้นฉบับ ซึ่งระบุวันที่แหล่งข้อมูล 31 กรกฎาคม 2567 แม้มีข้อมูลปี 2568"
+}

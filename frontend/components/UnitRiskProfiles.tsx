@@ -2,6 +2,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { riskFrequency, unitRiskColors, type RiskType } from '@/lib/unitRiskMatrix';
+import type { ImportedRisk } from '@/lib/unitRiskImport';
 
 type Unit = { id: number; name: string };
 type Risk = { id: number; unit_id: number; year: number; quarter: number; category: RiskType; title: string; occurrence_count: number; impact: number };
@@ -15,6 +16,31 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
   const [quarter, setQuarter] = useState(() => Math.floor(((new Date().getMonth() + 3) % 12) / 3) + 1);
   const [category, setCategory] = useState<RiskType>('clinical');
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [preview, setPreview] = useState<ImportedRisk[]>([]);
+  const [importInfo,setImportInfo] = useState('');
+  const [importWarnings,setImportWarnings] = useState<string[]>([]);
+  const [importMessage,setImportMessage] = useState('');
+  async function readFile(file: File) {
+    setBusy(true); setError(''); setPreview([]); setImportMessage('');
+    try {
+      const form = new FormData(); form.set('file',file);
+      const response = await fetch('/api/unit-risks/extract',{method:'POST',body:form});
+      const body = await response.json(); if(!response.ok) throw new Error(body.error);
+      setPreview(body.items); setImportWarnings(body.warnings);
+      setImportInfo(`${file.name} · ${body.unitName ?? ''} · ${body.sourceRows} รายการความเสี่ยง`);
+      if(body.year) setYear(body.year); if(body.quarter) setQuarter(body.quarter);
+      setCategory('clinical');
+      const match=units.find(u=>u.name===body.unitName); if(match) setUnitId(match.id);
+    } catch(err) { setError((err as Error).message); } finally {setBusy(false);}
+  }
+  async function saveImport() {
+    setBusy(true); setError('');
+    try {
+      const response=await fetch('/api/unit-risks/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit_id:unitId,year,quarter,category,items:preview.map(i=>({...i,title:`${i.title} [${i.levels}]`}))})});
+      const body=await response.json(); if(!response.ok) throw new Error(body.error);
+      setImportMessage(`บันทึก ${body.inserted} รายการแยกตามผลกระทบ · ข้ามรายการซ้ำ ${body.skipped} รายการ`);setPreview([]);router.refresh();
+    } catch(err) {setError((err as Error).message);} finally {setBusy(false);}
+  }
   const selected = risks.filter(r => r.unit_id === unitId && r.year === year && r.quarter === quarter && r.category === category);
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const values = new FormData(form);
@@ -41,13 +67,29 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
       </div>
       <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table"><tbody>
         {[5,4,3,2,1].map(i => <tr key={i}><th>{impacts[i-1]}</th>{[1,2,3,4,5].map(col => {
-          const items = selected.filter(r => r.impact === i && riskFrequency(r.occurrence_count, r.year, r.quarter).column === col);
+          const matrixItems = preview.length ? preview.map((r,index)=>({...r,id:-index-1,year,quarter})) : selected;
+          const items = matrixItems.filter(r => r.impact === i && riskFrequency(r.occurrence_count, r.year, r.quarter).column === col);
           return <td key={col} className={`risk-color-${unitRiskColors[category][i-1][col-1]}`}><ul>{items.map(r => <li key={r.id}>{r.title}<small>{r.occurrence_count} ครั้ง · {riskFrequency(r.occurrence_count,r.year,r.quarter).annualRate.toFixed(1)} ครั้ง/ปี</small></li>)}</ul></td>;
         })}</tr>)}
       </tbody><tfoot><tr><th>ผลกระทบ / ความถี่</th>{frequencies.map(f => <th key={f} className="risk-frequency-heading">{f}</th>)}</tr></tfoot></table></div>
       <p style={{ color: 'var(--text2)', marginTop: 12, fontSize: 13 }}>คำนวณจำนวนครั้ง ÷ จำนวนวันในไตรมาส × 365.2425 วัน: 0 = Remote, มากกว่า 0 ถึง 1 ครั้ง/ปี = Uncommon, มากกว่า 1 ถึง 36 ครั้ง/ปี = Occasional, มากกว่า 36 ถึง 624 ครั้ง/ปี = Probable, มากกว่า 624 ครั้ง/ปี = Frequent</p>
       <p style={{ color: 'var(--text3)', marginTop: 6, fontSize: 12 }}>ช่วงที่ต้นฉบับไม่ได้ระบุใช้การจัดเข้าช่วงถัดไปที่ครอบคลุม และสมมติอัตราเฉลี่ยคงที่ตลอดปี · โปรดทบทวนผลก่อนนำไปใช้</p>
       {error && <p className="announcement-error" role="alert">{error}</p>}
+      <div style={{marginTop:20}}>
+        <h3>นำเข้าตารางความเสี่ยงจาก Word</h3>
+        <p>เลือกไฟล์ .doc หรือ .docx ที่มีตารางจำนวนครั้งและระดับ A–I (ไม่เกิน 5 MB) ระบบจะแสดงตัวอย่างในตารางสีด้านบน</p>
+        <input aria-label="เลือกไฟล์ความเสี่ยง Word" type="file" accept=".doc,.docx" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void readFile(file);e.target.value='';}} />
+        {busy&&<p role="status">กำลังดำเนินการ…</p>}
+        {importMessage&&<p role="status">{importMessage}</p>}
+        {preview.length>0&&<>
+          <p>{importInfo}</p><p>ตัวอย่างก่อนบันทึก: {units.find(u=>u.id===unitId)?.name} · ปีงบประมาณ {year} · ไตรมาส {quarter} · รวม {preview.reduce((s,i)=>s+i.occurrence_count,0)} ครั้ง</p>
+          <p>ตรวจสอบหน่วยงานด้านบนก่อนบันทึก ระดับ A–B = 1, C–D = 2, E = 3, F = 4, G–I = 5</p>
+          {importWarnings.map((w,i)=><p role="alert" key={i}>{w}</p>)}
+          <div style={{overflowX:'auto'}}><table style={{width:'100%'}}><thead><tr><th>ความเสี่ยง</th><th>ระดับจากไฟล์</th><th>จำนวนครั้ง</th><th>ผลกระทบ</th></tr></thead><tbody>{preview.map((r,i)=><tr key={i}><td>{r.title}</td><td>{r.levels}</td><td>{r.occurrence_count}</td><td>{impacts[r.impact-1]}</td></tr>)}</tbody></table></div>
+          <button className="tb-btn tb-btn-primary" disabled={busy} onClick={saveImport}>บันทึกข้อมูลนำเข้า</button>{' '}
+          <button className="tb-btn tb-btn-ghost" disabled={busy} onClick={()=>setPreview([])}>ยกเลิกตัวอย่าง</button>
+        </>}
+      </div>
     </div></section>
     <section className="card"><div className="card-header"><div className="card-title">เพิ่มรายการความเสี่ยง</div></div><div className="card-body">
       <form className="survey-form" onSubmit={add}>

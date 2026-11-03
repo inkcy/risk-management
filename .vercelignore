@@ -1,0 +1,9 @@
+.git
+**/node_modules
+**/.next
+**/.codex-vercel-node
+.codex-vercel-node
+**/.env*
+**/*.log
+**/*.tsbuildinfo
+_legacy

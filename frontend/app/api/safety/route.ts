@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { audit, requireRole } from '@/lib/auth';
+import { audit, requireReadAccess, requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { loadSafety } from '@/lib/safety';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const denied = await requireReadAccess();
+  if (denied) return denied;
+  const result = await loadSafety();
+  if (result.error) return NextResponse.json({error:result.error},{status:503,headers:{'Cache-Control':'no-store'}});
+  return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
+}
+
 export async function PUT(request:NextRequest) {
   const auth=await requireRole('admin');
   if (!auth.ok) return auth.response;

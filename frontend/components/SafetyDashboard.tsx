@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SafetyData, SafetyIndicator } from '@/lib/safety';
 import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 import { formatSafetyText } from '@/lib/safety-text';
@@ -25,6 +25,31 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const [data,setData]=useState(initial),[draft,setDraft]=useState(initial),[revision,setRevision]=useState(initialRevision);
   const [mode,setMode]=useState<PeriodMode>('year'),[year,setYear]=useState(Math.max(2568,...(initial.years??[])));
   const [group,setGroup]=useState(initial.indicators[0].group),[editing,setEditing]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState('');
+  const [syncError,setSyncError]=useState(''),[newerRevision,setNewerRevision]=useState(false);
+  useEffect(()=>{
+    let active=true;
+    let inFlight=false;
+    const controller=new AbortController();
+    async function sync(){
+      if(document.visibilityState==='hidden'||inFlight)return;
+      inFlight=true;
+      try{
+        const response=await fetch('/api/safety',{cache:'no-store',signal:controller.signal});
+        const latest=await response.json();
+        if(!response.ok)throw new Error(latest.error||'โหลดข้อมูลกลางไม่สำเร็จ');
+        if(!active)return;
+        setSyncError('');
+        if(editing){setNewerRevision(latest.revision!==revision);return;}
+        setData(latest.data);setDraft(latest.data);setRevision(latest.revision);setNewerRevision(false);
+      }catch(error){if(active)setSyncError(error instanceof Error?error.message:'โหลดข้อมูลกลางไม่สำเร็จ');}
+      finally{inFlight=false;}
+    }
+    void sync();
+    const timer=window.setInterval(sync,15000);
+    window.addEventListener('focus',sync);
+    document.addEventListener('visibilitychange',sync);
+    return ()=>{active=false;controller.abort();window.clearInterval(timer);window.removeEventListener('focus',sync);document.removeEventListener('visibilitychange',sync);};
+  },[editing,revision]);
   const groups=Array.from(new Set(data.indicators.map(i=>i.group)));
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
   const visible=(editing?draft:data).indicators.filter(i=>i.group===group);
@@ -40,14 +65,19 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     setSaving(true);setMessage('');
     try {
       const response=await fetch('/api/safety',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:draft,revision})});
-      const result=await response.json(); if(!response.ok) throw new Error(result.error);
-      setData(draft);setRevision(result.revision);setEditing(false);setMessage('บันทึกแล้ว ผู้ดูจะเห็นข้อมูลล่าสุดเมื่อเปิดหรือรีเฟรชแดชบอร์ด');
+      const result=await response.json();
+      if(response.status===409)setNewerRevision(true);
+      if(!response.ok) throw new Error(result.error||'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
+      setData(draft);setRevision(result.revision);setEditing(false);setMessage('บันทึกลงข้อมูลกลางแล้ว แอดมินทุกคนจะได้รับข้อมูลล่าสุดอัตโนมัติภายใน 15 วินาที');
     }catch(error){setMessage(error instanceof Error?error.message:'บันทึกไม่สำเร็จ');}finally{setSaving(false);}
   }
   return <section className="card" style={{marginBottom:24}}>
     <div className="card-header" style={{flexWrap:'wrap',gap:12}}><div><div className="card-title">มาตรฐานสำคัญต่อความปลอดภัย 9 ด้าน</div><p style={{fontSize:13,color:'var(--text2)'}}>ติดตามตัวชี้วัดตามปีปฏิทิน มกราคม–ธันวาคม</p></div>{canEdit&&!editing&&<button className="tb-btn tb-btn-primary" onClick={startEditing}>แก้ไขข้อมูลตัวชี้วัดและข้อความ</button>}{editing&&<div style={{display:'flex',gap:8}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>}</div>
     <div className="card-body">
       {loadError&&<p role="alert">{loadError}</p>}{message&&<p role="status" style={{marginBottom:16}}>{message}</p>}
+      <p style={{fontSize:12,color:'var(--text2)',marginBottom:12}}>ข้อมูลชุดกลางร่วมกันสำหรับแอดมินทุกคน · อัปเดตอัตโนมัติทุก 15 วินาที · การแก้ไขจะเผยแพร่เมื่อกดบันทึกทั้งหมด</p>
+      {syncError&&<p role="alert">ยังยืนยันข้อมูลล่าสุดไม่ได้: {syncError}</p>}
+      {newerRevision&&editing&&<p role="alert">มีแอดมินคนอื่นบันทึกข้อมูลใหม่แล้ว ระบบเก็บสิ่งที่คุณกำลังแก้ไขไว้และจะไม่บันทึกทับข้อมูลใหม่ กรุณาคัดลอกสิ่งที่ต้องการเก็บก่อน <button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>{setEditing(false);setMessage('กำลังโหลดข้อมูลกลางล่าสุด');}}>ยกเลิกการแก้ไขและโหลดข้อมูลล่าสุด</button></p>}
       {editing?<label className="safety-note-label">คำอธิบายและหมายเหตุข้อมูล<textarea className="safety-note-input" rows={4} maxLength={10000} disabled={saving} value={draft.sourceNote} onChange={e=>setDraft(d=>({...d,sourceNote:e.target.value}))}/></label>:<p style={{fontSize:13,color:'var(--text2)',marginBottom:16,whiteSpace:'pre-wrap'}}>{data.sourceNote}</p>}
       <label style={{display:'block',marginBottom:20}}>หมวดตัวชี้วัด <select value={group} onChange={e=>setGroup(e.target.value)} style={{padding:10,maxWidth:'100%',background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}>{groups.map(g=><option key={g}>{g}</option>)}</select></label>
       <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',marginBottom:12}}>

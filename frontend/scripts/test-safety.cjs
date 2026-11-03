@@ -22,10 +22,12 @@ assert.equal(formatSafetyText('ข้อความที่แอดมิน�
 let role='viewer', stored=null, calls=0;
 const moduleMock={exports:{}};
 const json=(body,options={})=>({status:options.status??200,body});
-const auth={requireRole:async minimum=>role===minimum?{ok:true,user:{id:1}}:{ok:false,response:json({error:'Forbidden'},{status:role?403:401})},audit:async()=>{}};
+const auth={requireReadAccess:async()=>role?null:json({error:'Unauthorized'},{status:401}),requireRole:async minimum=>role===minimum?{ok:true,user:{id:1}}:{ok:false,response:json({error:'Forbidden'},{status:role?403:401})},audit:async()=>{}};
 const db={query:async(sql,params)=>{calls++;if(sql.startsWith('CREATE'))return {rows:[]};if(sql.startsWith('INSERT')){if(stored)return {rows:[]};stored={data:JSON.parse(params[0]),revision:1};return {rows:[{revision:1}]};}if(sql.startsWith('UPDATE')){if(!stored||stored.revision!==params[1])return {rows:[]};stored={data:JSON.parse(params[0]),revision:stored.revision+1};return {rows:[{revision:stored.revision}]};}throw Error(sql);}};
 const compiled=ts.transpileModule(fs.readFileSync('app/api/safety/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
-vm.runInNewContext(compiled,{exports:moduleMock.exports,require:name=>name==='next/server'?{NextResponse:{json}}:name==='@/lib/auth'?auth:db,console});
+let readError=false;
+const safety={loadSafety:async()=>readError?{data:seed,revision:0,error:'Database unavailable'}:stored??{data:seed,revision:0}};
+vm.runInNewContext(compiled,{exports:moduleMock.exports,require:name=>name==='next/server'?{NextResponse:{json}}:name==='@/lib/auth'?auth:name==='@/lib/safety'?safety:db,console});
 const put=body=>moduleMock.exports.PUT({json:async()=>body});
 (async()=>{
   assert.equal(seed.indicators.length,46);
@@ -117,5 +119,20 @@ const put=body=>moduleMock.exports.PUT({json:async()=>body});
   assert.equal(stored.data.indicators[0].measurements.find(r=>r.basis==='calendar').value,90);
   futureData.years=[2570,2570];
   assert.equal((await put({data:futureData,revision:6})).status,400);
+  // Every account reads the same committed data; a stale admin cannot overwrite it.
+  for(const account of ['admin','viewer','editor']){
+    role=account;
+    const latest=await moduleMock.exports.GET();
+    assert.equal(latest.status,200);
+    assert.equal(latest.body.revision,6);
+    assert.equal(latest.body.data.indicators[0].measurements.find(r=>r.basis==='calendar').value,90);
+  }
+  role='admin';
+  assert.equal((await put({data:seed,revision:5})).status,409);
+  assert.equal((await moduleMock.exports.GET()).body.revision,6);
+  readError=true;
+  assert.equal((await moduleMock.exports.GET()).status,503);
+  role=null;
+  assert.equal((await moduleMock.exports.GET()).status,401);
   console.log('PASS: reference data, missing values, role enforcement, save/update, conflict and invalid value checks');
 })().catch(e=>{console.error(e);process.exitCode=1;});

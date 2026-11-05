@@ -4,6 +4,7 @@ import { audit, requireReadAccess, requireRole } from '@/lib/auth';
 import { envelope } from '@/lib/envelope';
 import { demoIncidents } from '@/lib/demo';
 import type { Incident } from '@/lib/types';
+import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 
 const CATEGORIES = ['blood', 'medication', 'fall', 'procedure', 'communication', 'other'] as const;
 const SEVERITIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] as const;
@@ -47,7 +48,18 @@ export async function POST(request: NextRequest) {
 
     let resolvedUnitId = typeof unit_id === 'number' && Number.isInteger(unit_id) ? unit_id : null;
     if (resolvedUnitId === null && typeof unit_code === 'string' && unit_code.trim()) {
-      const unit = await query<{ id: number }>('SELECT id FROM units WHERE code = $1', [unit_code.trim()]);
+      const code = unit_code.trim();
+      const name = code.startsWith('RP:') ? code.slice(3) : null;
+      if (name !== null && !riskUnitDirectory.some(unit => unit === name)) {
+        return NextResponse.json({ error: 'ไม่พบหน่วยงานที่เลือก' }, { status: 400 });
+      }
+      // Provision official Risk Profile units on first use, without a separate seed step.
+      const unit = name !== null
+        ? await query<{ id: number }>(
+          `INSERT INTO units (code, name_th) VALUES ($1, $2)
+           ON CONFLICT (code) DO UPDATE SET name_th = EXCLUDED.name_th RETURNING id`, [code, name],
+        )
+        : await query<{ id: number }>('SELECT id FROM units WHERE code = $1', [code]);
       if (unit.rows.length === 0) {
         return NextResponse.json({ error: 'ไม่พบหน่วยงานที่เลือก' }, { status: 400 });
       }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 
 interface RecentReport {
   ir_code: string;
@@ -59,6 +60,7 @@ const units = [
   { code: 'OR', label: 'ห้องผ่าตัด' },
   { code: 'BB', label: 'ธนาคารเลือด' },
   { code: 'ER', label: 'ห้องฉุกเฉิน' },
+  ...riskUnitDirectory.map(name => ({ code: `RP:${name}`, label: name })),
 ];
 const categories: { value: string; label: string }[] = [
   { value: 'blood', label: 'การให้เลือด' },

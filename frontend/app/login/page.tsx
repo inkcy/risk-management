@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
-import { oauthConfigured } from '@/lib/googleOauth';
-import { dbConfigured } from '@/lib/db';
+import { DepartmentLogin } from '@/components/DepartmentLogin';
+import { dbConfigured, query } from '@/lib/db';
 
 const ERRORS: Record<string, string> = {
   config: 'ระบบยังตั้งค่าไม่ครบ — ดูรายการที่ขาดด้านล่าง',
@@ -16,8 +16,6 @@ const ERRORS: Record<string, string> = {
 /** ชื่อ env ที่ยังขาด — แสดงแค่ชื่อตัวแปร ไม่มีค่าใด ๆ หลุดออกไป */
 function missingConfig(): string[] {
   return [
-    !process.env.GOOGLE_CLIENT_ID && 'GOOGLE_CLIENT_ID',
-    !process.env.GOOGLE_CLIENT_SECRET && 'GOOGLE_CLIENT_SECRET',
     (process.env.SESSION_SECRET?.length ?? 0) < 32 && 'SESSION_SECRET',
     !dbConfigured() && 'POSTGRES_URL',
   ].filter((v): v is string => typeof v === 'string');
@@ -31,11 +29,18 @@ export default async function LoginPage({
   const { error, next } = await searchParams;
 
   const user = await getSessionUser();
-  if (user) redirect(next && next.startsWith('/') ? next : '/');
+  if (user) redirect(next?.startsWith('/') && !next.startsWith('//') && !next.includes('\\') ? next : '/');
 
-  const ready = oauthConfigured() && dbConfigured();
+  let units: { id: number; name: string }[] = [];
+  let directoryAvailable = false;
+  if (dbConfigured()) {
+    try {
+      units = (await query<{ id: number; name: string }>('SELECT id, name FROM risk_units WHERE active ORDER BY name')).rows;
+      directoryAvailable = true;
+    } catch { /* Show an unavailable state without exposing database details. */ }
+  }
+  const ready = directoryAvailable && (process.env.SESSION_SECRET?.length ?? 0) >= 32;
   const missing = ready ? [] : missingConfig();
-  const signInHref = `/api/auth/google${next ? `?next=${encodeURIComponent(next)}` : ''}`;
 
   return (
     <div style={{
@@ -73,7 +78,7 @@ export default async function LoginPage({
           <p style={{ fontSize: 15, color: 'var(--text2)', margin: '0 0 26px', lineHeight: 1.6 }}>
             Hospital Risk Management
             <br />
-            เข้าสู่ระบบด้วยบัญชีของโรงพยาบาล
+            ค้นหาหน่วยงานและกรอกรหัสผ่านเพื่อเข้าสู่ระบบ
           </p>
 
           {error && (
@@ -91,10 +96,7 @@ export default async function LoginPage({
           )}
 
           {ready ? (
-            <a href={signInHref} className="google-btn">
-              <GoogleMark />
-              เข้าสู่ระบบด้วย Google
-            </a>
+            <DepartmentLogin units={units} next={next} />
           ) : (
             <div style={{
               background: 'var(--bg3)', borderRadius: 14,
@@ -104,7 +106,7 @@ export default async function LoginPage({
                 ยังเปิดใช้งานการเข้าสู่ระบบไม่ได้
               </div>
               <div style={{ fontSize: 13.8, color: 'var(--text2)', lineHeight: 1.65, marginBottom: 11 }}>
-                ผู้ดูแลระบบต้องตั้งค่าตัวแปรต่อไปนี้ก่อน (ขั้นตอนอยู่ใน README)
+                กรุณาติดต่อผู้ดูแลระบบเพื่อตรวจสอบการตั้งค่าและบัญชีหน่วยงาน
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {missing.map(name => (
@@ -131,7 +133,7 @@ export default async function LoginPage({
         }}>
           ระบบนี้มีข้อมูลสุขภาพส่วนบุคคล การเข้าใช้งานทุกครั้งถูกบันทึกไว้เพื่อการตรวจสอบ
           <br />
-          ผู้ใช้ใหม่จะได้สิทธิ์ <strong style={{ color: 'var(--text2)' }}>ผู้ดูอย่างเดียว</strong> จนกว่าผู้ดูแลระบบจะเลื่อนสิทธิ์ให้
+          เลือกหน่วยงานของคุณและใช้รหัสผ่านที่ได้รับจากผู้ดูแลระบบ
         </p>
       </div>
     </div>
@@ -146,17 +148,6 @@ function ShieldMark() {
         stroke="#fff" strokeWidth="1.7" strokeLinejoin="round"
       />
       <path d="M12 8.4v6M9 11.4h6" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z" />
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </svg>
   );
 }

@@ -135,7 +135,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       `SELECT u.id, u.email, u.name, u.picture, u.role
        FROM sessions s
        JOIN users u ON u.id = s.user_id
-       WHERE s.id = $1 AND s.expires_at > now() AND u.active`,
+       LEFT JOIN risk_units ru ON ru.id = u.risk_unit_id
+       WHERE s.id = $1 AND s.expires_at > now() AND u.active
+         AND (u.risk_unit_id IS NULL OR ru.active)`,
       [sessionId],
     );
     return rows[0] ?? null;

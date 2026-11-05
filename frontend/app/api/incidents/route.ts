@@ -6,9 +6,9 @@ import { demoIncidents } from '@/lib/demo';
 import type { Incident } from '@/lib/types';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 import { incidentCategories } from '@/lib/incident-categories';
+import { validIncidentSeverity } from '@/lib/incident-severity';
 
 const CATEGORIES = incidentCategories.map(category => category.value);
-const SEVERITIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] as const;
 
 export async function GET() {
   const denied = await requireReadAccess();
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       typeof occurred_at !== 'string' || !occurred_at.trim() ||
       typeof title !== 'string' || !title.trim() ||
       typeof category !== 'string' || !CATEGORIES.includes(category as (typeof CATEGORIES)[number]) ||
-      typeof severity !== 'string' || !SEVERITIES.includes(severity as (typeof SEVERITIES)[number])
+      typeof severity !== 'string' || !validIncidentSeverity(category, severity)
     ) {
       return NextResponse.json({ error: 'ข้อมูลรายงานไม่ครบหรือมีค่าไม่ถูกต้อง' }, { status: 400 });
     }

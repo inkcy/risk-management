@@ -1,4 +1,4 @@
-export type Severity = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I';
+export type Severity = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | '1' | '2' | '3' | '4' | '5';
 export type Category = 'blood' | 'medication' | 'fall' | 'procedure' | 'communication' | 'other' | 'traffic' | 'environment' | 'natural_disaster' | 'corruption';
 export type RcaStatus = 'pending' | 'in_progress' | 'done' | 'not_required';
 export type ActionStatus = 'planned' | 'in_progress' | 'done' | 'overdue';

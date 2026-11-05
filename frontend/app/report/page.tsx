@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 import { incidentCategoryGroups, incidentRiskGroup } from '@/lib/incident-categories';
+import { generalSeverities, validIncidentSeverity } from '@/lib/incident-severity';
 
 interface RecentReport {
   ir_code: string;
@@ -82,6 +83,7 @@ export default function ReportPage() {
   const [message, setMessage] = useState('');
   const [lastIrCode, setLastIrCode] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentReport[]>([]);
+  const visibleSeverities = form.risk_group === 'nonclinical' ? generalSeverities : severities;
 
   useEffect(() => {
     setRecent(loadRecent());
@@ -89,7 +91,7 @@ export default function ReportPage() {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<typeof EMPTY_FORM>;
-        setForm({ ...EMPTY_FORM, ...parsed, risk_group: incidentRiskGroup(parsed.category ?? '') || parsed.risk_group || '' });
+        setForm({ ...EMPTY_FORM, ...parsed, risk_group: incidentRiskGroup(parsed.category ?? '') || parsed.risk_group || '', severity: validIncidentSeverity(parsed.category ?? '', parsed.severity ?? '') ? parsed.severity! : '' });
         setStatus('draft');
         setMessage('เปิดร่างรายงานที่บันทึกไว้ในเบราว์เซอร์นี้แล้ว');
       }
@@ -125,6 +127,9 @@ export default function ReportPage() {
       setStatus('error');
       setMessage('กรุณาเลือกหน่วยงานจากรายการ');
       return;
+    }
+    if (!validIncidentSeverity(form.category, form.severity)) {
+      setStatus('error'); setMessage('กรุณาเลือกระดับความรุนแรงให้ตรงกับด้านความเสี่ยง'); return;
     }
     setStatus('submitting');
     try {
@@ -206,7 +211,7 @@ export default function ReportPage() {
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="report-risk-group">ด้านความเสี่ยง</label>
-                <select id="report-risk-group" value={form.risk_group} onChange={e => setForm(s => ({ ...s, risk_group: e.target.value, category: '' }))} required>
+                <select id="report-risk-group" value={form.risk_group} onChange={e => setForm(s => ({ ...s, risk_group: e.target.value, category: '', severity: '' }))} required>
                   <option value="">เลือกด้านความเสี่ยง</option>
                   {incidentCategoryGroups.map(group => <option key={group.value} value={group.value}>{group.label}</option>)}
                 </select>
@@ -220,9 +225,9 @@ export default function ReportPage() {
                 </select>
             </div>
             <div className="form-group">
-              <label className="form-label">ระดับความรุนแรง</label>
+              <label className="form-label">ระดับความรุนแรง{form.risk_group === 'nonclinical' ? 'ด้านทั่วไป (1–5)' : 'ด้านคลินิก (A–I)'}</label>
               <div className="sev-grid">
-                {severities.map(s => (
+                {visibleSeverities.map(s => (
                   <button
                     key={s.value}
                     type="button"
@@ -235,6 +240,10 @@ export default function ReportPage() {
                   </button>
                 ))}
               </div>
+              {form.risk_group === 'nonclinical' && <div style={{ marginTop: 12, lineHeight: 1.8 }}>
+                {generalSeverities.filter(level => level.value === form.severity).map(level => <p key={level.value}><strong>ระดับ {level.value} · {level.label}</strong><br />{level.description}</p>)}
+                {!form.severity && <p style={{ color: 'var(--text2)' }}>เลือกระดับ 1–5 เพื่อดูเกณฑ์ด้านผลกระทบ ความล่าช้า มูลค่าความเสียหาย และข้อร้องเรียน</p>}
+              </div>}
             </div>
             <div className="form-group">
               <label className="form-label">รายละเอียดเหตุการณ์</label>
@@ -335,7 +344,7 @@ export default function ReportPage() {
         )}
 
         <div className="card">
-          <div className="card-header"><div className="card-title">เกณฑ์การรายงาน</div></div>
+          <div className="card-header"><div className="card-title">เกณฑ์การรายงานด้านคลินิก</div></div>
           <div className="card-body" style={{ fontSize: 13.8, color: 'var(--text2)', lineHeight: 1.8 }}>
             <div style={{ marginBottom: 10 }}><span style={{ color: 'var(--red)', fontWeight: 600 }}>ระดับ E–I</span> — ต้องทำ RCA ภายใน 7 วัน รายงานคณะกรรมการ</div>
             <div style={{ marginBottom: 10 }}><span style={{ color: 'var(--amber)', fontWeight: 600 }}>ระดับ C–D</span> — วิเคราะห์สาเหตุภายใน 30 วัน</div>

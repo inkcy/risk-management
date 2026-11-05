@@ -1,4 +1,4 @@
-export type Severity = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I';
+export type Severity = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | '1' | '2' | '3' | '4' | '5';
 export type { IncidentCategory as Category } from './incident-categories';
 import type { IncidentCategory as Category } from './incident-categories';
 export type RcaStatus = 'pending' | 'in_progress' | 'done' | 'not_required';

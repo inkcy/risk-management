@@ -55,15 +55,13 @@ export default async function LoginPage({
           padding: '38px 34px 30px',
           textAlign: 'center',
         }}>
-          <div style={{
-            width: 58, height: 58, margin: '0 auto 18px',
-            borderRadius: 18,
-            background: 'linear-gradient(140deg, var(--accent), var(--accent2))',
-            boxShadow: '0 10px 26px rgba(123,97,255,0.34)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <ShieldMark />
-          </div>
+          <img
+            src="/hospital-risk-logo.png"
+            alt="โลโก้ Hospital Risk Management — Collaboration from Everyone"
+            width={152}
+            height={158}
+            style={{ display: 'block', width: 152, maxWidth: '100%', height: 'auto', margin: '0 auto 20px' }}
+          />
 
           <h1 style={{ fontSize: 24.2, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 7px' }}>
             ระบบบริหารความเสี่ยง
@@ -130,17 +128,5 @@ export default async function LoginPage({
         </p>
       </div>
     </div>
-  );
-}
-
-function ShieldMark() {
-  return (
-    <svg width="27" height="27" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2.6 5 5.4v5.5c0 4.4 2.9 8.4 7 9.5 4.1-1.1 7-5.1 7-9.5V5.4l-7-2.8Z"
-        stroke="#fff" strokeWidth="1.7" strokeLinejoin="round"
-      />
-      <path d="M12 8.4v6M9 11.4h6" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
   );
 }

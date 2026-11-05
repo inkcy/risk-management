@@ -22,6 +22,10 @@ const categoryLabel: Record<string, string> = {
   procedure: 'การผ่าตัด / หัตถการ',
   communication: 'การสื่อสาร / ส่งต่อ',
   other: 'อื่นๆ',
+  traffic: 'ความเสี่ยงด้านทั่วไป / ด้านจราจร',
+  environment: 'ความเสี่ยงด้านทั่วไป / ด้านสิ่งแวดล้อม',
+  natural_disaster: 'ความเสี่ยงด้านทั่วไป / ภัยธรรมชาติ',
+  corruption: 'ความเสี่ยงด้านทั่วไป / ทุจริตคอร์รัปชัน',
 };
 
 const causeGroupLabel: Record<string, string> = {

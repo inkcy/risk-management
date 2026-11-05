@@ -12,17 +12,10 @@ import {
   WidthType,
 } from 'docx';
 import type { ActionItem, RcaBundle } from './types';
+import { categoryLabel } from './incident-categories';
 
 const FONT = 'TH Sarabun New';
 
-const categoryLabel: Record<string, string> = {
-  blood: 'การให้เลือด',
-  medication: 'การให้ยา (High Alert)',
-  fall: 'การพลัดตกหกล้ม',
-  procedure: 'การผ่าตัด / หัตถการ',
-  communication: 'การสื่อสาร / ส่งต่อ',
-  other: 'อื่นๆ',
-};
 
 const causeGroupLabel: Record<string, string> = {
   people: 'บุคลากร (People)',

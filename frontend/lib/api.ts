@@ -7,11 +7,4 @@ export const getRcaPage = loadRcaPage;
 export const getCauti = loadCauti;
 export const getStats = loadStats;
 
-export const categoryLabel: Record<string, string> = {
-  blood: 'การให้เลือด',
-  medication: 'การให้ยา (High Alert)',
-  fall: 'การพลัดตกหกล้ม',
-  procedure: 'การผ่าตัด / หัตถการ',
-  communication: 'การสื่อสาร / ส่งต่อ',
-  other: 'อื่นๆ',
-};
+export { categoryLabel } from './incident-categories';

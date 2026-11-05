@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
+import { incidentCategoryGroups, incidentRiskGroup } from '@/lib/incident-categories';
 
 interface RecentReport {
   ir_code: string;
@@ -25,6 +26,7 @@ const EMPTY_FORM = {
   occurred_at: '',
   time: '',
   unit: '',
+  risk_group: '',
   category: '',
   severity: '',
   description: '',
@@ -62,14 +64,6 @@ const units = [
   { code: 'ER', label: 'ห้องฉุกเฉิน' },
   ...riskUnitDirectory.map(name => ({ code: `RP:${name}`, label: name })),
 ];
-const categories: { value: string; label: string }[] = [
-  { value: 'blood', label: 'การให้เลือด' },
-  { value: 'medication', label: 'การให้ยา (High Alert)' },
-  { value: 'fall', label: 'การพลัดตกหกล้ม' },
-  { value: 'procedure', label: 'การผ่าตัด / หัตถการ' },
-  { value: 'communication', label: 'การสื่อสาร / ส่งต่อ' },
-  { value: 'other', label: 'อื่นๆ' },
-];
 const severities = [
   { value: 'A', label: 'Near miss', color: 'var(--green)' },
   { value: 'B', label: 'ถึงผู้ป่วย ไม่เกิดอันตราย', color: 'var(--green)' },
@@ -95,7 +89,7 @@ export default function ReportPage() {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<typeof EMPTY_FORM>;
-        setForm({ ...EMPTY_FORM, ...parsed });
+        setForm({ ...EMPTY_FORM, ...parsed, risk_group: incidentRiskGroup(parsed.category ?? '') || parsed.risk_group || '' });
         setStatus('draft');
         setMessage('เปิดร่างรายงานที่บันทึกไว้ในเบราว์เซอร์นี้แล้ว');
       }
@@ -123,6 +117,9 @@ export default function ReportPage() {
       setStatus('error');
       setMessage('กรุณากรอกข้อมูลให้ครบ');
       return;
+    }
+    if (!form.risk_group || incidentRiskGroup(form.category) !== form.risk_group) {
+      setStatus('error');setMessage('กรุณาเลือกด้านและประเภทความเสี่ยงให้ตรงกัน');return;
     }
     if (!units.some(unit => unit.code === form.unit)) {
       setStatus('error');
@@ -208,12 +205,19 @@ export default function ReportPage() {
                 <datalist id="report-units">{units.map(unit => <option key={unit.code} value={unit.label} />)}</datalist>
               </div>
               <div className="form-group">
-                <label className="form-label">ประเภทอุบัติการณ์</label>
-                <select value={form.category} onChange={e => set('category', e.target.value)} required>
-                  <option value="">เลือกประเภท</option>
-                  {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                <label className="form-label" htmlFor="report-risk-group">ด้านความเสี่ยง</label>
+                <select id="report-risk-group" value={form.risk_group} onChange={e => setForm(s => ({ ...s, risk_group: e.target.value, category: '' }))} required>
+                  <option value="">เลือกด้านความเสี่ยง</option>
+                  {incidentCategoryGroups.map(group => <option key={group.value} value={group.value}>{group.label}</option>)}
                 </select>
               </div>
+            </div>
+            <div className="form-group">
+                <label className="form-label" htmlFor="report-category">ประเภทความเสี่ยง</label>
+                <select id="report-category" value={form.category} onChange={e => set('category', e.target.value)} disabled={!form.risk_group} required>
+                  <option value="">เลือกประเภท</option>
+                  {incidentCategoryGroups.find(group => group.value === form.risk_group)?.categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
             </div>
             <div className="form-group">
               <label className="form-label">ระดับความรุนแรง</label>

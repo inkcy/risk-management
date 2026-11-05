@@ -5,8 +5,9 @@ import { envelope } from '@/lib/envelope';
 import { demoIncidents } from '@/lib/demo';
 import type { Incident } from '@/lib/types';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
+import { incidentCategories } from '@/lib/incident-categories';
 
-const CATEGORIES = ['blood', 'medication', 'fall', 'procedure', 'communication', 'other'] as const;
+const CATEGORIES = incidentCategories.map(category => category.value);
 const SEVERITIES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] as const;
 
 export async function GET() {

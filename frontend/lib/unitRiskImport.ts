@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 
-export type ImportedRisk = { title: string; occurrence_count: number; impact: number; levels: string };
+export type ImportedRisk = { title: string; occurrence_count: number; impact: number; levels: string; source_title?: string; source_analysis_level?: 'green' | 'yellow' | 'orange' | 'red' };
 export function parseRiskText(text: string) {
   const items: ImportedRisk[] = [];
   const warnings: string[] = [];
@@ -10,6 +10,15 @@ export function parseRiskText(text: string) {
     const cells = row[3].split('\t').slice(0, 9).map(s => s.trim());
     if (!title || cells.some(s => s && !/^(?:\d+|[✓✔√⁄∕/()]+)$/.test(s))) continue;
     const total = Number(row[2]);
+    // Only read the four analysis cells when the source declares this section.
+    // These marks are the author's assessment, separate from a calculated matrix.
+    let sourceLevel: ImportedRisk['source_analysis_level'];
+    if (/Risk Analysis/.test(text)) {
+      const analysisCells = text.slice(row.index! + row[0].length).split('\t').slice(0, 4).map(cell => cell.trim());
+      const analysisMarks = analysisCells.flatMap((cell, index) => /^[✓✔√⁄∕/()]+$/.test(cell) ? [index] : []);
+      if (analysisMarks.length === 1) sourceLevel = (['green','yellow','orange','red'] as const)[analysisMarks[0]];
+      else warnings.push(`ไม่พบระดับ Risk Analysis ที่ชัดเจนในต้นฉบับ ระบบจะแสดงสีคำนวณ: ${title}`);
+    }
     const marked = cells.flatMap((s, i) => s && !/^\d+$/.test(s) ? [i] : []);
     if (marked.length > 1 || (marked.length && cells.some(s => /^\d+$/.test(s) && Number(s) > 0))) {
       warnings.push(`ระบุผลกระทบไม่ชัดเจน กรุณาตรวจสอบ: ${title}`);
@@ -20,7 +29,7 @@ export function parseRiskText(text: string) {
     for (let impact = 1; impact <= 5; impact++) {
       const indices = [[0,1],[2,3],[4],[5],[6,7,8]][impact-1];
       const count = indices.reduce((sum,i) => sum+counts[i],0);
-      if (count) items.push({ title: title.slice(0, 240), occurrence_count: count, impact, levels: indices.filter(i=>counts[i]>0).map(i=>`${'ABCDEFGHI'[i]} ${counts[i]}`).join(', ') });
+      if (count) items.push({ title: title.slice(0, 240), occurrence_count: count, impact, levels: indices.filter(i=>counts[i]>0).map(i=>`${'ABCDEFGHI'[i]} ${counts[i]}`).join(', '), ...(sourceLevel ? { source_title: title.slice(0, 240), source_analysis_level: sourceLevel } : {}) });
     }
   }
   if (!items.length) throw new Error('ไม่พบตารางความเสี่ยงที่มีจำนวนครั้งและคอลัมน์ A–I กรุณาตรวจสอบรูปแบบไฟล์');

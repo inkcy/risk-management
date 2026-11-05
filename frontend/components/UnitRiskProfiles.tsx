@@ -5,7 +5,7 @@ import { riskFrequency, unitRiskColors, type RiskType } from '@/lib/unitRiskMatr
 import type { ImportedRisk } from '@/lib/unitRiskImport';
 
 type Unit = { id: number; name: string };
-type Risk = { id: number; unit_id: number; year: number; quarter: number; category: RiskType; title: string; occurrence_count: number; impact: number };
+type Risk = { id: number; unit_id: number; year: number; quarter: number; category: RiskType; title: string; occurrence_count: number; impact: number; source_title?: string | null; source_analysis_level?: 'green' | 'yellow' | 'orange' | 'red' | null };
 const impacts = ['Negligible · A–B / 1', 'Minor · C–D / 2', 'Moderate · E / 3', 'Major · F / 4', 'Catastrophic · G–I / 5'];
 const frequencies = ['Remote', 'Uncommon', 'Occasional', 'Probable', 'Frequent'];
 function CompactRiskTitle({ title }: { title: string }) {
@@ -31,6 +31,7 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
   const [importInfo,setImportInfo] = useState('');
   const [importWarnings,setImportWarnings] = useState<string[]>([]);
   const [importMessage,setImportMessage] = useState('');
+  function clearPreview() { setPreview([]); setImportInfo(''); setImportWarnings([]); setImportMessage(''); }
   async function readFile(file: File) {
     setBusy(true); setError(''); setPreview([]); setImportMessage('');
     try {
@@ -49,15 +50,22 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
     try {
       const response=await fetch('/api/unit-risks/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit_id:unitId,year,quarter,category,items:preview.map(i=>({...i,title:`${i.title} [${i.levels}]`}))})});
       const body=await response.json(); if(!response.ok) throw new Error(body.error);
-      setImportMessage(`บันทึก ${body.inserted} รายการแยกตามผลกระทบ · ข้ามรายการซ้ำ ${body.skipped} รายการ`);setPreview([]);router.refresh();
+      setImportMessage(`บันทึก ${body.inserted} รายการแยกตามผลกระทบ · ปรับข้อมูลต้นฉบับ ${body.updated ?? 0} รายการ · ข้ามรายการซ้ำ ${body.skipped} รายการ`);setPreview([]);router.refresh();
     } catch(err) {setError((err as Error).message);} finally {setBusy(false);}
   }
   const selected = risks.filter(r => r.unit_id === unitId && r.year === year && r.quarter === quarter && r.category === category);
   const matrixItems = preview.length ? preview.map((r,index)=>({...r,id:-index-1,year,quarter})) : selected;
-  const analysisItems = matrixItems.map(r => ({
+  const assessedItems = matrixItems.map(r => ({
     ...r,
-    color: unitRiskColors[category][r.impact - 1][riskFrequency(r.occurrence_count, r.year, r.quarter).column - 1],
+    color: r.source_analysis_level ?? unitRiskColors[category][r.impact - 1][riskFrequency(r.occurrence_count, r.year, r.quarter).column - 1],
   }));
+  const analysisItems = [...assessedItems.reduce((groups, risk) => {
+    const key = risk.source_title && risk.source_analysis_level ? `${risk.source_title}\u0000${risk.color}` : `id:${risk.id}`;
+    const existing = groups.get(key);
+    if (existing) { existing.occurrence_count += risk.occurrence_count; existing.impact = Math.max(existing.impact, risk.impact); }
+    else groups.set(key, { ...risk, title: risk.source_title ?? risk.title });
+    return groups;
+  }, new Map<string, typeof assessedItems[number]>()).values()];
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const values = new FormData(form);
     setBusy(true); setError('');
@@ -76,11 +84,12 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
   return <>
     <section className="card" style={{ marginBottom: 16 }}><div className="card-header"><div className="card-title">Risk Profile ตามหน่วยงาน</div>{canLogout && <button className="tb-btn tb-btn-ghost" type="button" onClick={async () => { const response = await fetch('/api/risk-units/logout', { method: 'POST' }); if (response.ok) router.refresh(); else setError('ออกจากระบบหน่วยงานไม่สำเร็จ'); }}>ออกจากหน่วยงาน</button>}</div><div className="card-body">
       <div className="risk-assessment-fields">
-        <label>หน่วยงาน<select value={unitId} onChange={e => setUnitId(Number(e.target.value))}>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
-        <label>ปีงบประมาณ พ.ศ.<input type="number" min="2500" max="2700" value={year} onChange={e => setYear(Number(e.target.value))} /></label>
-        <label>ไตรมาส<select value={quarter} onChange={e => setQuarter(Number(e.target.value))}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}</option>)}</select></label>
-        <label>ประเภท<select value={category} onChange={e => setCategory(e.target.value as RiskType)}><option value="clinical">Clinical</option><option value="nonclinical">Non-Clinical</option></select></label>
+        <label>หน่วยงาน<select value={unitId} onChange={e => { clearPreview(); setUnitId(Number(e.target.value)); }}>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
+        <label>ปีงบประมาณ พ.ศ.<input type="number" min="2500" max="2700" value={year} onChange={e => { clearPreview(); setYear(Number(e.target.value)); }} /></label>
+        <label>ไตรมาส<select value={quarter} onChange={e => { clearPreview(); setQuarter(Number(e.target.value)); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}</option>)}</select></label>
+        <label>ประเภท<select value={category} onChange={e => { clearPreview(); setCategory(e.target.value as RiskType); }}><option value="clinical">Clinical</option><option value="nonclinical">Non-Clinical</option></select></label>
       </div>
+      <h3 style={{ marginTop: 16, marginBottom: 10 }}>ตาราง 5×5 · สีคำนวณตามจำนวนครั้งและผลกระทบ</h3>
       <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table"><tbody>
         {[5,4,3,2,1].map(i => <tr key={i}><th>{impacts[i-1]}</th>{[1,2,3,4,5].map(col => {
           const items = matrixItems.filter(r => r.impact === i && riskFrequency(r.occurrence_count, r.year, r.quarter).column === col);
@@ -88,10 +97,11 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
         })}</tr>)}
       </tbody><tfoot><tr><th>ผลกระทบ / ความถี่</th>{frequencies.map(f => <th key={f} className="risk-frequency-heading">{f}</th>)}</tr></tfoot></table></div>
       <h3 style={{ marginTop: 20 }}>การวิเคราะห์ความเสี่ยง (Risk Analysis)</h3>
+      <p style={{ color: 'var(--text2)', margin: '8px 0', fontSize: 13 }}>รายการที่นำเข้าจะแสดงระดับตามเครื่องหมายในต้นฉบับและรวมผลกระทบเป็นหนึ่งรายการต่อความเสี่ยง · รายการที่ไม่มีระดับจากต้นฉบับใช้สีคำนวณและระบุไว้แยกกัน</p>
       <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table">
         <thead><tr>{analysisLevels.map(level => <th key={level.color} scope="col">{level.label}</th>)}</tr></thead>
         <tbody><tr>{analysisLevels.map(level => <td key={level.color} className={`risk-color-${level.color}`}>
-          <ul>{analysisItems.filter(r => r.color === level.color).map(r => <li key={r.id}><CompactRiskTitle title={r.title} /><small>{r.occurrence_count} ครั้ง · ผลกระทบ {r.impact}</small></li>)}</ul>
+          <ul>{analysisItems.filter(r => r.color === level.color).map(r => <li key={r.id}><CompactRiskTitle title={r.title} /><small>{r.occurrence_count} ครั้ง · {r.source_analysis_level ? 'ตามต้นฉบับ' : `สีคำนวณ · ผลกระทบ ${r.impact}`}</small></li>)}</ul>
         </td>)}</tr></tbody>
       </table></div>
       <p style={{ color: 'var(--text2)', marginTop: 12, fontSize: 13 }}>คำนวณจำนวนครั้ง ÷ จำนวนวันในไตรมาส × 365.2425 วัน: 0 = Remote, มากกว่า 0 ถึง 1 ครั้ง/ปี = Uncommon, มากกว่า 1 ถึง 36 ครั้ง/ปี = Occasional, มากกว่า 36 ถึง 624 ครั้ง/ปี = Probable, มากกว่า 624 ครั้ง/ปี = Frequent</p>

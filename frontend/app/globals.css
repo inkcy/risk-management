@@ -386,6 +386,9 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .survey-form label { display: grid; gap: 5px; color: var(--text2); }
 .survey-form input { width: 100%; padding: 9px; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg3); color: var(--text); font: inherit; }
 .survey-form small { color: var(--text3); }
+.department-login { grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; text-align: left; }
+.department-login > *, .department-login label { min-width: 0; max-width: 100%; }
+.department-login input { display: block; min-width: 0; max-width: 100%; }
 .survey-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; }
 .survey-form button { width: fit-content; }
 .culture-bar-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 14px; font-size: 12.6px; color: var(--text2); }

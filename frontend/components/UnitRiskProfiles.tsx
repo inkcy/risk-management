@@ -3,15 +3,16 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { riskFrequency, unitRiskColors, type RiskType } from '@/lib/unitRiskMatrix';
 import type { ImportedRisk } from '@/lib/unitRiskImport';
+import { riskKeyword } from '@/lib/riskTitle';
 
 type Unit = { id: number; name: string };
 type Risk = { id: number; unit_id: number; year: number; quarter: number; category: RiskType; title: string; occurrence_count: number; impact: number; source_title?: string | null; source_analysis_level?: 'green' | 'yellow' | 'orange' | 'red' | null };
 const impacts = ['Negligible · A–B / 1', 'Minor · C–D / 2', 'Moderate · E / 3', 'Major · F / 4', 'Catastrophic · G–I / 5'];
 const frequencies = ['Remote', 'Uncommon', 'Occasional', 'Probable', 'Frequent'];
 function CompactRiskTitle({ title }: { title: string }) {
-  const characters = Array.from(title);
-  if (characters.length <= 50) return <span>{title}</span>;
-  return <details className="compact-risk-title"><summary title={title}>{characters.slice(0, 50).join('').trimEnd()}…</summary><p>{title}</p></details>;
+  const keyword = riskKeyword(title);
+  if (keyword === title) return <span>{title}</span>;
+  return <details className="compact-risk-title"><summary title={title}>{keyword}</summary><p>{title}</p></details>;
 }
 const analysisLevels = [
   { color: 'green', label: 'ต่ำ' },
@@ -93,7 +94,7 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
       <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table"><tbody>
         {[5,4,3,2,1].map(i => <tr key={i}><th>{impacts[i-1]}</th>{[1,2,3,4,5].map(col => {
           const items = matrixItems.filter(r => r.impact === i && riskFrequency(r.occurrence_count, r.year, r.quarter).column === col);
-          return <td key={col} className={`risk-color-${unitRiskColors[category][i-1][col-1]}`}><ul>{items.map(r => <li key={r.id}><CompactRiskTitle title={r.title} /><small>{r.occurrence_count} ครั้ง · {riskFrequency(r.occurrence_count,r.year,r.quarter).annualRate.toFixed(1)} ครั้ง/ปี</small></li>)}</ul></td>;
+          return <td key={col} className={`risk-color-${unitRiskColors[category][i-1][col-1]}`}><ul className="risk-analysis-cards">{items.map(r => <li key={r.id}><CompactRiskTitle title={r.title} /><small>{r.occurrence_count} ครั้ง · {riskFrequency(r.occurrence_count,r.year,r.quarter).annualRate.toFixed(1)} ครั้ง/ปี</small></li>)}</ul></td>;
         })}</tr>)}
       </tbody><tfoot><tr><th>ผลกระทบ / ความถี่</th>{frequencies.map(f => <th key={f} className="risk-frequency-heading">{f}</th>)}</tr></tfoot></table></div>
       <h3 style={{ marginTop: 20 }}>การวิเคราะห์ความเสี่ยง (Risk Analysis)</h3>

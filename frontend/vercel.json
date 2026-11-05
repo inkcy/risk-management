@@ -1,3 +1,0 @@
-{
-  "buildCommand": "node scripts/verify-matrix-ai.cjs && npm run build"
-}

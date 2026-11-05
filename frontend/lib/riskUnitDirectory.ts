@@ -72,3 +72,6 @@ export const riskUnitDirectory = [
   'ฝ่ายวิชาการและวิจัย',
   'ฝ่ายพัฒนาคุณภาพและบริหารความเสี่ยง',
 ] as const;
+
+// Additional login accounts are separate from the official Risk Profile directory.
+export const loginUnitDirectory: readonly string[] = [...riskUnitDirectory, 'dev'];

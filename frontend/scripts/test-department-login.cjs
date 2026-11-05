@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const ts = require('typescript');
 const directoryModule = { exports: {} };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/riskUnitDirectory.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: directoryModule.exports });
-const directory = directoryModule.exports.riskUnitDirectory;
+const directory = directoryModule.exports.loginUnitDirectory;
 let unit, user, statements, cookies, sessionCount;
 const json = (body, options = {}) => ({ body, status: options.status || 200, cookies: { set: (...args) => cookies.push(args) } });
 const client = {
@@ -18,7 +18,7 @@ const client = {
 };
 const mod = { exports: {} };
 const mocks = {
-  '@/lib/riskUnitDirectory': { riskUnitDirectory: directory },
+  '@/lib/riskUnitDirectory': { loginUnitDirectory: directory },
   'next/server': { NextResponse: { json } },
   '@/lib/auth': { audit: async () => {}, createSession: async () => { sessionCount++; return { name: 'rm_session', value: 'signed', options: { httpOnly: true } }; } },
   '@/lib/db': { dbConfigured: () => true, getPool: () => ({ connect: async () => client }) },

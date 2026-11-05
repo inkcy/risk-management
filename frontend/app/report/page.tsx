@@ -124,6 +124,11 @@ export default function ReportPage() {
       setMessage('กรุณากรอกข้อมูลให้ครบ');
       return;
     }
+    if (!units.some(unit => unit.code === form.unit)) {
+      setStatus('error');
+      setMessage('กรุณาเลือกหน่วยงานจากรายการ');
+      return;
+    }
     setStatus('submitting');
     try {
       const occurred = `${form.occurred_at}T${form.time || '00:00'}:00+07:00`;
@@ -196,11 +201,11 @@ export default function ReportPage() {
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">หน่วยงาน</label>
-                <select value={form.unit} onChange={e => set('unit', e.target.value)} required>
-                  <option value="">เลือกหน่วยงาน</option>
-                  {units.map(u => <option key={u.code} value={u.code}>{u.label}</option>)}
-                </select>
+                <label className="form-label" htmlFor="report-unit">หน่วยงาน</label>
+                <input id="report-unit" list="report-units" value={units.find(unit => unit.code === form.unit)?.label ?? form.unit}
+                  onChange={e => set('unit', units.find(unit => unit.label === e.target.value)?.code ?? e.target.value)}
+                  placeholder="พิมพ์เพื่อค้นหาและเลือกหน่วยงาน" autoComplete="off" required />
+                <datalist id="report-units">{units.map(unit => <option key={unit.code} value={unit.label} />)}</datalist>
               </div>
               <div className="form-group">
                 <label className="form-label">ประเภทอุบัติการณ์</label>

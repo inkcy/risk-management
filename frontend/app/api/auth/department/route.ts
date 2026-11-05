@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { audit, createSession, type SessionUser } from '@/lib/auth';
 import { dbConfigured, getPool } from '@/lib/db';
 import { checkUnitPassword, newUnitToken, RISK_UNIT_COOKIE, riskCookieOptions, tokenDigest } from '@/lib/riskUnitAuth';
-import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
+import { loginUnitDirectory as riskUnitDirectory } from '@/lib/riskUnitDirectory';
 
 export const runtime = 'nodejs';
 

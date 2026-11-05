@@ -16,7 +16,7 @@ const titles: Record<string, [string, string]> = {
   '/risk-profile': ['Risk Profile', 'ทะเบียนความเสี่ยงองค์กร'],
   '/actions': ['มาตรการแก้ไข', 'ติดตามความคืบหน้า'],
   '/report': ['E-SAFE · รายงานอุบัติการณ์ใหม่', 'Just Culture · Patient Safety First'],
-  '/culture': ['วัฒนธรรมความปลอดภัย', 'HRO · Safety Culture · System Thinking'],
+  '/culture': ['HSCS', 'HRO · Safety Culture · System Thinking'],
   '/compassion': ['Compassionate RCA', 'CANDOR Response · Trauma-Informed Care'],
   '/settings': ['ตั้งค่าระบบ', 'จัดการองค์กรและผู้ใช้'],
 };

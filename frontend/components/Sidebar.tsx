@@ -43,7 +43,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
   {
     label: 'Safety Culture Survey',
     items: [
-      { href: '/culture', icon: '❖', label: 'วัฒนธรรมความปลอดภัย' },
+      { href: '/culture', icon: '❖', label: 'HSCS' },
       { href: '/compassion', icon: '♡', label: 'Compassionate RCA' },
     ],
   },

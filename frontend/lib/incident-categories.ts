@@ -13,6 +13,15 @@ export const incidentCategoryGroups = [
     { value: 'natural_disaster', label: 'ภัยธรรมชาติ' },
     { value: 'corruption', label: 'ทุจริตคอร์รัปชัน' },
   ] },
+  { value: 'complaint', label: 'ร้องเรียน', categories: [
+    { value: 'complaint_distress', label: 'เพื่อให้โรงพยาบาลได้รับทราบความเดือดร้อนและคับแค้นใจ' },
+    { value: 'complaint_prevention', label: 'เพื่อให้โรงพยาบาลแก้ไขข้อบกพร่องอย่าให้เกิดเหตุการณ์ซ้ำกับคนอื่น' },
+    { value: 'complaint_treatment', label: 'เพื่อช่วยเหลือผู้ป่วยด้านการรักษา' },
+    { value: 'complaint_clarification', label: 'เพื่อตรวจสอบเหตุการณ์และชี้แจงข้อขัดข้องใจ' },
+    { value: 'complaint_discipline', label: 'เพื่อหาผู้กระทำผิด ว่ากล่าวตักเตือน และลงโทษ' },
+    { value: 'complaint_compensation', label: 'เพื่อชดเชยความเสียหาย' },
+    { value: 'complaint_social_support', label: 'เพื่อช่วยเหลือผู้ป่วยหรือญาติทางสังคม' },
+  ] },
 ] as const;
 
 export type IncidentRiskGroup = typeof incidentCategoryGroups[number]['value'];

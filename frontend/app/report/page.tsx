@@ -83,7 +83,8 @@ export default function ReportPage() {
   const [message, setMessage] = useState('');
   const [lastIrCode, setLastIrCode] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentReport[]>([]);
-  const visibleSeverities = form.risk_group === 'nonclinical' ? generalSeverities : severities;
+  const usesGeneralSeverity = form.risk_group === 'nonclinical' || form.risk_group === 'complaint';
+  const visibleSeverities = usesGeneralSeverity ? generalSeverities : severities;
 
   useEffect(() => {
     setRecent(loadRecent());
@@ -225,7 +226,7 @@ export default function ReportPage() {
                 </select>
             </div>
             <div className="form-group">
-              <label className="form-label">ระดับความรุนแรง{form.risk_group === 'nonclinical' ? 'ด้านทั่วไป (1–5)' : 'ด้านคลินิก (A–I)'}</label>
+              <label className="form-label">ระดับความรุนแรง{usesGeneralSeverity ? (form.risk_group === 'complaint' ? 'ข้อร้องเรียน (1–5)' : 'ด้านทั่วไป (1–5)') : 'ด้านคลินิก (A–I)'}</label>
               <div className="sev-grid">
                 {visibleSeverities.map(s => (
                   <button
@@ -240,7 +241,7 @@ export default function ReportPage() {
                   </button>
                 ))}
               </div>
-              {form.risk_group === 'nonclinical' && <div style={{ marginTop: 12, lineHeight: 1.8 }}>
+              {usesGeneralSeverity && <div style={{ marginTop: 12, lineHeight: 1.8 }}>
                 {generalSeverities.filter(level => level.value === form.severity).map(level => <p key={level.value}><strong>ระดับ {level.value} · {level.label}</strong><br />{level.description}</p>)}
                 {!form.severity && <p style={{ color: 'var(--text2)' }}>เลือกระดับ 1–5 เพื่อดูเกณฑ์ด้านผลกระทบ ความล่าช้า มูลค่าความเสียหาย และข้อร้องเรียน</p>}
               </div>}

@@ -26,6 +26,13 @@ const categoryLabel: Record<string, string> = {
   environment: 'ความเสี่ยงด้านทั่วไป / ด้านสิ่งแวดล้อม',
   natural_disaster: 'ความเสี่ยงด้านทั่วไป / ภัยธรรมชาติ',
   corruption: 'ความเสี่ยงด้านทั่วไป / ทุจริตคอร์รัปชัน',
+  complaint_distress: 'ร้องเรียน / เพื่อให้โรงพยาบาลได้รับทราบความเดือดร้อนและคับแค้นใจ',
+  complaint_prevention: 'ร้องเรียน / เพื่อให้โรงพยาบาลแก้ไขข้อบกพร่องอย่าให้เกิดเหตุการณ์ซ้ำกับคนอื่น',
+  complaint_treatment: 'ร้องเรียน / เพื่อช่วยเหลือผู้ป่วยด้านการรักษา',
+  complaint_clarification: 'ร้องเรียน / เพื่อตรวจสอบเหตุการณ์และชี้แจงข้อขัดข้องใจ',
+  complaint_discipline: 'ร้องเรียน / เพื่อหาผู้กระทำผิด ว่ากล่าวตักเตือน และลงโทษ',
+  complaint_compensation: 'ร้องเรียน / เพื่อชดเชยความเสียหาย',
+  complaint_social_support: 'ร้องเรียน / เพื่อช่วยเหลือผู้ป่วยหรือญาติทางสังคม',
 };
 
 const causeGroupLabel: Record<string, string> = {

@@ -213,7 +213,7 @@ export default function ReportPage() {
               <div className="form-group">
                 <label className="form-label" htmlFor="report-risk-group">ด้านความเสี่ยง</label>
                 <select id="report-risk-group" value={form.risk_group} onChange={e => setForm(s => ({ ...s, risk_group: e.target.value, category: '', severity: '' }))} required>
-                  <option value="">เลือกด้านความเสี่ยง</option>
+                  <option value="">เลือกประเภท</option>
                   {incidentCategoryGroups.map(group => <option key={group.value} value={group.value}>{group.label}</option>)}
                 </select>
               </div>

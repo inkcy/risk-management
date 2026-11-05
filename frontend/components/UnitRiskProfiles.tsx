@@ -99,9 +99,9 @@ export function UnitRiskProfiles({ units, risks, canLogout }: { units: Unit[]; r
       <h3 style={{ marginTop: 20 }}>การวิเคราะห์ความเสี่ยง (Risk Analysis)</h3>
       <p style={{ color: 'var(--text2)', margin: '8px 0', fontSize: 13 }}>รายการที่นำเข้าจะแสดงระดับตามเครื่องหมายในต้นฉบับและรวมผลกระทบเป็นหนึ่งรายการต่อความเสี่ยง · รายการที่ไม่มีระดับจากต้นฉบับใช้สีคำนวณและระบุไว้แยกกัน</p>
       <div className="risk-assessment-table-wrap"><table className="risk-assessment-table unit-risk-table">
-        <thead><tr>{analysisLevels.map(level => <th key={level.color} scope="col">{level.label}</th>)}</tr></thead>
+        <thead><tr>{analysisLevels.map(level => <th key={level.color} scope="col">{level.label} {analysisItems.filter(r => r.color === level.color).length} เรื่อง</th>)}</tr></thead>
         <tbody><tr>{analysisLevels.map(level => <td key={level.color} className={`risk-color-${level.color}`}>
-          <ul>{analysisItems.filter(r => r.color === level.color).map(r => <li key={r.id}><CompactRiskTitle title={r.title} /><small>{r.occurrence_count} ครั้ง · {r.source_analysis_level ? 'ตามต้นฉบับ' : `สีคำนวณ · ผลกระทบ ${r.impact}`}</small></li>)}</ul>
+          <ul className="risk-analysis-cards">{analysisItems.filter(r => r.color === level.color).map(r => <li key={r.id}><CompactRiskTitle title={r.title} /><small>{r.occurrence_count} ครั้ง · {r.source_analysis_level ? 'ตามต้นฉบับ' : `สีคำนวณ · ผลกระทบ ${r.impact}`}</small></li>)}</ul>
         </td>)}</tr></tbody>
       </table></div>
       <p style={{ color: 'var(--text2)', marginTop: 12, fontSize: 13 }}>คำนวณจำนวนครั้ง ÷ จำนวนวันในไตรมาส × 365.2425 วัน: 0 = Remote, มากกว่า 0 ถึง 1 ครั้ง/ปี = Uncommon, มากกว่า 1 ถึง 36 ครั้ง/ปี = Occasional, มากกว่า 36 ถึง 624 ครั้ง/ปี = Probable, มากกว่า 624 ครั้ง/ปี = Frequent</p>

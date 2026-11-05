@@ -367,6 +367,9 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .unit-risk-table small { display: block; font-size: 11px; }
 .compact-risk-title summary { cursor: pointer; line-height: 1.5; }
 .compact-risk-title p { margin: 6px 0; line-height: 1.6; }
+.unit-risk-table .risk-analysis-cards { display: grid; gap: 10px; }
+.unit-risk-table .risk-analysis-cards li { margin: 0; padding: 12px; border: 1px solid rgba(0,0,0,0.18); border-radius: 8px; background: #fff; color: #172033; line-height: 1.6; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.unit-risk-table .risk-analysis-cards small { margin-top: 8px; color: #526079; }
 .unit-risk-list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .risk-assessment-result { margin-top: 14px; font-size: 16.1px; color: var(--text); }
 .culture-chart { margin: 18px 0 24px; padding: 16px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg3); }

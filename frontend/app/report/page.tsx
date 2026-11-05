@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 import { incidentCategoryGroups, incidentRiskGroup } from '@/lib/incident-categories';
 import { generalSeverities, validIncidentSeverity } from '@/lib/incident-severity';
+import { thaiDateTime } from '@/lib/thai-date-time';
 
 interface RecentReport {
   ir_code: string;
@@ -83,12 +84,14 @@ export default function ReportPage() {
   const visibleSeverities = usesGeneralSeverity ? generalSeverities : severities;
 
   useEffect(() => {
+    const current = thaiDateTime();
+    setForm(s => ({ ...s, ...current }));
     setRecent(loadRecent());
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<typeof EMPTY_FORM>;
-        setForm({ ...EMPTY_FORM, ...parsed, risk_group: incidentRiskGroup(parsed.category ?? '') || parsed.risk_group || '', severity: validIncidentSeverity(parsed.category ?? '', parsed.severity ?? '') ? parsed.severity! : '' });
+        setForm({ ...EMPTY_FORM, ...parsed, occurred_at: parsed.occurred_at || current.occurred_at, time: parsed.time || current.time, risk_group: incidentRiskGroup(parsed.category ?? '') || parsed.risk_group || '', severity: validIncidentSeverity(parsed.category ?? '', parsed.severity ?? '') ? parsed.severity! : '' });
         setStatus('draft');
         setMessage('เปิดร่างรายงานที่บันทึกไว้ในเบราว์เซอร์นี้แล้ว');
       }
@@ -164,7 +167,7 @@ export default function ReportPage() {
       saveRecent(newEntry);
       setRecent(loadRecent());
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* รายงานบนเซิร์ฟเวอร์บันทึกสำเร็จแล้ว */ }
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, ...thaiDateTime() });
     } catch (err) {
       setStatus('error');
       setMessage(err instanceof Error ? err.message : String(err));

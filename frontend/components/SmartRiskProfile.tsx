@@ -32,7 +32,7 @@ export function SmartRiskProfile({ units, risks }: { units: { id: number; name: 
     <div className="card" style={{ padding: 22, marginBottom: 16 }}>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 18 }}>
         <div><h1 style={{ fontSize: 24, marginBottom: 6 }}>Smart Risk Profile</h1><p style={{ color: 'var(--text2)' }}>ภาพรวมและลำดับความสำคัญจากทะเบียนความเสี่ยงของหน่วยงาน</p></div>
-        <Link href="/risk-profile" className="tb-btn tb-btn-primary">จัดการ Risk Profile</Link>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Link href="/matrix" className="tb-btn tb-btn-ghost">วิเคราะห์ตารางด้วย AI</Link><Link href="/risk-profile" className="tb-btn tb-btn-primary">จัดการ Risk Profile</Link></div>
       </div>
       <div className="smart-risk-filters">
         <label>หน่วยงาน<select value={unit} onChange={event => { setUnit(event.target.value); setCell(null); }}><option value="">ทุกหน่วยงานที่มีสิทธิ์ดู</option>{units.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>

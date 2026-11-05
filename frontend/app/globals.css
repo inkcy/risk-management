@@ -389,6 +389,25 @@ html:not(.light) .stat-change { background: rgba(255,255,255,0.07); }
 .department-login { grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; text-align: left; }
 .department-login > *, .department-login label { min-width: 0; max-width: 100%; }
 .department-login input { display: block; min-width: 0; max-width: 100%; }
+.smart-risk-profile { min-width: 0; }
+.smart-risk-filters, .smart-risk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
+.smart-risk-stats { margin-bottom: 16px; }
+.smart-risk-filters label { display: grid; gap: 6px; min-width: 0; color: var(--text2); }
+.smart-risk-filters select, .smart-risk-search { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg3); color: var(--text); font: inherit; }
+.smart-risk-search { display: block; margin-top: 6px; }
+.smart-risk-matrix, .smart-risk-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.smart-risk-matrix { min-width: 460px; table-layout: fixed; }
+.smart-risk-matrix th:first-child { width: 130px; }
+.smart-risk-matrix caption { text-align: left; margin-bottom: 10px; }
+.smart-risk-matrix th, .smart-risk-matrix td, .smart-risk-table th, .smart-risk-table td { padding: 12px; border: 1px solid var(--border); text-align: left; }
+.smart-risk-matrix td { padding: 0; }
+.smart-risk-matrix .risk-color-green { background: #bcead0; }
+.smart-risk-matrix .risk-color-yellow { background: #fff0a6; }
+.smart-risk-matrix .risk-color-orange { background: #ffc18c; }
+.smart-risk-matrix .risk-color-red { background: #ff9eab; }
+.smart-risk-matrix button { display: block; width: 100%; min-height: 58px; border: 0; background: transparent; color: #172033; cursor: pointer; font: inherit; }
+.smart-risk-table { min-width: 620px; }
+.smart-risk-table td { vertical-align: top; }
 .survey-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; }
 .survey-form button { width: fit-content; }
 .culture-bar-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 14px; font-size: 12.6px; color: var(--text2); }

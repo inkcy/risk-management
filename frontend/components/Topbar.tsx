@@ -14,6 +14,7 @@ const titles: Record<string, [string, string]> = {
   '/rca/form': ['แบบฟอร์ม RCA', 'บันทึกและส่งออกแบบวิเคราะห์สาเหตุ'],
   '/matrix': ['Risk Matrix', 'ประเมินความเสี่ยงองค์กร'],
   '/risk-profile': ['Risk Profile', 'ทะเบียนความเสี่ยงองค์กร'],
+  '/smart-risk-profile': ['Smart Risk Profile', 'ภาพรวมและลำดับความสำคัญของความเสี่ยง'],
   '/actions': ['มาตรการแก้ไข', 'ติดตามความคืบหน้า'],
   '/report': ['E-SAFE · รายงานอุบัติการณ์ใหม่', 'Just Culture · Patient Safety First'],
   '/culture': ['HSCS', 'HRO · Safety Culture · System Thinking'],

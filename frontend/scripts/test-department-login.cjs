@@ -2,6 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const ts = require('typescript');
+const directoryModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/riskUnitDirectory.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: directoryModule.exports });
+const directory = directoryModule.exports.riskUnitDirectory;
 let unit, user, statements, cookies, sessionCount;
 const json = (body, options = {}) => ({ body, status: options.status || 200, cookies: { set: (...args) => cookies.push(args) } });
 const client = {
@@ -15,6 +18,7 @@ const client = {
 };
 const mod = { exports: {} };
 const mocks = {
+  '@/lib/riskUnitDirectory': { riskUnitDirectory: directory },
   'next/server': { NextResponse: { json } },
   '@/lib/auth': { audit: async () => {}, createSession: async () => { sessionCount++; return { name: 'rm_session', value: 'signed', options: { httpOnly: true } }; } },
   '@/lib/db': { dbConfigured: () => true, getPool: () => ({ connect: async () => client }) },
@@ -31,6 +35,13 @@ function reset() {
   reset(); assert.equal((await post({ unitId: 1, password: 'correct' }, 'https://other.test')).status, 403); assert.equal(statements.length, 0);
   reset(); assert.equal((await post(null)).status, 401);
   reset(); assert.equal((await post({ unitId: '1', password: 'correct' })).status, 401);
+  reset(); assert.equal((await post({ unitName: 'inkcy', password: 'correct' })).status, 401); assert.equal(statements.length, 0);
+  for (const name of directory) {
+    reset(); unit.name = name;
+    assert.equal((await post({ unitName: name, password: 'correct' })).status, 200);
+    assert.ok(statements.some(sql => sql.includes('WHERE name=$1 FOR UPDATE')));
+  }
+  reset(); unit = null; assert.equal((await post({ unitName: directory[0], password: 'correct' })).status, 401); assert.equal(sessionCount, 0); assert.equal(cookies.length, 0);
   reset(); assert.equal((await post({ unitId: 1, password: 'wrong' })).status, 401); assert.ok(statements.some(sql => sql.includes('failed_attempts='))); assert.equal(sessionCount, 0);
   reset(); unit.locked = true; assert.equal((await post({ unitId: 1, password: 'correct' })).status, 401); assert.equal(cookies.length, 0);
   reset(); unit.active = false; assert.equal((await post({ unitId: 1, password: 'correct' })).status, 401); assert.equal(sessionCount, 0);

@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
 import { DepartmentLogin } from '@/components/DepartmentLogin';
-import { dbConfigured, query } from '@/lib/db';
+import { dbConfigured } from '@/lib/db';
+import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 
 const ERRORS: Record<string, string> = {
   config: 'ระบบยังตั้งค่าไม่ครบ — ดูรายการที่ขาดด้านล่าง',
@@ -31,15 +32,7 @@ export default async function LoginPage({
   const user = await getSessionUser();
   if (user) redirect(next?.startsWith('/') && !next.startsWith('//') && !next.includes('\\') ? next : '/');
 
-  let units: { id: number; name: string }[] = [];
-  let directoryAvailable = false;
-  if (dbConfigured()) {
-    try {
-      units = (await query<{ id: number; name: string }>('SELECT id, name FROM risk_units WHERE active ORDER BY name')).rows;
-      directoryAvailable = true;
-    } catch { /* Show an unavailable state without exposing database details. */ }
-  }
-  const ready = directoryAvailable && (process.env.SESSION_SECRET?.length ?? 0) >= 32;
+  const ready = dbConfigured() && (process.env.SESSION_SECRET?.length ?? 0) >= 32;
   const missing = ready ? [] : missingConfig();
 
   return (
@@ -96,7 +89,7 @@ export default async function LoginPage({
           )}
 
           {ready ? (
-            <DepartmentLogin units={units} next={next} />
+            <DepartmentLogin units={riskUnitDirectory} next={next} />
           ) : (
             <div style={{
               background: 'var(--bg3)', borderRadius: 14,

@@ -76,8 +76,8 @@ export function Topbar({ user }: { user: SessionUser | null }) {
           {isLight ? '☀️' : '🌙'}
         </button>
         {canEdit && (
-          <Link href="/report" className="tb-btn tb-btn-primary report-btn">
-            <span className="btn-full">+ รายงานใหม่</span>
+          <Link href="/report" className="tb-btn tb-btn-primary report-btn" aria-label="ความเสี่ยงอยากบอก">
+            <span className="btn-full">+ ความเสี่ยงอยากบอก</span>
             <span className="btn-short" aria-hidden="true">+</span>
           </Link>
         )}

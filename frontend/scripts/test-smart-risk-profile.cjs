@@ -12,9 +12,11 @@ const mocks = {
   '@/lib/riskUnitAuth': { getRiskUnit: async () => unit },
   '@/lib/db': { dbConfigured: () => true, query: async (sql, params) => { calls.push({ sql, params }); if (broken) throw Error('DB unavailable'); return { rows: [] }; } },
   '@/components/SmartRiskProfile': { SmartRiskProfile: () => null },
+  './MatrixAiAnalysis': { MatrixAiAnalysis: () => null },
+  './RiskMatrixAssessment': { RiskMatrixAssessment: () => null },
 };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/smart-risk-profile/page.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 } }).outputText,
-  { exports: moduleMock.exports, require: name => { assert.ok(mocks[name], name); return mocks[name]; } });
+  { exports: moduleMock.exports, process: {env:{}}, require: name => { assert.ok(mocks[name], name); return mocks[name]; } });
 const page = moduleMock.exports.default;
 const matrixModule = { exports: {} };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/unitRiskMatrix.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: matrixModule.exports });

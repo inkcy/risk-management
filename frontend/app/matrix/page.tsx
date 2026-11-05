@@ -1,6 +1,5 @@
-import { RiskMatrixAssessment } from '@/components/RiskMatrixAssessment';
-import { MatrixAiAnalysis } from '@/components/MatrixAiAnalysis';
+import { redirect } from 'next/navigation';
 
 export default function MatrixPage() {
-  return <><MatrixAiAnalysis aiEnabled={!!process.env.GEMINI_API_KEY?.trim()} /><RiskMatrixAssessment /></>;
+  redirect('/smart-risk-profile');
 }

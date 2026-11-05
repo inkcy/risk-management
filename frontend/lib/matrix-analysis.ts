@@ -17,7 +17,7 @@ export function parseMatrixTable(text: string): MatrixInput[] {
     if (cells.some(cell => /^(?:รหัส.*เรื่อง|เรื่องย่อย|ความรุนแรง|ความถี่)$/.test(cell)) || cells.every(cell => /^[\s:\-]*$/.test(cell))) return;
     const count = cells.at(-1) ?? '';
     const severity = cells.at(-2)?.toUpperCase() ?? '';
-    if (cells.length < 3 || !/^[A-I1-5]$/.test(severity) || !/^\d+$/.test(count)) { invalid.push(index + 1); return; }
+    if (cells.length < 3 || !/^(?:[A-I1-5]|A[–-]B|C[–-]D|G[–-]I)$/.test(severity) || !/^\d+$/.test(count)) { invalid.push(index + 1); return; }
     const fields = cells.slice(0, -2);
     const title = fields[0];
     if (!title) { invalid.push(index + 1); return; }
@@ -34,8 +34,8 @@ export function calculateMatrix(items: MatrixInput[], options: MatrixOptions) {
   return items.map((item, index) => {
     if (!item || typeof item.title !== 'string' || !item.title.trim() || item.title.length > 300 || typeof item.subtopic !== 'string' || item.subtopic.length > 1000 || typeof item.severity !== 'string' || !Number.isInteger(item.frequency) || item.frequency < 0 || item.frequency > 10000000) throw new Error(`ข้อมูลรายการ ${index + 1} ไม่ถูกต้อง`);
     const severity = item.severity.toUpperCase();
-    if (!(options.type === 'clinical' ? /^[A-I]$/ : /^[1-5]$/).test(severity)) throw new Error(`รายการ ${index + 1}: ด้านคลินิกใช้ A–I ด้านทั่วไปใช้ 1–5`);
-    const impact = options.type === 'clinical' ? (severity <= 'B' ? 1 : severity <= 'D' ? 2 : severity === 'E' ? 3 : severity === 'F' ? 4 : 5) : Number(severity);
+    if (!(options.type === 'clinical' ? /^(?:[A-I]|A[–-]B|C[–-]D|G[–-]I)$/ : /^[1-5]$/).test(severity)) throw new Error(`รายการ ${index + 1}: ด้านคลินิกใช้ A–I หรือกลุ่ม A–B/C–D/G–I ด้านทั่วไปใช้ 1–5`);
+    const impact = options.type === 'clinical' ? ('AB'.includes(severity)||/^A[–-]B$/.test(severity) ? 1 : 'CD'.includes(severity)||/^C[–-]D$/.test(severity) ? 2 : severity === 'E' ? 3 : severity === 'F' ? 4 : 5) : Number(severity);
     let likelihood: number;
     if (options.basis === 'level') {
       if (item.frequency < 1 || item.frequency > 5) throw new Error(`รายการ ${index + 1}: ระดับโอกาสเกิดต้องเป็น 1–5`);

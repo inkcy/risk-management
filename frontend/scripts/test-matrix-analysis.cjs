@@ -1,3 +1,4 @@
+process.chdir(require('node:path').resolve(__dirname, '..'));
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript');
 const path=require('node:path');
 function moduleAt(file,mocks={}){const mod={exports:{}};const source=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInNewContext(source,{exports:mod.exports,require:name=>name in mocks?mocks[name]:moduleAt(path.resolve(path.dirname(file),name+'.ts'),mocks),console,process:{env:{GEMINI_API_KEY:"test"}},fetch,AbortSignal,Buffer});return mod.exports;}
@@ -13,6 +14,8 @@ assert.throws(()=>matrix.parseMatrixTable('Unknown\tE\tnot-a-number'));
 assert.throws(()=>matrix.parseMatrixTable('CPE405\tE\t1\nUnparsed data'));
 for(const [type,severities] of [['clinical',['A','C','E','F','I']],['nonclinical',['1','2','3','4','5']]])for(let i=0;i<5;i++)for(let l=1;l<=5;l++){const result=matrix.calculateMatrix([{title:'Test',subtopic:'',severity:severities[i],frequency:l}],{...options,type,basis:'level'})[0];assert.equal(result.impact,i+1);assert.equal(result.likelihood,l);assert.equal(result.score,(i+1)*l);}
 assert.equal(matrix.calculateMatrix(items,{...options,basis:'year'})[0].likelihood,2);
+for(const [severity,impact]of [['A–B',1],['C–D',2],['G–I',5]])assert.equal(matrix.calculateMatrix([{...items[0],severity}],options)[0].impact,impact);
+assert.equal(matrix.parseMatrixTable('กลุ่มผลกระทบ\t\tG–I\t1')[0].severity,'G–I');
 assert.equal(matrix.calculateMatrix([{title:'Test',subtopic:'',severity:'5',frequency:3}],{...options,type:'nonclinical',basis:'level'})[0].color,'orange');
 for(const bad of [-1,0.5,NaN,Infinity])assert.throws(()=>matrix.calculateMatrix([{...items[0],frequency:bad}],options));
 assert.throws(()=>matrix.calculateMatrix(items,{...options,type:'nonclinical'}));

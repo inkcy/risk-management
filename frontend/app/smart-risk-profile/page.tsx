@@ -24,7 +24,7 @@ export default async function SmartRiskProfilePage() {
        WHERE u.active AND ($1::boolean OR r.unit_id=$2)
        ORDER BY r.year DESC, r.quarter DESC, r.id DESC`, [admin, unit?.id ?? null],
     );
-    return <SmartRiskProfile units={units} risks={rows} />;
+    return <SmartRiskProfile units={units} risks={rows} aiEnabled={!!process.env.GEMINI_API_KEY?.trim()} />;
   } catch {
     return <div className="announcement-error" role="alert">ไม่สามารถโหลด Smart Risk Profile ได้ กรุณาลองใหม่อีกครั้ง</div>;
   }

@@ -12,7 +12,6 @@ const titles: Record<string, [string, string]> = {
   '/incidents': ['รายการอุบัติการณ์', 'ทุกเหตุการณ์ที่บันทึกไว้'],
   '/rca': ['Root Cause Analysis', 'วิเคราะห์สาเหตุและติดตามมาตรการ'],
   '/rca/form': ['แบบฟอร์ม RCA', 'บันทึกและส่งออกแบบวิเคราะห์สาเหตุ'],
-  '/matrix': ['Risk Matrix', 'ประเมินความเสี่ยงองค์กร'],
   '/risk-profile': ['Risk Profile', 'ทะเบียนความเสี่ยงองค์กร'],
   '/smart-risk-profile': ['Smart Risk Profile', 'ภาพรวมและลำดับความสำคัญของความเสี่ยง'],
   '/actions': ['มาตรการแก้ไข', 'ติดตามความคืบหน้า'],

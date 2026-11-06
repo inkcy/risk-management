@@ -1001,3 +1001,9 @@ option { background: var(--bg3); }
   .fivewhy-card { padding: 18px 14px; }
   .rca-report-cover h2 { font-size: 24.2px; }
 }
+
+.matrix-treatment textarea, .matrix-treatment input:not([type="checkbox"]) {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border2);
+  border-radius: 8px; background: var(--bg3); color: var(--text); font: inherit; line-height: 1.6;
+}
+.matrix-treatment textarea { min-height: 160px; resize: vertical; }

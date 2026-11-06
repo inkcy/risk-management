@@ -1,13 +1,21 @@
 process.chdir(require('node:path').resolve(__dirname, '..'));
 const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),ts=require('typescript'),path=require('path'),JSZip=require('jszip');
 function load(file,mocks={}){const mod={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:mod.exports,require:name=>name in mocks?mocks[name]:name.startsWith('.')?load(path.resolve(path.dirname(file),name+'.ts'),mocks):require(name),console,Buffer,process,Uint8Array,Response});return mod.exports;}
-const {calculateMatrix}=load('lib/matrix-analysis.ts');const {normalizeTreatments,normalizeExportNotes}=load('lib/matrix-treatment.ts');const {buildMatrixDocx}=load('lib/matrix-docx.ts');
+const {calculateMatrix}=load('lib/matrix-analysis.ts');const {normalizeTreatments,normalizeExportNotes,applyMatrixAdvice}=load('lib/matrix-treatment.ts');const {buildMatrixDocx}=load('lib/matrix-docx.ts');
 const items=[{title:'CPE405: Delay Diagnosis & Treatment',subtopic:'ผู้ป่วยฉุกเฉิน',severity:'E',frequency:1},{title:'CPP401: ภาวะแทรกซ้อนที่ป้องกันได้',subtopic:'',severity:'F',frequency:1}];
 const options={type:'clinical',basis:'quarter',year:2570,quarter:1};const rows=calculateMatrix(items,options);
 const treatment=normalizeTreatments([1,2],[]);assert.equal(treatment[0].confirmedCurrent,false);
 treatment[0]={...treatment[0],transferPrevention:true,monitorControl:true,mitigation:true,measures:'ร่างมาตรการ: ทบทวนกระบวนการคัดกรอง\nติดตามระยะเวลารอคอย',reviewFrequency:'ทุกเดือน'};
 treatment[1]={...treatment[1],monitorControl:true,measures:'มาตรการทบทวนที่ผู้ใช้ยืนยัน',confirmedCurrent:true,reviewFrequency:'ทุกไตรมาส'};
 assert.throws(()=>normalizeTreatments([1,2],[treatment[0],treatment[0]]));assert.throws(()=>normalizeTreatments([1],[{...treatment[0],id:9}]));assert.throws(()=>normalizeTreatments([1],[{...treatment[0],confirmedCurrent:'yes'}]));assert.throws(()=>normalizeExportNotes([1],[{id:2,analysis:'x',followUp:'x'}]));
+const aiNotes=[1,2].map(id=>({id,analysis:'วิเคราะห์',actions:'ทบทวนกระบวนการและติดตามตัวชี้วัด',followUp:'ติดตามผล',transferPrevention:true,monitorControl:true,mitigation:false,reviewFrequency:'ทุกเดือน'}));
+const generated=applyMatrixAdvice([1,2],[],aiNotes);
+assert.equal(generated[0].measures,aiNotes[0].actions);assert.equal(generated[0].reviewFrequency,'ทุกเดือน');assert.equal(generated[0].monitorControl,true);assert.equal(generated[0].confirmedCurrent,false);
+const partial=normalizeTreatments([1,2],[]);partial[0].mitigation=true;partial[0].measures='ข้อความที่ผู้ใช้กรอก';partial[1]={...treatment[1]};
+const merged=applyMatrixAdvice([1,2],partial,aiNotes);
+assert.equal(merged[0].measures,'ข้อความที่ผู้ใช้กรอก');assert.equal(merged[0].reviewFrequency,'ทุกเดือน');assert.equal(merged[0].mitigation,true);assert.equal(merged[0].monitorControl,false);
+assert.equal(JSON.stringify(merged[1]),JSON.stringify(partial[1]));
+assert.equal(JSON.stringify(applyMatrixAdvice([1,2],partial,[])),JSON.stringify(partial));
 let allowed=false,builds=0;
 const json=(body,opts={})=>({body,status:opts.status??200});
 const api=load('app/api/matrix/export/route.ts',{'next/server':{NextResponse:{json}},'@/lib/auth':{requireRole:async()=>allowed?{ok:true}:{ok:false,response:json({error:'Unauthorized'},{status:401})}},'@/lib/matrix-analysis':{calculateMatrix},'@/lib/matrix-treatment':{normalizeTreatments,normalizeExportNotes},'@/lib/matrix-docx':{buildMatrixDocx:async(...args)=>{builds++;return buildMatrixDocx(...args);}}});

@@ -1,10 +1,11 @@
 process.chdir(require('node:path').resolve(__dirname, '..'));
 const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),ts=require('typescript');
+let calls=0, recover=false;
 let status=400,providerMessage='API key not valid. Please pass a valid API key.';
 const mod={exports:{}};
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/matrix-ai.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{
-  exports:mod.exports,require:()=>({generalSeverities:[]}),process:{env:{GEMINI_API_KEY:'test-secret'}},AbortSignal,
-  fetch:async()=>({ok:false,status,json:async()=>({error:{message:providerMessage}})}),
+  exports:mod.exports,require:()=>({generalSeverities:[]}),process:{env:{GEMINI_API_KEY:'test-secret'}},AbortSignal,setTimeout:fn=>fn(),
+  fetch:async()=>{calls++;if(recover&&calls===2)return {ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:'[]'}]}}]})};return {ok:false,status,json:async()=>({error:{message:providerMessage}})};},
 });
 const {analyzeMatrixRisks,MatrixAiError}=mod.exports;
 (async()=>{
@@ -12,5 +13,7 @@ const {analyzeMatrixRisks,MatrixAiError}=mod.exports;
     status=code;providerMessage=message;
     await assert.rejects(()=>analyzeMatrixRisks([]),error=>error instanceof MatrixAiError&&error.message.includes(expected)&&!error.message.includes('test-secret'));
   }
+  status=503;calls=0;recover=true;assert.equal((await analyzeMatrixRisks([])).length,0);assert.equal(calls,2);
+  status=400;calls=0;recover=false;await assert.rejects(()=>analyzeMatrixRisks([]));assert.equal(calls,1);
   console.log('PASS: invalid key, access denied, quota, model and provider failures return safe actionable messages');
 })().catch(error=>{console.error(error);process.exitCode=1;});

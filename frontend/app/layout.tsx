@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#f5f6fc',
+  themeColor: '#dff2f8',
 };
 
 // ธีมสว่างเป็นค่าเริ่มต้น — ใส่คลาสก่อน paint แรกเพื่อไม่ให้จอกระพริบเป็นสีเข้ม

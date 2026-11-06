@@ -48,11 +48,10 @@ export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTr
     ] }),
     ...rows.map(row => {
       const item = treatments.find(item => item.id === row.id)!;
-      const note = notes.find(note => note.id === row.id);
       const severity = row.severity.replace(/\s/g, '').toUpperCase();
       const selectedSeverity = severityLabels.indexOf(severity);
       const severityText = selectedSeverity < 0 ? severity : '';
-      const measure = `${item.confirmedCurrent?'ยืนยันว่าเป็นมาตรการที่ใช้อยู่ในปัจจุบัน':'ร่างข้อเสนอ ยังไม่ยืนยันว่าใช้อยู่จริง'}\n${item.measures || 'ยังไม่ระบุมาตรการ'}${note ? `\nวิเคราะห์: ${note.analysis}\nติดตาม: ${note.followUp}` : ''}`;
+      const measure = `${item.confirmedCurrent ? '' : '[ร่าง] '}${item.measures || 'ยังไม่ระบุมาตรการ'}`;
       return new TableRow({ children: [
         cell(row.title + (row.subtopic ? '\n'+row.subtopic : ''),widths[0]),cell(String(row.frequency),widths[1],false,1,undefined,true),
         ...severityLabels.map((label,index)=>cell(index===selectedSeverity?'✓':index===0?severityText:'',widths[2+index],false,1,undefined,true)),

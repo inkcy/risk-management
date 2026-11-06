@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';
-    if (!riskUnitDirectory.some(unit => unit === name) || !/^[a-z0-9._-]{3,64}$/.test(username) || password.length < 12 || password.length > 128) return NextResponse.json({ error: 'กรุณาเลือกหน่วยงาน ชื่อผู้ใช้ต้องเป็น a-z, 0-9 หรือ ._- และรหัสผ่านต้องมี 12–128 ตัวอักษร' }, { status: 400 });
+    if (!riskUnitDirectory.some(unit => unit === name) || !/^[a-z0-9._-]{3,64}$/.test(username) || password.length < 7 || password.length > 128) return NextResponse.json({ error: 'กรุณาเลือกหน่วยงาน ชื่อผู้ใช้ต้องเป็น a-z, 0-9 หรือ ._- และรหัสผ่านต้องมี 7–128 ตัวอักษร' }, { status: 400 });
     const { rows } = await query<{ id: number }>('INSERT INTO risk_units (name, username, password_hash) VALUES ($1,$2,$3) RETURNING id', [name, username, await hashUnitPassword(password)]);
     await audit(auth.user, 'risk_unit.create', 'risk_unit', rows[0].id, { name, username });
     return NextResponse.json({ ok: true }, { status: 201 });
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest) {
       await audit(auth.user, 'risk_unit.reject', 'risk_unit', id);
       return NextResponse.json({ ok: true });
     }
-    if (!Number.isInteger(id) || id < 1 || password.length < 12 || password.length > 128) return NextResponse.json({ error: 'รหัสผ่านต้องมี 12–128 ตัวอักษร' }, { status: 400 });
+    if (!Number.isInteger(id) || id < 1 || password.length < 7 || password.length > 128) return NextResponse.json({ error: 'รหัสผ่านต้องมี 7–128 ตัวอักษร' }, { status: 400 });
     const result = await query('UPDATE risk_units SET password_hash=$1, failed_attempts=0, locked_until=NULL WHERE id=$2', [await hashUnitPassword(password), id]);
     if (!result.rowCount) return NextResponse.json({ error: 'ไม่พบหน่วยงาน' }, { status: 404 });
     await query('DELETE FROM risk_unit_sessions WHERE unit_id=$1', [id]);

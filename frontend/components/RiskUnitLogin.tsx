@@ -40,8 +40,8 @@ export function RiskUnitLogin() {
       <p>สมัครบัญชีหน่วยงานใหม่และรอแอดมินตรวจสอบ หากหน่วยงานมีบัญชีแล้ว กรุณาติดต่อผู้ดูแลระบบ</p>
       <label>ชื่อหน่วยงาน<select name="name" required defaultValue=""><option value="" disabled>เลือกหน่วยงาน</option>{riskUnitDirectory.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
       <label>ชื่อผู้ใช้หน่วยงาน<input name="username" required minLength={3} maxLength={64} pattern="[A-Za-z0-9._-]+" autoComplete="username" /><small>ภาษาอังกฤษ ตัวเลข และ . _ -</small></label>
-      <label>รหัสผ่าน<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" /><small>อย่างน้อย 12 ตัวอักษร</small></label>
-      <label>ยืนยันรหัสผ่าน<input name="confirm_password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" /></label>
+      <label>รหัสผ่าน<input name="password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /><small>อย่างน้อย 7 ตัวอักษร</small></label>
+      <label>ยืนยันรหัสผ่าน<input name="confirm_password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /></label>
       {error && <p className="announcement-error" role="alert">{error}</p>}
       <button className="tb-btn tb-btn-primary" type="submit" disabled={busy}>{busy ? 'กำลังส่งคำขอ…' : 'Sign up · ส่งคำขอ'}</button>
     </form>}

@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';
-    if (!riskUnitDirectory.some(unit => unit === name) || !/^[a-z0-9._-]{3,64}$/.test(username) || password.length < 12 || password.length > 128) {
-      return NextResponse.json({ error: 'กรุณากรอกหน่วยงาน ชื่อผู้ใช้ (a-z, 0-9 หรือ ._-) และรหัสผ่านอย่างน้อย 12 ตัวอักษร' }, { status: 400 });
+    if (!riskUnitDirectory.some(unit => unit === name) || !/^[a-z0-9._-]{3,64}$/.test(username) || password.length < 7 || password.length > 128) {
+      return NextResponse.json({ error: 'กรุณากรอกหน่วยงาน ชื่อผู้ใช้ (a-z, 0-9 หรือ ._-) และรหัสผ่านอย่างน้อย 7 ตัวอักษร' }, { status: 400 });
     }
     const { rows } = await query<{ id: number }>(
       'INSERT INTO risk_units (name, username, password_hash, active, requested_by) VALUES ($1,$2,$3,false,$4) RETURNING id',

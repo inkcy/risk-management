@@ -50,14 +50,14 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
     <form className="survey-form" onSubmit={submit} style={{ marginTop: 12 }}>
       <label>ชื่อหน่วยงาน<select name="name" required defaultValue=""><option value="" disabled>เลือกหน่วยงาน</option>{riskUnitDirectory.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
       <label>ชื่อผู้ใช้<input name="username" required minLength={3} maxLength={64} pattern="[A-Za-z0-9._-]+" autoComplete="off" /></label>
-      <label>รหัสผ่าน<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" /><small>อย่างน้อย 12 ตัวอักษร</small></label>
+      <label>รหัสผ่าน<input name="password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /><small>อย่างน้อย 7 ตัวอักษร</small></label>
       {error && <p className="announcement-error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
       <button className="tb-btn tb-btn-primary" type="submit" disabled={busy}>{busy ? 'กำลังสร้าง…' : 'สร้างบัญชี'}</button>
     </form>
     {units.length > 0 && <form className="survey-form" onSubmit={resetPassword} style={{ marginTop: 20 }}>
       <strong>เปลี่ยนรหัสผ่านหน่วยงาน</strong>
       <label>หน่วยงาน<select name="id" required>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.username})</option>)}</select></label>
-      <label>รหัสผ่านใหม่<input name="password" type="password" required minLength={12} maxLength={128} autoComplete="new-password" /></label>
+      <label>รหัสผ่านใหม่<input name="password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /></label>
       <button className="tb-btn tb-btn-ghost" disabled={busy} type="submit">เปลี่ยนรหัสผ่าน</button>
     </form>}
   </details>;

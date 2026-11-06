@@ -208,7 +208,9 @@ textarea.safety-note-input { resize: vertical; min-height: 120px; }
 .content { padding: 28px; }
 
 .home-banner {
-  margin-bottom: 28px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 24px;
   overflow: hidden;
   border-radius: var(--r);
   background: var(--bg2);

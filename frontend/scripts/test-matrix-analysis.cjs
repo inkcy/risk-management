@@ -20,13 +20,14 @@ assert.equal(matrix.calculateMatrix([{title:'Test',subtopic:'',severity:'5',freq
 for(const bad of [-1,0.5,NaN,Infinity])assert.throws(()=>matrix.calculateMatrix([{...items[0],frequency:bad}],options));
 assert.throws(()=>matrix.calculateMatrix(items,{...options,type:'nonclinical'}));
 assert.throws(()=>matrix.calculateMatrix([{...items[0],frequency:0}],{...options,basis:'level'}));
-let allowed=false,aiCalls=0,failAi=false;
+const {MatrixAiError}=moduleAt('lib/matrix-ai.ts');
+let allowed=false,aiCalls=0,failAi=false,invalidKey=false;
 const json=(body,opts={})=>({body,status:opts.status??200});
 const api=moduleAt('app/api/matrix/analyze/route.ts',{
  'next/server':{NextResponse:{json}},
  '@/lib/auth':{requireRole:async()=>allowed?{ok:true,user:{role:'viewer'}}:{ok:false,response:json({error:'Unauthorized'},{status:401})}},
  '@/lib/matrix-analysis':matrix,
- '@/lib/matrix-ai':{analyzeMatrixRisks:async data=>{aiCalls++;if(failAi)throw Error('Unavailable');return data.map(row=>({id:row.id,analysis:'Draft',actions:'Review',followUp:'Monitor'}));}},
+ '@/lib/matrix-ai':{MatrixAiError,analyzeMatrixRisks:async data=>{aiCalls++;if(invalidKey)throw new MatrixAiError('คีย์บริการ AI ไม่ถูกต้อง');if(failAi)throw Error('Unavailable');return data.map(row=>({id:row.id,analysis:'Draft',actions:'Review',followUp:'Monitor'}));}},
 });
 const request=body=>({text:async()=>JSON.stringify(body)});
 (async()=>{
@@ -34,5 +35,6 @@ const request=body=>({text:async()=>JSON.stringify(body)});
  allowed=true;const response=await api.POST(request({items,options}));assert.equal(response.status,200);assert.equal(response.body.rows[0].score,9);assert.equal(response.body.advice.length,2);
  assert.equal((await api.POST(request({items:[{...items[0],frequency:-1}],options}))).status,400);assert.equal(aiCalls,1);
  failAi=true;const fallback=await api.POST(request({items,options}));assert.equal(fallback.status,200);assert.equal(fallback.body.rows[1].score,12);assert.equal(fallback.body.advice.length,0);assert.ok(fallback.body.aiError);
+ invalidKey=true;const keyFailure=await api.POST(request({items,options}));assert.equal(keyFailure.body.aiError,'คีย์บริการ AI ไม่ถูกต้อง');assert.equal(keyFailure.body.rows[0].score,9);
  console.log('PASS: Bangkok midnight, Markdown/Excel input, E/F quarterly examples, 50 matrix cells, invalid inputs, auth and AI failure fallback');
 })().catch(error=>{console.error(error);process.exitCode=1;});

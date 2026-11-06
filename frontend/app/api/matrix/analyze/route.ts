@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { calculateMatrix } from '@/lib/matrix-analysis';
-import { analyzeMatrixRisks } from '@/lib/matrix-ai';
+import { analyzeMatrixRisks, MatrixAiError } from '@/lib/matrix-ai';
 
 export const maxDuration = 60;
 export async function POST(request: NextRequest) {
@@ -21,6 +21,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ rows, advice: await analyzeMatrixRisks(rows) }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('matrix AI analysis failed', error instanceof Error ? error.message : 'unknown');
-    return NextResponse.json({ rows, advice: [], aiError: 'วิเคราะห์ด้วย AI ไม่สำเร็จ กรุณาลองอีกครั้ง ผลคำนวณ Risk Matrix ด้านล่างยังใช้งานได้' }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ rows, advice: [], aiError: error instanceof MatrixAiError ? error.message : 'วิเคราะห์ด้วย AI ไม่สำเร็จ กรุณาลองอีกครั้ง ผลคำนวณ Risk Matrix ด้านล่างยังใช้งานได้' }, { headers: { 'Cache-Control': 'no-store' } });
   }
 }

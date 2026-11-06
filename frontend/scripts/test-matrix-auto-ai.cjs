@@ -38,7 +38,7 @@ function find(node, predicate) {
   let tree = render({ aiEnabled: true });
   find(tree, n => n.type === 'textarea' && n.props.maxLength === 50000).props.onChange({ target: { value: 'Test\t\tE\t1' } });
   tree = render({ aiEnabled: true });
-  await find(tree, n => n.type === 'button' && n.props.children === 'อ่านตารางและประเมินอัตโนมัติ').props.onClick();
+  await find(tree, n => n.type === 'button' && n.props.children === 'วิเคราะห์และเติมมาตรการด้วย AI').props.onClick();
   assert.equal(calls.length, 1);assert.equal(calls[0].items[0].title, 'Test');
   tree = render({ aiEnabled: true });
   assert.equal(find(tree, n => n.type === 'textarea' && n.props['aria-label'] === 'มาตรการรายการ 1').props.value, 'AI measures');

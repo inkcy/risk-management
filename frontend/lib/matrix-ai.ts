@@ -2,6 +2,9 @@ import type { MatrixResult } from './matrix-analysis';
 import { generalSeverities } from './incident-severity';
 
 export type MatrixAdvice = { id: number; analysis: string; actions: string; followUp: string; transferPrevention: boolean; monitorControl: boolean; mitigation: boolean; reviewFrequency: string };
+export class MatrixAiError extends Error {
+  constructor(message: string) { super(message); this.name = 'MatrixAiError'; }
+}
 export async function analyzeMatrixRisks(rows: MatrixResult[]): Promise<MatrixAdvice[]> {
   const key = process.env.GEMINI_API_KEY?.trim();
   if (!key) throw new Error('ยังไม่ได้ตั้งค่า AI ผลคำนวณ Risk Matrix ยังใช้งานได้');
@@ -15,7 +18,15 @@ export async function analyzeMatrixRisks(rows: MatrixResult[]): Promise<MatrixAd
       generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8192 },
     }),
   });
-  if (!response.ok) throw new Error(`AI ไม่พร้อมใช้งาน (${response.status}) กรุณาลองใหม่ ผลคำนวณยังคงแสดงได้`);
+  if (!response.ok) {
+    const failure = await response.json().catch(() => null);
+    const invalidKey = failure?.error?.details?.some((detail: { reason?: string }) => detail.reason === 'API_KEY_INVALID') || /API key not valid|API_KEY_INVALID|API key expired/i.test(failure?.error?.message || '');
+    if (invalidKey) throw new MatrixAiError('คีย์บริการ AI ไม่ถูกต้องหรือหมดอายุ กรุณาให้ผู้ดูแลระบบเปลี่ยน GEMINI_API_KEY แล้วเผยแพร่ระบบใหม่ ผลคำนวณ Risk Matrix ยังใช้งานได้');
+    if (response.status === 401 || response.status === 403) throw new MatrixAiError('บริการ AI ปฏิเสธสิทธิ์การใช้งาน กรุณาให้ผู้ดูแลระบบตรวจสอบคีย์และสิทธิ์ Gemini API');
+    if (response.status === 429) throw new MatrixAiError('บริการ AI ใช้งานเกินโควตาหรือมีคำขอมากเกินไป กรุณาลองภายหลัง หรือให้ผู้ดูแลระบบตรวจสอบโควตา');
+    if (response.status === 404) throw new MatrixAiError('ไม่พบโมเดล AI ที่ตั้งค่าไว้ กรุณาให้ผู้ดูแลระบบตรวจสอบ GEMINI_MODEL');
+    throw new MatrixAiError(`บริการ AI ไม่พร้อมใช้งาน (${response.status}) กรุณาลองอีกครั้ง ผลคำนวณ Risk Matrix ยังใช้งานได้`);
+  }
   const body = await response.json();
   const text = body.candidates?.[0]?.content?.parts?.filter((part: { thought?: boolean }) => !part.thought).map((part: { text?: string }) => part.text || '').join('') || '';
   const advice = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim());

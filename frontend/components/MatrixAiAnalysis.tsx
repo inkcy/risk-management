@@ -12,7 +12,7 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
   const [options, setOptions] = useState<MatrixOptions>({ type: 'clinical', basis: 'quarter', year: Number(today.slice(0,4)) + 543 + (month >= 10 ? 1 : 0), quarter: Math.floor(((month + 2) % 12) / 3) + 1 });
   const [text,setText] = useState(''), [items,setItems] = useState<MatrixInput[]>([]), [rows,setRows] = useState<MatrixResult[]>([]);
   const [advice,setAdvice] = useState<MatrixAdvice[]>([]), [message,setMessage] = useState(''), [busy,setBusy] = useState(false);
-  const [treatments,setTreatments] = useState<MatrixTreatment[]>([]), [unitName,setUnitName] = useState(''), [exporting,setExporting] = useState(false);
+  const [treatments,setTreatments] = useState<MatrixTreatment[]>([]), [unitName,setUnitName] = useState(profileUnitName === 'ทุกหน่วยงานที่มีสิทธิ์ดู' ? '' : profileUnitName), [exporting,setExporting] = useState(false);
   const patchTreatment = (id:number, patch:Partial<MatrixTreatment>) => setTreatments(previous => previous.map(item => item.id === id ? {...item,...patch} : item));
   const invalidate = () => { setRows([]); setAdvice([]); setTreatments([]); setMessage(''); };
   async function prepare() {

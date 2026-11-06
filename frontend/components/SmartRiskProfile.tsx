@@ -16,7 +16,7 @@ export function SmartRiskProfile({ units, risks, aiEnabled=false }: { aiEnabled?
   const years = [...new Set(risks.map(risk => risk.year))].sort((a, b) => b - a);
   const currentDate = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'numeric' }).formatToParts(new Date());
   const currentFiscalYear = Number(currentDate.find(part => part.type === 'year')!.value) + 543 + (Number(currentDate.find(part => part.type === 'month')!.value) >= 10 ? 1 : 0);
-  const [unit, setUnit] = useState('');
+  const [unit, setUnit] = useState(units.length === 1 ? String(units[0].id) : '');
   const [year, setYear] = useState(String(years[0] ?? currentFiscalYear));
   const [quarter, setQuarter] = useState(String(risks.find(risk => String(risk.year) === year)?.quarter ?? 1));
   const [category, setCategory] = useState<RiskType>('clinical');

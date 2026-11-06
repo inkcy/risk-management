@@ -25,7 +25,7 @@ const payload={items,options,treatments:treatment,unitName:'ห้องฉุ�
  allowed=true;const response=await api.POST({text:async()=>JSON.stringify(payload)});assert.equal(response.status,200);assert.ok(response.headers.get('Content-Disposition').endsWith('.docx"'));
  const zip=await JSZip.loadAsync(await response.arrayBuffer());const xml=await zip.file('word/document.xml').async('string');
  for(const text of ['Risk Treatment','Risk Monitoring','Review Frequency','Transfer &amp;','Prevention','Monitor &amp;','Mitigation','ทุกเดือน','ทุกไตรมาส','ร่างข้อเสนอ','ยืนยันว่าเป็นมาตรการ','ร่างการวิเคราะห์จาก AI','CPE405: Delay Diagnosis &amp; Treatment'])assert.ok(xml.includes(text),text);
- assert.ok(xml.includes('w:orient="landscape"'));assert.ok(xml.includes('FFC18C'));assert.ok(xml.includes('FF9EAB'));assert.ok((xml.match(/w:tblHeader/g)||[]).length>=3);
+ assert.ok(xml.includes('w:orient="landscape"'));assert.ok(xml.includes('FFC18C'));assert.ok(xml.includes('FF9EAB'));assert.ok((xml.match(/w:tblHeader/g)||[]).length>=3);assert.equal((xml.match(/<w:tbl>/g)||[]).length,1);
  assert.equal((await api.POST({text:async()=>JSON.stringify({...payload,treatments:[treatment[0],treatment[0]]})})).status,400);assert.equal(builds,1);
  console.log('PASS: authenticated DOCX download, recomputed matrix, treatment flags, draft/current status, review periods, repeated headers, landscape and colored cells');
 })().catch(error=>{console.error(error);process.exitCode=1;});

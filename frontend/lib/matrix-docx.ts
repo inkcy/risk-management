@@ -10,25 +10,56 @@ function paragraph(text: string, bold = false, centered = false, size = 22) {
   return new Paragraph({ alignment: centered ? AlignmentType.CENTER : AlignmentType.LEFT, spacing: { before: 0, after: 80 }, children: [new TextRun({ text, bold, size, font, color: '000000' })] });
 }
 function cell(text: string, size: number, header = false, span = 1, fill?: string, centered = false) {
-  return new TableCell({ width: { size, type: WidthType.DXA }, columnSpan: span, shading: header || fill ? { fill: fill || 'D9D9D9' } : undefined, margins: { top: 90, bottom: 90, left: 90, right: 90 }, children: text.split('\n').map(line => paragraph(line, header, header || centered, header ? 20 : 22)) });
+  return new TableCell({ width: { size, type: WidthType.DXA }, columnSpan: span, shading: header || fill ? { fill: fill || 'D9D9D9' } : undefined, margins: { top: 90, bottom: 90, left: 90, right: 90 }, children: text.split('\n').map(line => paragraph(line, header, header || centered, header ? 14 : 20)) });
 }
 const borders = Object.fromEntries(['top','bottom','left','right','insideHorizontal','insideVertical'].map(edge => [edge, { style: BorderStyle.SINGLE, size: 4, color: '606060' }]));
 function table(widths: number[], rows: TableRow[]) {
   return new Table({ width: { size: width, type: WidthType.DXA }, columnWidths: widths, layout: TableLayoutType.FIXED, borders, rows });
 }
 export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string, notes: MatrixExportNote[] = []) {
-  const analysisWidths = [700,5600,1000,1200,1100,1100,1000,1660];
-  const treatmentWidths = [3150,1450,1450,1450,6000,1860];
-  const analysis = table(analysisWidths, [
-    new TableRow({ tableHeader: true, cantSplit: true, children: ['ลำดับ','รหัสและเรื่อง / เรื่องย่อย','ความรุนแรง','ความถี่นำเข้า','ผลกระทบ','โอกาสเกิด','คะแนน','ระดับความเสี่ยง'].map((text,index) => cell(text,analysisWidths[index],true)) }),
-    ...rows.map(row => new TableRow({ children: [String(row.id), row.title + (row.subtopic ? '\n'+row.subtopic : ''), row.severity, String(row.frequency), String(row.impact), String(row.likelihood), String(row.score), row.level].map((text,index) => cell(text,analysisWidths[index],false,1,index===7?fills[row.color]:undefined)) })),
-  ]);
-  const treatment = table(treatmentWidths, [
-    new TableRow({ tableHeader: true, cantSplit: true, children: [cell('รหัสและเรื่อง',3150,true),cell('การจัดการความเสี่ยง [Risk Treatment]',10350,true,4),cell('Risk Monitoring & Review',1860,true)] }),
-    new TableRow({ tableHeader: true, cantSplit: true, children: ['ความเสี่ยง','Transfer &\nPrevention','Monitor &\nControl','Mitigation','มาตรการป้องกัน/การแก้ไข\nระบุสถานะมาตรการปัจจุบันหรือข้อเสนอ','ความถี่ในการทบทวน\n(Review Frequency)'].map((text,index) => cell(text,treatmentWidths[index],true)) }),
+  const severityLabels = options.type === 'clinical' ? ['A','B','C','D','E','F','G','H','I'] : ['1','2','3','4','5'];
+  const severityWidth = options.type === 'clinical' ? 300 : 540;
+  const widths = [2600, 650, ...severityLabels.map(() => severityWidth), 300, 300, 300, 300, 700, 700, 700, 4510, 1600];
+  const sum = (from: number, count: number) => widths.slice(from, from + count).reduce((total, value) => total + value, 0);
+  const colorStart = 2 + severityLabels.length;
+  const responseStart = colorStart + 4;
+  const colors = ['green','yellow','orange','red'] as const;
+  const summary = table(widths, [
+    new TableRow({ tableHeader: true, cantSplit: true, children: [
+      cell('การระบุความเสี่ยง (Risk Identification)',sum(0,colorStart),true,colorStart),
+      cell('การวิเคราะห์ความเสี่ยง (Risk Analysis)',sum(colorStart,4),true,4),
+      cell('การจัดการความเสี่ยง (Risk Treatment)',sum(responseStart,4),true,4),
+      cell('Risk Monitoring & Review',widths.at(-1)!,true),
+    ] }),
+    new TableRow({ tableHeader: true, cantSplit: true, children: [
+      cell('ประเภทความเสี่ยง',widths[0],true),cell('ความถี่',widths[1],true),
+      cell('ความรุนแรง (Impact)',sum(2,severityLabels.length),true,severityLabels.length),
+      cell('ระดับความเสี่ยง',sum(colorStart,4),true,4),
+      cell('การตอบสนองความเสี่ยง',sum(responseStart,3),true,3),
+      cell('มาตรการป้องกัน/การแก้ไข',widths[responseStart+3],true),
+      cell('ความถี่ในการทบทวน (Review Frequency)',widths.at(-1)!,true),
+    ] }),
+    new TableRow({ tableHeader: true, cantSplit: true, children: [
+      cell('',widths[0],true),cell('',widths[1],true),
+      ...severityLabels.map((label,index)=>cell(label,widths[2+index],true)),
+      ...colors.map((color,index)=>cell('',widths[colorStart+index],false,1,fills[color],true)),
+      ...['Transfer &\nPrevention','Monitor &\nControl','Mitigation'].map((label,index)=>cell(label,widths[responseStart+index],true)),
+      cell('',widths[responseStart+3],true),cell('',widths.at(-1)!,true),
+    ] }),
     ...rows.map(row => {
       const item = treatments.find(item => item.id === row.id)!;
-      return new TableRow({ children: [row.title + (row.subtopic ? '\n'+row.subtopic : ''),item.transferPrevention?'✓':'—',item.monitorControl?'✓':'—',item.mitigation?'✓':'—',`${item.confirmedCurrent?'ยืนยันว่าเป็นมาตรการที่ใช้อยู่ในปัจจุบัน':'ร่างข้อเสนอ ยังไม่ยืนยันว่าใช้อยู่จริง'}\n${item.measures || 'ยังไม่ระบุมาตรการ'}`,item.reviewFrequency||'ยังไม่ระบุ'].map((text,index) => cell(text,treatmentWidths[index])) });
+      const note = notes.find(note => note.id === row.id);
+      const severity = row.severity.replace(/\s/g, '').toUpperCase();
+      const selectedSeverity = severityLabels.indexOf(severity);
+      const severityText = selectedSeverity < 0 ? severity : '';
+      const measure = `${item.confirmedCurrent?'ยืนยันว่าเป็นมาตรการที่ใช้อยู่ในปัจจุบัน':'ร่างข้อเสนอ ยังไม่ยืนยันว่าใช้อยู่จริง'}\n${item.measures || 'ยังไม่ระบุมาตรการ'}${note ? `\nวิเคราะห์: ${note.analysis}\nติดตาม: ${note.followUp}` : ''}`;
+      return new TableRow({ children: [
+        cell(row.title + (row.subtopic ? '\n'+row.subtopic : ''),widths[0]),cell(String(row.frequency),widths[1],false,1,undefined,true),
+        ...severityLabels.map((label,index)=>cell(index===selectedSeverity?'✓':index===0?severityText:'',widths[2+index],false,1,undefined,true)),
+        ...colors.map((color,index)=>cell(row.color===color?'✓':'',widths[colorStart+index],false,1,fills[color],true)),
+        ...[item.transferPrevention,item.monitorControl,item.mitigation].map((selected,index)=>cell(selected?'✓':'',widths[responseStart+index],false,1,undefined,true)),
+        cell(measure,widths[responseStart+3]),cell(item.reviewFrequency||'ยังไม่ระบุ',widths.at(-1)!),
+      ] });
     }),
   ]);
   const basis = options.basis === 'quarter' ? 'จำนวนครั้งในไตรมาส (แปลงเป็นอัตราต่อปีก่อนจัดระดับโอกาสเกิด)' : options.basis === 'year' ? 'จำนวนครั้งต่อปี' : 'ระดับโอกาสเกิด 1–5';
@@ -37,11 +68,8 @@ export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTr
     paragraph(`หน่วยงาน: ${unitName || 'ยังไม่ระบุ'}    ปีงบประมาณ ${options.year}    ไตรมาส ${options.quarter}    ด้าน${options.type === 'clinical' ? 'คลินิก' : 'ทั่วไป'}`),
     paragraph(`วันที่ส่งออก ${thaiDateTime().occurred_at}    เกณฑ์ความถี่: ${basis}`),
     paragraph('คะแนน = ผลกระทบ × ระดับโอกาสเกิด สีประเมินตามตารางโรงพยาบาล ไม่ได้แบ่งจากช่วงคะแนน'),
-    paragraph('การวิเคราะห์ความเสี่ยง',true),analysis,
-    new Paragraph({ pageBreakBefore: true, children: [new TextRun({ text: 'การจัดการความเสี่ยงและการติดตามทบทวน', bold: true, font, size: 36, color: '000000' })] }),
-    paragraph('เครื่องหมาย ✓ แสดงแนวทางตอบสนองที่เลือก ช่องมาตรการระบุสถานะตามการยืนยันบนหน้าจอ โปรดทบทวนข้อเสนอจาก AI ก่อนนำไปใช้'),treatment,
-    paragraph('เกณฑ์ความรุนแรงด้านทั่วไปอ้างอิง ระดับความรุนแรงรายงานอุบัติการณ์(1).docx ส่วนรูปแบบ Risk Treatment อ้างอิงภาพตัวอย่างที่ให้มา'),
-    ...(notes.length ? [paragraph('ข้อเสนอแนะประกอบจาก AI',true), ...notes.flatMap(note=>[paragraph(rows.find(row=>row.id===note.id)!.title,true),paragraph(note.analysis),paragraph('การติดตามผล: '+note.followUp)])] : []),
+    summary,
+    paragraph('ข้อเสนอจาก AI เป็นร่าง โปรดทบทวนและยืนยันมาตรการก่อนนำไปใช้'),
   ] }] });
   return Packer.toBuffer(doc);
 }

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { getSessionUser } from '@/lib/auth';
 import { dbConfigured } from '@/lib/db';
+import { getRiskUnit } from '@/lib/riskUnitAuth';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (dbConfigured() && pathname !== '/login' && !user) {
     redirect('/login?error=expired');
   }
+  const selectedUnit = user ? await getRiskUnit(user.id).catch(error => { console.error('load header department failed',error); return null; }) : null;
 
   return (
     // themeBootstrap เติมคลาส light ลงบน <html> ก่อน React hydrate ทำให้ไม่ตรงกับ HTML ฝั่ง server เสมอ
@@ -39,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body>
-        <AppShell user={user}>{children}</AppShell>
+        <AppShell user={user} selectedUnitName={selectedUnit?.name ?? null}>{children}</AppShell>
       </body>
     </html>
   );

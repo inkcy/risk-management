@@ -18,6 +18,7 @@ export interface SessionUser {
   name: string | null;
   picture: string | null;
   role: Role;
+  roster_name?: string | null;
 }
 
 export interface GoogleProfile {
@@ -132,10 +133,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   try {
     const { rows } = await query<SessionUser>(
-      `SELECT u.id, u.email, u.name, u.picture, u.role
+      `SELECT u.id, u.email, u.name, u.picture, u.role, rc.display_name AS roster_name
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN risk_units ru ON ru.id = u.risk_unit_id
+       LEFT JOIN department_login_codes rc ON rc.user_id=u.id AND rc.active
        WHERE s.id = $1 AND s.expires_at > now() AND u.active
          AND (u.risk_unit_id IS NULL OR ru.active)`,
       [sessionId],

@@ -27,7 +27,7 @@ const ROLE_LABEL: Record<string, string> = {
   viewer: 'ผู้ดูอย่างเดียว',
 };
 
-export function Topbar({ user }: { user: SessionUser | null }) {
+export function Topbar({ user, selectedUnitName }: { user: SessionUser | null; selectedUnitName?: string | null }) {
   const pathname = usePathname();
   const titleKey = Object.keys(titles)
     .filter(path => path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(`${path}/`))
@@ -82,7 +82,7 @@ export function Topbar({ user }: { user: SessionUser | null }) {
           </Link>
         )}
         {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
+          <div className="topbar-account">
             <Link href="/settings" className="topbar-profile-link" title="เปิดบัญชีของฉัน">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {user.picture && (
@@ -95,10 +95,10 @@ export function Topbar({ user }: { user: SessionUser | null }) {
                   referrerPolicy="no-referrer"
                 />
               )}
-              <span className="user-name" style={{ fontSize: 14.4, lineHeight: 1.25 }}>
-                {user.name ?? user.email}
-                <br />
-                <span style={{ color: 'var(--text3)', fontSize: 12.6 }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+              <span className="user-name topbar-identity">
+                <span className="topbar-identity-name">ผู้ใช้งาน: {user.roster_name || user.name || user.email}</span>
+                <span className="topbar-identity-unit" title={selectedUnitName ?? undefined}>หน่วยงาน: {selectedUnitName || 'ยังไม่ได้เลือก'}</span>
+                <span className="topbar-identity-role">{ROLE_LABEL[user.role] ?? user.role}</span>
               </span>
             </Link>
             <form action="/api/auth/logout" method="post">

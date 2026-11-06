@@ -15,13 +15,23 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
   const [treatments,setTreatments] = useState<MatrixTreatment[]>([]), [unitName,setUnitName] = useState(''), [exporting,setExporting] = useState(false);
   const patchTreatment = (id:number, patch:Partial<MatrixTreatment>) => setTreatments(previous => previous.map(item => item.id === id ? {...item,...patch} : item));
   const invalidate = () => { setRows([]); setAdvice([]); setTreatments([]); setMessage(''); };
-  function prepare() { try { const parsed = parseMatrixTable(text); setItems(parsed); const result=calculateMatrix(parsed,options);setRows(result);setTreatments(normalizeTreatments(result.map(row=>row.id),[])); setAdvice([]); setMessage('อ่านตารางแล้ว กรุณาตรวจสอบก่อนวิเคราะห์ด้วย AI'); } catch(error) { setItems([]);setRows([]);setAdvice([]);setMessage(error instanceof Error ? error.message : 'อ่านตารางไม่สำเร็จ'); } }
-  async function analyze() {
-    setBusy(true);setMessage('');setAdvice([]);
+  async function prepare() {
     try {
-      const computed=calculateMatrix(items,options);setRows(computed);setTreatments(previous=>normalizeTreatments(computed.map(row=>row.id),previous));
+      const parsed = parseMatrixTable(text);
+      const result = calculateMatrix(parsed, options);
+      setItems(parsed);setRows(result);setTreatments(normalizeTreatments(result.map(row=>row.id),[]));setAdvice([]);
+      await analyze(parsed, options);
+    } catch(error) {
+      setItems([]);setRows([]);setAdvice([]);setTreatments([]);
+      setMessage(error instanceof Error ? error.message : 'อ่านตารางไม่สำเร็จ');
+    }
+  }
+  async function analyze(sourceItems: MatrixInput[] = items, sourceOptions: MatrixOptions = options) {
+    setBusy(true);setMessage('AI กำลังประเมินและเติมมาตรการอัตโนมัติ…');setAdvice([]);
+    try {
+      const computed=calculateMatrix(sourceItems,sourceOptions);setRows(computed);setTreatments(previous=>normalizeTreatments(computed.map(row=>row.id),previous));
       if(!aiEnabled){setMessage('คำนวณ Risk Matrix แล้ว ส่วน AI ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');return;}
-      const response = await fetch('/api/matrix/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items,options }), signal: AbortSignal.timeout(60000) });
+      const response = await fetch('/api/matrix/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: sourceItems, options: sourceOptions }), signal: AbortSignal.timeout(60000) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'วิเคราะห์ไม่สำเร็จ');
       setRows(result.rows);setAdvice(result.advice);
@@ -39,14 +49,14 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
       setMessage('ส่งออกไฟล์ Word แล้ว');
     }catch(error){setMessage(error instanceof Error?error.message:'ส่งออกไม่สำเร็จ');}finally{setExporting(false);}
   }
-  function useProfileRows() {
+  async function useProfileRows() {
     if(!profileOptions||!profileItems.length||profileItems.length>50)return;
     setOptions(profileOptions);setUnitName(profileUnitName);setItems(profileItems);
     setText('รหัส: เรื่อง\tเรื่องย่อย\tความรุนแรง\tความถี่\n'+profileItems.map(item=>[item.title.replace(/\s+/g,' '),item.subtopic.replace(/\s+/g,' '),item.severity,item.frequency].join('\t')).join('\n'));
-    const result=calculateMatrix(profileItems,profileOptions);setRows(result);setTreatments(normalizeTreatments(result.map(row=>row.id),[]));setAdvice([]);setMessage('นำรายการตามตัวกรองมาแล้ว กลุ่ม A–B/C–D/G–I คงระดับผลกระทบเดิมโดยไม่เดาความรุนแรงรายเหตุการณ์');
+    const result=calculateMatrix(profileItems,profileOptions);setRows(result);setTreatments(normalizeTreatments(result.map(row=>row.id),[]));setAdvice([]);await analyze(profileItems, profileOptions);
   }
   return <section className="card" style={{marginBottom:20}}>
-    <div className="card-header"><div><h2 className="card-title">วิเคราะห์ตารางความเสี่ยงด้วย AI</h2><p className="announcement-subtitle">วางตารางจาก Excel หรือข้อความ แล้วตรวจสอบผลคำนวณก่อนให้ AI เสนอแนวทางลดความเสี่ยง</p></div></div>
+    <div className="card-header"><div><h2 className="card-title">วิเคราะห์ตารางความเสี่ยงด้วย AI</h2><p className="announcement-subtitle">วางตารางจาก Excel หรือข้อความ เมื่ออ่านตารางแล้ว AI จะประเมินและเติมมาตรการให้อัตโนมัติ</p></div></div>
     <div className="card-body">
       {!aiEnabled&&<p role="status" style={{marginBottom:12,color:'var(--text2)'}}>คำนวณ Risk Matrix ได้ตามปกติ ส่วนการวิเคราะห์ด้วย AI จะใช้งานได้เมื่อผู้ดูแลระบบเปิดบริการ AI</p>}
       <fieldset disabled={busy||exporting} style={{border:0,padding:0,minWidth:0}}>
@@ -63,17 +73,17 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
         </label>
         <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
           <button type="button" className="tb-btn tb-btn-ghost" onClick={()=>{setText(example);setItems([]);invalidate();}}>ใช้ตัวอย่าง CPE405 / CPP401</button>
-          <button type="button" className="tb-btn tb-btn-primary" onClick={prepare} disabled={!text.trim()}>อ่านตารางและคำนวณ</button>
+          <button type="button" className="tb-btn tb-btn-primary" onClick={prepare} disabled={!text.trim()}>{aiEnabled?'อ่านตารางและประเมินอัตโนมัติ':'อ่านตารางและคำนวณ'}</button>
         </div>
         {!!items.length&&<><div style={{overflowX:'auto',marginTop:16}}><table className="data-table"><thead><tr><th>เรื่อง</th><th>เรื่องย่อย</th><th>ความรุนแรง</th><th>ความถี่</th></tr></thead><tbody>{items.map((item,index)=><tr key={index}><td>{item.title}</td><td>{item.subtopic||'—'}</td><td><input aria-label={`ความรุนแรงรายการ ${index+1}`} value={item.severity} maxLength={3} style={{width:70}} onChange={e=>{setItems(items.map((row,i)=>i===index?{...row,severity:e.target.value.toUpperCase()}:row));invalidate();}}/></td><td><input aria-label={`ความถี่รายการ ${index+1}`} type="number" min={options.basis==='level'?1:0} max={options.basis==='level'?5:10000000} value={item.frequency} style={{width:90}} onChange={e=>{setItems(items.map((row,i)=>i===index?{...row,frequency:Number(e.target.value)}:row));invalidate();}}/></td></tr>)}</tbody></table></div>
-        <button type="button" className="tb-btn tb-btn-primary" style={{marginTop:12}} onClick={analyze}>{busy?'กำลังวิเคราะห์…':aiEnabled?'วิเคราะห์ด้วย AI':'คำนวณผล Risk Matrix'}</button></>}
+        <button type="button" className="tb-btn tb-btn-primary" style={{marginTop:12}} onClick={()=>void analyze()}>{busy?'กำลังวิเคราะห์…':aiEnabled?'ให้ AI ประเมินอีกครั้ง':'คำนวณผล Risk Matrix'}</button></>}
       </fieldset>
       {message&&<p role="status" style={{marginTop:12,whiteSpace:'pre-wrap'}}>{message}</p>}
       {!!rows.length&&<><p style={{marginTop:16,color:'var(--text2)'}}>คะแนน = ผลกระทบ × ระดับโอกาสเกิด · สีตามตารางของโรงพยาบาล ไม่ได้แบ่งจากช่วงคะแนน{options.basis==='quarter'?' · จำนวนครั้งในไตรมาสแปลงเป็นอัตราต่อปีก่อนจัดระดับโอกาสเกิด เช่นเดียวกับ Smart Risk Profile':''}</p>
         <div style={{overflowX:'auto',marginTop:12}}><table className="data-table"><thead><tr><th>เรื่อง</th><th>ความรุนแรง</th><th>ผลกระทบ</th><th>โอกาสเกิด</th><th>คะแนน</th><th>ระดับความเสี่ยง</th><th>AI วิเคราะห์และข้อเสนอแนะ</th></tr></thead><tbody>{rows.map(row=>{const note=advice.find(item=>item.id===row.id);return <tr key={row.id}><td>{row.title}{row.subtopic&&<p>{row.subtopic}</p>}</td><td>{row.severity}</td><td>{row.impact}</td><td>{row.likelihood}</td><td>{row.score}</td><td><span className={`risk-color-${row.color}`} style={{display:'inline-block',padding:'6px 10px',borderRadius:8,color:'#172033',background:{green:'#bcead0',yellow:'#fff0a6',orange:'#ffc18c',red:'#ff9eab'}[row.color]}}>{row.level}</span></td><td style={{minWidth:260,whiteSpace:'pre-wrap'}}>{note?<><p>{note.analysis}</p><p><strong>มาตรการ: </strong>{note.actions}</p><p><strong>ติดตาม: </strong>{note.followUp}</p></>:'ยังไม่มีผลวิเคราะห์จาก AI'}</td></tr>;})}</tbody></table></div>
         <section className="matrix-treatment" aria-busy={busy} style={{marginTop:24}}>
-          <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',alignItems:'center'}}><h3>การจัดการความเสี่ยงและการติดตามทบทวน</h3><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button type="button" className="tb-btn tb-btn-primary" disabled={busy||exporting||!aiEnabled} onClick={analyze}>{busy?'AI กำลังประเมิน…':'AI ประเมินและเติมมาตรการ'}</button><button type="button" className="tb-btn tb-btn-ghost" disabled={busy||exporting} onClick={exportDocx}>{exporting?'กำลังสร้างไฟล์…':'Export Word (.docx)'}</button></div></div>
-          <p style={{color:'var(--text2)',margin:'10px 0'}}>กด AI ประเมินและเติมมาตรการ เพื่อเสนอแนวทางตอบสนอง มาตรการป้องกัน/แก้ไข และความถี่ทบทวนลงช่องว่างในตารางโดยตรง แก้ไขได้ก่อนยืนยันว่าเป็นมาตรการปัจจุบัน</p>
+          <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',alignItems:'center'}}><h3>การจัดการความเสี่ยงและการติดตามทบทวน</h3><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button type="button" className="tb-btn tb-btn-primary" disabled={busy||exporting||!aiEnabled} onClick={()=>void analyze()}>{busy?'AI กำลังประเมิน…':'ให้ AI ประเมินอีกครั้ง'}</button><button type="button" className="tb-btn tb-btn-ghost" disabled={busy||exporting} onClick={exportDocx}>{exporting?'กำลังสร้างไฟล์…':'Export Word (.docx)'}</button></div></div>
+          <p style={{color:'var(--text2)',margin:'10px 0'}}>AI จะประเมินและเติมแนวทางตอบสนอง มาตรการป้องกัน/แก้ไข และความถี่ทบทวนอัตโนมัติหลังอ่านตารางหรือนำรายการมาใช้ แก้ไขได้ก่อนยืนยันว่าเป็นมาตรการปัจจุบัน</p>
           <div style={{overflowX:'auto'}}><table className="data-table"><thead><tr><th>เรื่อง</th><th>Transfer &amp; Prevention</th><th>Monitor &amp; Control</th><th>Mitigation</th><th>มาตรการป้องกัน/การแก้ไข</th><th>ความถี่ในการทบทวน</th></tr></thead><tbody>{rows.map(row=>{const item=treatments.find(item=>item.id===row.id);if(!item)return null;return <tr key={row.id}><td style={{minWidth:180}}>{row.title}</td>{(['transferPrevention','monitorControl','mitigation'] as const).map((key,index)=><td key={key}><input type="checkbox" style={{width:'auto'}} disabled={busy||exporting} aria-label={`${['Transfer & Prevention','Monitor & Control','Mitigation'][index]} รายการ ${row.id}`} checked={item[key]} onChange={e=>patchTreatment(row.id,{[key]:e.target.checked})}/></td>)}<td style={{minWidth:340}}><textarea aria-label={`มาตรการรายการ ${row.id}`} rows={6} maxLength={5000} disabled={busy||exporting} value={item.measures} onChange={e=>patchTreatment(row.id,{measures:e.target.value})} placeholder="กรอกมาตรการป้องกัน/แก้ไข หรือแก้ไขข้อเสนอจาก AI"/><label style={{display:'flex',alignItems:'flex-start',gap:8,marginTop:8}}><input type="checkbox" style={{width:'auto',marginTop:5}} disabled={busy||exporting} checked={item.confirmedCurrent} onChange={e=>patchTreatment(row.id,{confirmedCurrent:e.target.checked})}/>ยืนยันว่าเป็นมาตรการที่ใช้อยู่ในปัจจุบัน</label></td><td style={{minWidth:170}}><input aria-label={`ความถี่ทบทวนรายการ ${row.id}`} list="matrix-review-periods" disabled={busy||exporting} maxLength={300} value={item.reviewFrequency} onChange={e=>patchTreatment(row.id,{reviewFrequency:e.target.value})} placeholder="เช่น ทุกเดือน"/></td></tr>;})}</tbody></table></div>
           {message&&<p role="status" style={{marginTop:12,whiteSpace:'pre-wrap'}}>{message}</p>}
           <datalist id="matrix-review-periods">{['ทุกสัปดาห์','ทุกเดือน','ทุกไตรมาส','ทุก 6 เดือน','ทุกปี','หลังเกิดเหตุทุกครั้ง'].map(period=><option key={period} value={period}/>)}</datalist>

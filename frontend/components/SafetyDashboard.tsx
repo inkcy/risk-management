@@ -4,7 +4,23 @@ import type { SafetyData, SafetyIndicator } from '@/lib/safety';
 import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 import { formatSafetyText } from '@/lib/safety-text';
 
-function Trend({ item, periods }: { item: SafetyIndicator; periods: string[] }) {
+function wrapChartText(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  const words = new Intl.Segmenter('th', { granularity: 'word' }).segment(text);
+  const lines: string[] = [];
+  let line = '';
+  for (const { segment } of words) {
+    if (line && context.measureText(line + segment).width > maxWidth) {
+      lines.push(line.trimEnd());
+      line = segment.trimStart();
+    } else {
+      line += segment;
+    }
+  }
+  if (line) lines.push(line.trimEnd());
+  return lines;
+}
+
+function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; periods: string[]; periodCaption: string }) {
   const max = Math.max(...item.values.filter((v): v is number => v !== null), item.comparison === 'none' ? 0 : item.target, 0.01) * 1.2;
   const wide = periods.length > 6;
   const width = wide ? Math.max(660, periods.length * 42 + 80) : 550;
@@ -37,42 +53,61 @@ function Trend({ item, periods }: { item: SafetyIndicator; periods: string[] }) 
     return `${line}${mark}<text x="${x(i)}" y="${y(value) - 10}" text-anchor="middle" font-size="13">${value}</text>${label}`;
   }).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="Tahoma, sans-serif" font-size="11" fill="#193c4b"><rect width="100%" height="100%" fill="white" rx="8"/>${grid}${target}${points}</svg>`;
-  const alt = `${item.name}: ${item.values.map((value, i) => `${periods[i]} ${value ?? 'ไม่มีข้อมูล'}`).join(', ')}`;
+  const metadata = `หน่วย: ${item.unit} · เป้าหมาย: ${item.targetText} · สไลด์ ${item.slide}`;
+  const alt = `${item.name} · ${metadata} · ${periodCaption} · ${item.values.map((value, i) => `${periods[i]} ${value ?? 'ไม่มีข้อมูล'}`).join(', ')}`;
+  const imageKey = JSON.stringify([svg, item.name, metadata, periodCaption]);
 
-  const [image, setImage] = useState<{ svg: string; png: string | null }>();
+  const [image, setImage] = useState<{ key: string; png: string | null }>();
   useEffect(() => {
     let active = true;
     const source = new Image();
     source.onerror = () => {
-      if (active) setImage({ svg, png: null });
+      if (active) setImage({ key: imageKey, png: null });
     };
     source.onload = () => {
       if (!active) return;
       const canvas = document.createElement('canvas');
       const scale = Math.min(2, 8192 / width);
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
       const context = canvas.getContext('2d');
       let png: string | null = null;
       try {
         if (context) {
-          context.drawImage(source, 0, 0, canvas.width, canvas.height);
+          context.font = 'bold 22px Tahoma, sans-serif';
+          const titleLines = wrapChartText(context, item.name, 510);
+          context.font = '16px Tahoma, sans-serif';
+          const details = [...wrapChartText(context, metadata, 510), periodCaption];
+          const headerHeight = 28 + titleLines.length * 29 + details.length * 22;
+          canvas.width = Math.round(width * scale);
+          canvas.height = Math.round((height + headerHeight) * scale);
+          context.scale(scale, scale);
+          context.fillStyle = '#fff';
+          context.fillRect(0, 0, width, height + headerHeight);
+          context.textBaseline = 'top';
+          context.fillStyle = '#193c4b';
+          context.font = 'bold 22px Tahoma, sans-serif';
+          titleLines.forEach((line, i) => context.fillText(line, 20, 18 + i * 29, 510));
+          context.font = '16px Tahoma, sans-serif';
+          details.forEach((line, i) => context.fillText(line, 20, 22 + titleLines.length * 29 + i * 22, 510));
+          context.drawImage(source, 0, headerHeight, width, height);
           const url = canvas.toDataURL('image/png');
           if (url.startsWith('data:image/png;base64,')) png = url;
         }
       } catch {
         // Some browsers restrict reading canvas pixels.
       }
-      setImage({ svg, png });
+      setImage({ key: imageKey, png });
     };
     source.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
     return () => { active = false; };
-  }, [svg, width, height]);
+  }, [svg, width, height, imageKey, item.name, metadata, periodCaption]);
 
-  const current = image?.svg === svg ? image : undefined;
+  const current = image?.key === imageKey ? image : undefined;
   const style = { width: '100%', minWidth: wide ? width : undefined };
   return current?.png
-    ? <img src={current.png} alt={alt} width={width} height={height} style={{ ...style, height: 'auto', display: 'block' }} />
+    ? <>
+        <img src={current.png} alt={alt} style={{ ...style, height: 'auto', display: 'block' }} />
+        <a className="tb-btn tb-btn-ghost" href={current.png} download={`safety-${item.id}.png`}>บันทึกรูป PNG</a>
+      </>
     : <div style={{ ...style, aspectRatio: `${width} / ${height}`, display: 'grid', placeItems: 'center' }}>
         <span role="status">{current ? 'สร้างรูปกราฟไม่สำเร็จ' : 'กำลังสร้างรูปกราฟ…'}</span>
       </div>;
@@ -150,9 +185,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       <div className="safety-grid">{visible.map(item=>{
         const series=periodSeries(item,data.periods,mode,year,(editing?draft:data).years);
         return <article key={item.id} style={{padding:18,border:'1px solid var(--border2)',borderRadius:14,background:'var(--bg2)',minWidth:0}}>
-        <h3 style={{fontSize:16,lineHeight:1.6}}>{item.name}</h3><p style={{fontSize:12,color:'var(--text2)',marginTop:6}}>หน่วย: {item.unit} · เป้าหมาย: {item.targetText} · สไลด์ {item.slide}</p>
-        <p style={{fontSize:12,color:'var(--text2)',marginTop:6}}>{mode==='year'?'รายปีปฏิทิน (มกราคม–ธันวาคม)':`${mode==='quarter'?'รายไตรมาส':'รายเดือน'} ปี พ.ศ. ${year}`}</p>
-        <div style={{overflowX:'auto'}}><Trend item={{...item,values:series.map(r=>r.value)}} periods={series.map(r=>r.label)}/></div>
+        <div style={{overflowX:'auto'}}><Trend item={{...item,values:series.map(r=>r.value)}} periods={series.map(r=>r.label)} periodCaption={mode==='year'?'รายปีปฏิทิน (มกราคม–ธันวาคม)':`${mode==='quarter'?'รายไตรมาส':'รายเดือน'} ปี พ.ศ. ${year}`}/></div>
         {series.every(r=>r.value===null)&&<p style={{fontSize:13,color:'var(--text2)',marginBottom:12}}>ยังไม่มีข้อมูลในช่วงเวลานี้{canEdit?' แอดมินสามารถกดแก้ไขเพื่อกรอกข้อมูลได้':''}</p>}
         {item.benchmark&&<p style={{fontSize:12}}>Benchmark: {item.benchmark} (ตามต้นฉบับ)</p>}{item.note&&<p style={{fontSize:12,color:'var(--amber)'}}>{item.note}</p>}
         {canEdit&&!editing&&<button className="tb-btn tb-btn-ghost" style={{margin:'12px 0'}} aria-label={`แก้ไขข้อมูล ${item.name}`} onClick={startEditing}>แก้ไขข้อมูล</button>}

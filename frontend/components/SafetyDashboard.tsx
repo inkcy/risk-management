@@ -64,14 +64,7 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
     source.onerror = () => {
       if (active) setImage({ key: imageKey, png: null });
     };
-    source.onload = async () => {
-      if (!active) return;
-      const logo = new Image();
-      const logoLoaded = await new Promise<boolean>(resolve => {
-        logo.onload = () => resolve(true);
-        logo.onerror = () => resolve(false);
-        logo.src = '/safety-chart-logo.png';
-      });
+    source.onload = () => {
       if (!active) return;
       const canvas = document.createElement('canvas');
       const scale = Math.min(2, 8192 / width);
@@ -85,10 +78,10 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
           const details = [...wrapChartText(context, metadata, 510), periodCaption];
           const headerHeight = 28 + titleLines.length * 29 + details.length * 22;
           canvas.width = Math.round(width * scale);
-          canvas.height = Math.round((height + headerHeight + 100) * scale);
+          canvas.height = Math.round((height + headerHeight) * scale);
           context.scale(scale, scale);
           context.fillStyle = '#fff';
-          context.fillRect(0, 0, width, height + headerHeight + 100);
+          context.fillRect(0, 0, width, height + headerHeight);
           context.textBaseline = 'top';
           context.fillStyle = '#193c4b';
           context.font = 'bold 22px Tahoma, sans-serif';
@@ -96,7 +89,6 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
           context.font = '16px Tahoma, sans-serif';
           details.forEach((line, i) => context.fillText(line, 20, 22 + titleLines.length * 29 + i * 22, 510));
           context.drawImage(source, 0, headerHeight, width, height);
-          if (logoLoaded) context.drawImage(logo, (width - 240) / 2, headerHeight + height, 240, 95);
           const url = canvas.toDataURL('image/png');
           if (url.startsWith('data:image/png;base64,')) png = url;
         }
@@ -153,6 +145,36 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const groups=Array.from(new Set(data.indicators.map(i=>i.group)));
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
   const visible=(editing?draft:data).indicators.filter(i=>i.group===group);
+  async function exportTable() {
+    try {
+      const { default: JSZip } = await import('jszip');
+      const rows: (string | number | null)[][] = [['ตัวชี้วัด', 'หน่วย', 'เป้าหมาย', 'ช่วงเวลา', 'ค่า']];
+      for (const item of visible) {
+        for (const row of periodSeries(item, data.periods, mode, year, (editing ? draft : data).years)) {
+          rows.push([item.name, item.unit, item.targetText, periodLabel(row.label, mode, mode === 'quarter' ? year : row.year, row.period), row.value]);
+        }
+      }
+      const xml = (value: string) => value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const sheetRows = rows.map((row, index) => `<row r="${index + 1}">${row.map((value, column) => {
+        const ref = `${String.fromCharCode(65 + column)}${index + 1}`;
+        if (value === null) return `<c r="${ref}"/>`;
+        if (typeof value === 'number') return `<c r="${ref}"><v>${value}</v></c>`;
+        return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;
+      }).join('')}</row>`).join('');
+      const zip = new JSZip();
+      zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+      zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+      zip.file('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="ตัวชี้วัด" sheetId="1" r:id="rId1"/></sheets></workbook>');
+      zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
+      zip.file('xl/worksheets/sheet1.xml', `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="55" customWidth="1"/><col min="2" max="5" width="22" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData></worksheet>`);
+      const url = URL.createObjectURL(await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      const link = document.createElement('a');
+      link.href = url; link.download = `safety-dashboard-${year}-${mode}.xlsx`; link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch {
+      setMessage('ส่งออกไฟล์ Excel ไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
+  }
   const startEditing=()=>{setDraft({...data,notes:data.notes.map(n=>({...n,text:formatSafetyText(n.text)}))});setEditing(true);setMessage('');};
   const addNextYear=()=>{
     if(year>=2800)return;
@@ -190,6 +212,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       </div>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>ทุกมุมมองใช้ปีปฏิทิน มกราคม–ธันวาคม: Q1 ม.ค.–มี.ค. · Q2 เม.ย.–มิ.ย. · Q3 ก.ค.–ก.ย. · Q4 ต.ค.–ธ.ค.<br/>ข้อมูลรายเดือนและไตรมาสเดิมจัดตามช่วงเดือนจริง ยอดรวมปีงบประมาณเดิมยังอยู่ในข้อมูลอ้างอิง แอดมินกรอกผลรวมรายปีปฏิทินแยกต่างหาก ไม่มีการเฉลี่ยหรือรวมอัตราอัตโนมัติ</p>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>เส้นประสีส้ม = เป้าหมาย · สีเขียว = ผ่าน · สีแดง = ไม่ผ่าน · — = ไม่มีข้อมูล</p>
+      <button type="button" className="tb-btn tb-btn-ghost" style={{marginBottom:16}} onClick={exportTable}>ส่งออกข้อมูลตาราง Excel (.xlsx)</button>
       <div className="safety-grid">{visible.map(item=>{
         const series=periodSeries(item,data.periods,mode,year,(editing?draft:data).years);
         return <article key={item.id} style={{padding:18,border:'1px solid var(--border2)',borderRadius:14,background:'var(--bg2)',minWidth:0}}>

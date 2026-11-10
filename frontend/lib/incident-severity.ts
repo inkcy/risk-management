@@ -12,5 +12,5 @@ export const generalSeverities = [
 export function validIncidentSeverity(category: string, severity: string): boolean {
   const group = incidentRiskGroup(category);
   return group === 'clinical' ? /^[A-I]$/.test(severity)
-    : (group === 'nonclinical' || group === 'complaint') && generalSeverities.some(level => level.value === severity);
+    : group === 'nonclinical' && generalSeverities.some(level => level.value === severity);
 }

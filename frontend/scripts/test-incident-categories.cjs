@@ -8,7 +8,7 @@ for(const category of ['blood','medication','fall','procedure','communication','
 for(const category of ['traffic','environment','natural_disaster','corruption'])assert.equal(incidentRiskGroup(category),'nonclinical');
 assert.equal(incidentRiskGroup('unknown'),'');
 assert.equal(incidentCategories.length,17);
-for(const {value} of incidentCategories.filter(c=>c.value.startsWith('complaint_')))assert.equal(incidentRiskGroup(value),'complaint');
+for(const {value} of incidentCategories.filter(c=>c.value.startsWith('complaint_')))assert.equal(incidentRiskGroup(value),'clinical');
 const severity={exports:{}};
 vm.runInNewContext(compile('lib/incident-severity.ts'),{exports:severity.exports,require:()=>categories.exports});
 let inserted=[],role='editor';
@@ -31,9 +31,9 @@ const post=(category,level=incidentRiskGroup(category)==='clinical'?'A':'1')=>mo
  assert.equal((await post('unknown')).status,400);
  assert.equal(inserted.length,17);
  for(const {value} of incidentCategories.filter(c=>c.value.startsWith('complaint_'))){
-  for(const level of ['2','3','4','5'])assert.equal((await post(value,level)).status,201);
-  assert.equal((await post(value,'A')).status,400);
+  for(const level of ['A','B','C','D','E','F','G','H','I'])assert.equal((await post(value,level)).status,201);
+  assert.equal((await post(value,'1')).status,400);
  }
  role='viewer';assert.equal((await post('traffic')).status,403);
- console.log('PASS: three risk groups, all 17 category saves and complaint severity, invalid categories and permissions');
+ console.log('PASS: clinical and nonclinical categories, complaint A–I severity, invalid categories and permissions');
 })().catch(error=>{console.error(error);process.exitCode=1;});

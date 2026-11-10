@@ -5,6 +5,13 @@ export const incidentCategoryGroups = [
     { value: 'fall', label: 'การพลัดตกหกล้ม' },
     { value: 'procedure', label: 'การผ่าตัด / หัตถการ' },
     { value: 'communication', label: 'การสื่อสาร / ส่งต่อ' },
+    { value: 'complaint_distress', label: 'ร้องเรียน · เพื่อให้โรงพยาบาลได้รับทราบความเดือดร้อนและคับแค้นใจ' },
+    { value: 'complaint_prevention', label: 'ร้องเรียน · เพื่อให้โรงพยาบาลแก้ไขข้อบกพร่องอย่าให้เกิดเหตุการณ์ซ้ำกับคนอื่น' },
+    { value: 'complaint_treatment', label: 'ร้องเรียน · เพื่อช่วยเหลือผู้ป่วยด้านการรักษา' },
+    { value: 'complaint_clarification', label: 'ร้องเรียน · เพื่อตรวจสอบเหตุการณ์และชี้แจงข้อขัดข้องใจ' },
+    { value: 'complaint_discipline', label: 'ร้องเรียน · เพื่อหาผู้กระทำผิด ว่ากล่าวตักเตือน และลงโทษ' },
+    { value: 'complaint_compensation', label: 'ร้องเรียน · เพื่อชดเชยความเสียหาย' },
+    { value: 'complaint_social_support', label: 'ร้องเรียน · เพื่อช่วยเหลือผู้ป่วยหรือญาติทางสังคม' },
     { value: 'other', label: 'อื่นๆ' },
   ] },
   { value: 'nonclinical', label: 'ความเสี่ยงด้านทั่วไป (Non-clinical)', categories: [
@@ -12,15 +19,6 @@ export const incidentCategoryGroups = [
     { value: 'environment', label: 'ด้านสิ่งแวดล้อม' },
     { value: 'natural_disaster', label: 'ภัยธรรมชาติ' },
     { value: 'corruption', label: 'ทุจริตคอร์รัปชัน' },
-  ] },
-  { value: 'complaint', label: 'ร้องเรียน', categories: [
-    { value: 'complaint_distress', label: 'เพื่อให้โรงพยาบาลได้รับทราบความเดือดร้อนและคับแค้นใจ' },
-    { value: 'complaint_prevention', label: 'เพื่อให้โรงพยาบาลแก้ไขข้อบกพร่องอย่าให้เกิดเหตุการณ์ซ้ำกับคนอื่น' },
-    { value: 'complaint_treatment', label: 'เพื่อช่วยเหลือผู้ป่วยด้านการรักษา' },
-    { value: 'complaint_clarification', label: 'เพื่อตรวจสอบเหตุการณ์และชี้แจงข้อขัดข้องใจ' },
-    { value: 'complaint_discipline', label: 'เพื่อหาผู้กระทำผิด ว่ากล่าวตักเตือน และลงโทษ' },
-    { value: 'complaint_compensation', label: 'เพื่อชดเชยความเสียหาย' },
-    { value: 'complaint_social_support', label: 'เพื่อช่วยเหลือผู้ป่วยหรือญาติทางสังคม' },
   ] },
 ] as const;
 

@@ -80,7 +80,7 @@ export default function ReportPage() {
   const [message, setMessage] = useState('');
   const [lastIrCode, setLastIrCode] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentReport[]>([]);
-  const usesGeneralSeverity = form.risk_group === 'nonclinical' || form.risk_group === 'complaint';
+  const usesGeneralSeverity = form.risk_group === 'nonclinical';
   const visibleSeverities = usesGeneralSeverity ? generalSeverities : severities;
 
   useEffect(() => {
@@ -229,7 +229,7 @@ export default function ReportPage() {
                 </select>
             </div>
             <div className="form-group">
-              <label className="form-label">ระดับความรุนแรง{usesGeneralSeverity ? (form.risk_group === 'complaint' ? 'ข้อร้องเรียน (1–5)' : 'ด้านทั่วไป (1–5)') : 'ด้านคลินิก (A–I)'}</label>
+              <label className="form-label">ระดับความรุนแรง{usesGeneralSeverity ? 'ด้านทั่วไป (1–5)' : 'ด้านคลินิก (A–I)'}</label>
               <div className="sev-grid">
                 {visibleSeverities.map(s => (
                   <button

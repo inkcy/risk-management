@@ -31,6 +31,14 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
     const id = Number(body.id); const password = typeof body.password === 'string' ? body.password : '';
+    if (body.action === 'rename') {
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      if (!Number.isSafeInteger(id) || id < 1 || !name || name.length > 255) return NextResponse.json({ error: 'กรุณาระบุชื่อหน่วยงานไม่เกิน 255 ตัวอักษร' }, { status: 400 });
+      const result = await query('UPDATE risk_units SET name=$1 WHERE id=$2 RETURNING id', [name, id]);
+      if (!result.rowCount) return NextResponse.json({ error: 'ไม่พบหน่วยงาน' }, { status: 404 });
+      await audit(auth.user, 'risk_unit.rename', 'risk_unit', id, { name });
+      return NextResponse.json({ ok: true });
+    }
     if (body.action === 'approve') {
       if (!Number.isInteger(id) || id < 1) return NextResponse.json({ error: 'รหัสหน่วยงานไม่ถูกต้อง' }, { status: 400 });
       const approved = await query('UPDATE risk_units SET active=true, approved_at=now() WHERE id=$1 AND active=false AND requested_by IS NOT NULL', [id]);
@@ -51,5 +59,8 @@ export async function PATCH(request: NextRequest) {
     await query('DELETE FROM risk_unit_sessions WHERE unit_id=$1', [id]);
     await audit(auth.user, 'risk_unit.password_reset', 'risk_unit', id);
     return NextResponse.json({ ok: true });
-  } catch (err) { console.error('risk unit reset failed:', err); return NextResponse.json({ error: 'เปลี่ยนรหัสผ่านไม่สำเร็จ' }, { status: 500 }); }
+  } catch (err) {
+    if ((err as { code?: string }).code === '23505') return NextResponse.json({ error: 'ชื่อหน่วยงานนี้มีอยู่แล้ว' }, { status: 409 });
+    console.error('risk unit update failed:', err); return NextResponse.json({ error: 'แก้ไขหน่วยงานไม่สำเร็จ' }, { status: 500 });
+  }
 }

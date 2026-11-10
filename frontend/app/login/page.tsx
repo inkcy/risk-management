@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
 import { DepartmentLogin } from '@/components/DepartmentLogin';
-import { dbConfigured } from '@/lib/db';
-import { loginUnitDirectory as riskUnitDirectory } from '@/lib/riskUnitDirectory';
+import { dbConfigured, query } from '@/lib/db';
 
 const ERRORS: Record<string, string> = {
   config: 'ระบบยังตั้งค่าไม่ครบ — ดูรายการที่ขาดด้านล่าง',
@@ -34,6 +33,7 @@ export default async function LoginPage({
 
   const ready = dbConfigured() && (process.env.SESSION_SECRET?.length ?? 0) >= 32;
   const missing = ready ? [] : missingConfig();
+  const units = ready ? (await query<{ name: string }>('SELECT name FROM risk_units WHERE active ORDER BY name')).rows.map(unit => unit.name) : [];
 
   return (
     <div style={{
@@ -87,7 +87,7 @@ export default async function LoginPage({
           )}
 
           {ready ? (
-            <DepartmentLogin units={riskUnitDirectory} next={next} />
+            <DepartmentLogin units={units} next={next} />
           ) : (
             <div style={{
               background: 'var(--bg3)', borderRadius: 14,

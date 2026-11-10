@@ -133,7 +133,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   try {
     const { rows } = await query<SessionUser>(
-      `SELECT u.id, u.email, u.name, u.picture, u.role, rc.display_name AS roster_name
+      `SELECT u.id, u.email, COALESCE(ru.name, u.name) AS name, u.picture, u.role, rc.display_name AS roster_name
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN risk_units ru ON ru.id = u.risk_unit_id

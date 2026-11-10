@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { audit, createSession, type SessionUser } from '@/lib/auth';
 import { dbConfigured, getPool } from '@/lib/db';
 import { checkUnitPassword, newUnitToken, RISK_UNIT_COOKIE, riskCookieOptions, tokenDigest } from '@/lib/riskUnitAuth';
-import { loginUnitDirectory as riskUnitDirectory } from '@/lib/riskUnitDirectory';
 import { departmentAttemptKey, departmentCodeLookup } from '@/lib/departmentLoginCode';
 
 export const runtime = 'nodejs';
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
   const name = typeof body?.unitName === 'string' ? body.unitName.trim() : null;
   const password = body?.password;
   const denied = () => NextResponse.json({ error: 'หน่วยงานหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกพักชั่วคราว' }, { status: 401 });
-  if (name !== null ? !riskUnitDirectory.some(unit => unit === name) : typeof requestedId !== 'number' || !Number.isSafeInteger(requestedId) || requestedId < 1) return denied();
+  if (name !== null ? !name || name.length > 255 : typeof requestedId !== 'number' || !Number.isSafeInteger(requestedId) || requestedId < 1) return denied();
   if (typeof password !== 'string' || !password || password.length > 128) return denied();
   let client;
   try { client = await getPool().connect(); } catch {
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
       [departmentCodeLookup(accessCode,process.env.SESSION_SECRET ?? '')],
     )).rows[0] : undefined;
     if (credential) {
-      if (!credential.active || !riskUnitDirectory.some(name=>name===unit.name) || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
+      if (!credential.active || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
     } else if (password !== 'QSMH' && !devPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);

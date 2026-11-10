@@ -26,6 +26,18 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
       form.reset(); setNotice('เปลี่ยนรหัสผ่านแล้ว และออกจากระบบหน่วยงานเดิมทุกเครื่อง');
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
+  async function renameUnit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/risk-units', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: Number(data.get('id')), name: data.get('name'), action: 'rename' }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || 'แก้ไขชื่อหน่วยงานไม่สำเร็จ');
+      form.reset(); setNotice('แก้ไขชื่อหน่วยงานแล้ว'); router.refresh();
+    } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
+  }
   async function approve(id: number) {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -54,6 +66,12 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
       {error && <p className="announcement-error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
       <button className="tb-btn tb-btn-primary" type="submit" disabled={busy}>{busy ? 'กำลังสร้าง…' : 'สร้างบัญชี'}</button>
     </form>
+    {units.length > 0 && <form className="survey-form" onSubmit={renameUnit} style={{ marginTop: 20 }}>
+      <strong>แก้ไขชื่อหน่วยงาน</strong>
+      <label>หน่วยงาน<select name="id" required>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label>
+      <label>ชื่อหน่วยงานใหม่<input name="name" required maxLength={255} /></label>
+      <button className="tb-btn tb-btn-ghost" disabled={busy} type="submit">บันทึกชื่อหน่วยงาน</button>
+    </form>}
     {units.length > 0 && <form className="survey-form" onSubmit={resetPassword} style={{ marginTop: 20 }}>
       <strong>เปลี่ยนรหัสผ่านหน่วยงาน</strong>
       <label>หน่วยงาน<select name="id" required>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.username})</option>)}</select></label>

@@ -3,11 +3,13 @@ import { audit, requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getRiskUnit } from '@/lib/riskUnitAuth';
 import { ensureRiskSubmissions } from '@/lib/riskSubmissions';
+import { departmentAccess } from '@/lib/departmentAccess';
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'คำขอไม่ถูกต้อง' }, { status: 403 });
   const auth = await requireRole('editor');
   if (!auth.ok) return auth.response;
+  if (auth.user.role !== 'admin' && departmentAccess(auth.user) !== 'supervisor') return NextResponse.json({ error: 'เฉพาะหัวหน้างานหรือผู้ดูแลระบบเท่านั้นที่ยืนยันส่งได้' }, { status: 403 });
   try {
     const body = await request.json();
     const { year, quarter } = body;

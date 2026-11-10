@@ -78,13 +78,13 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
         {groups.map((g) => (
           <div key={g.label}>
             <div className="nav-group-label">{g.label}</div>
-            {g.items.filter(it => (it.href !== '/report' || canEdit) && (it.href !== '/incidents' || isAdmin)).map((it) => (
+            {g.items.filter(it => (it.href !== '/report' || canEdit) && (it.href !== '/incidents' || isAdmin) && (it.href !== '/risk-profile' || departmentAccess(user) !== 'staff')).map((it) => (
               <Link
                 key={it.href}
                 href={it.href}
                 className={`nav-item ${isActive(it.href) ? 'active' : ''}`}
               >
-                <span className="nav-icon">{it.icon}</span> {it.href === '/risk-profile' && departmentAccess(user) === 'staff' ? 'ยืนยันส่ง Risk Profile' : it.label}
+                <span className="nav-icon">{it.icon}</span> {it.label}
                 {it.badge && <span className="nav-badge">{it.badge}</span>}
                 <NavPending />
               </Link>

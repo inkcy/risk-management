@@ -4,6 +4,7 @@ const vm = require('node:vm');
 const ts = require('typescript');
 
 let authorized = true;
+let staff = false;
 let unit = { id: 7, name: 'หน่วยทดสอบ' };
 let inserted = false;
 const json = (body, options = {}) => ({ body, status: options.status ?? 200 });
@@ -11,6 +12,7 @@ const mocks = {
   'next/server': { NextResponse: { json } },
   '@/lib/auth': { requireRole: async () => authorized ? { ok: true, user: { id: 1 } } : { ok: false, response: json({}, { status: 403 }) }, audit: async () => {} },
   '@/lib/riskUnitAuth': { getRiskUnit: async () => unit },
+  '@/lib/departmentAccess': { departmentAccess: () => staff ? 'staff' : 'supervisor' },
   '@/lib/riskSubmissions': { ensureRiskSubmissions: async () => {} },
   '@/lib/db': { query: async (_sql, params) => {
     assert.equal(params[0], 7);
@@ -27,7 +29,9 @@ const req = (body, origin = 'https://example.test') => ({ json: async () => body
   assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 1 }, 'https://other.test'))).status, 403);
   authorized = false;
   assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 1 }))).status, 403);
-  authorized = true; unit = null;
+  authorized = true; staff = true;
+  assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 1 }))).status, 403);
+  staff = false; unit = null;
   assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 1 }))).status, 403);
   unit = { id: 7, name: 'หน่วยทดสอบ' };
   assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 5 }))).status, 400);

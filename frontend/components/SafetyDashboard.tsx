@@ -191,7 +191,8 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     setNewIndicatorName(''); setEditing(true); setMessage('เพิ่มตัวชี้วัดแล้ว กรุณากรอกข้อมูลและกดบันทึกทั้งหมด');
   };
   const removeIndicator = (item: SafetyIndicator) => {
-    if (!item.id.startsWith('custom-') || !window.confirm(`ลบตัวชี้วัด “${item.name}” หรือไม่? การลบจะมีผลเมื่อกดบันทึกทั้งหมด`)) return;
+    if (!window.confirm(`ลบตัวชี้วัด “${item.name}” หรือไม่? การลบจะมีผลเมื่อกดบันทึกทั้งหมด`)) return;
+    if (draft.indicators.length <= 1) { setMessage('ต้องมีตัวชี้วัดอย่างน้อย 1 รายการ'); return; }
     setDraft(current => ({ ...current, indicators: current.indicators.filter(indicator => indicator.id !== item.id) }));
     setMessage('ลบตัวชี้วัดออกจากฉบับแก้ไขแล้ว กรุณากดบันทึกทั้งหมด');
   };
@@ -209,7 +210,9 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       const result=await response.json();
       if(response.status===409)setNewerRevision(true);
       if(!response.ok) throw new Error(result.error||'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
-      setData(draft);setRevision(result.revision);setEditing(false);setMessage('บันทึกลงข้อมูลกลางแล้ว แอดมินทุกคนจะได้รับข้อมูลล่าสุดอัตโนมัติภายใน 15 วินาที');
+      setData(draft);setRevision(result.revision);setEditing(false);
+      if (!draft.indicators.some(indicator => indicator.group === group)) setGroup(draft.indicators[0].group);
+      setMessage('บันทึกลงข้อมูลกลางแล้ว แอดมินทุกคนจะได้รับข้อมูลล่าสุดอัตโนมัติภายใน 15 วินาที');
     }catch(error){setMessage(error instanceof Error?error.message:'บันทึกไม่สำเร็จ');}finally{setSaving(false);}
   }
   return <section className="card" style={{marginBottom:24}}>
@@ -256,7 +259,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
             </div>)}
           </fieldset>:(item.periods??data.periods).map((p,i)=><p key={`${p}-${i}`} style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{p}: {item.raw[i]||'ไม่มีข้อมูล'}</p>)}
         </details>
-        {editing&&<div style={{marginTop:16}}><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button>{item.id.startsWith('custom-')&&<button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>removeIndicator(item)}>ลบตัวชี้วัด</button>}</div>{message&&<p role="status" style={{fontSize:13,marginTop:8}}>{message}</p>}</div>}
+        {editing&&<div style={{marginTop:16}}><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button><button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>removeIndicator(item)}>ลบตัวชี้วัด</button></div>{message&&<p role="status" style={{fontSize:13,marginTop:8}}>{message}</p>}</div>}
       </article>;})}{canEdit && <div className="card" style={{padding:18,border:'1px solid var(--border2)',borderRadius:14}}>
         <h3>เพิ่มตัวชี้วัดใหม่</h3>
         <p style={{fontSize:13,color:'var(--text2)',margin:'8px 0'}}>เพิ่มในหมวด {group}</p>

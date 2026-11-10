@@ -56,11 +56,11 @@ export default async function LoginPage({
           textAlign: 'center',
         }}>
           <img
-            src="/hospital-risk-logo.png"
-            alt="โลโก้ Hospital Risk Management — Collaboration from Everyone"
-            width={152}
-            height={158}
-            style={{ display: 'block', width: 152, maxWidth: '100%', height: 'auto', margin: '0 auto 20px' }}
+            src="/safety-chart-logo.png"
+            alt="โลโก้โรงพยาบาลสมเด็จพระบรมราชเทวี ณ ศรีราชา สภากาชาดไทย"
+            width={256}
+            height={100}
+            style={{ display: 'block', width: 256, maxWidth: '100%', height: 'auto', margin: '0 auto 20px' }}
           />
 
           <h1 style={{ fontSize: 24.2, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 7px' }}>

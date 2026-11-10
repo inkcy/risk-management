@@ -98,10 +98,10 @@ body {
   transition: background 0.25s, border-color 0.25s;
 }
 .logo {
-  display: grid; place-items: center; padding: 16px 20px; text-decoration: none;
+  display: grid; place-items: center; padding: 16px 8px; text-decoration: none;
   border-bottom: 1px solid var(--border);
 }
-.logo-image { display: block; width: min(100%, 172px); height: auto; transition: transform .16s ease; }
+.logo-image { display: block; width: min(100%, 204px); height: auto; transition: transform .16s ease; }
 .logo:hover .logo-image { transform: scale(1.025); }
 
 .safety-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr)); gap: 16px; }

@@ -25,7 +25,10 @@ export async function getRiskUnit(userId: number): Promise<{ id: number; name: s
   if (!token || token.length > 128) return null;
   const { rows } = await query<{ id: number; name: string }>(
     `SELECT u.id, u.name FROM risk_unit_sessions s JOIN risk_units u ON u.id=s.unit_id
-     WHERE s.token_hash=$1 AND s.user_id=$2 AND s.expires_at > now() AND u.active`, [tokenDigest(token), userId],
+     JOIN users account ON account.id=s.user_id
+     WHERE s.token_hash=$1 AND s.user_id=$2 AND s.expires_at > now() AND u.active
+       AND (account.email !~ '^supervisor-[0-9]+@units[.]invalid$'
+         OR account.email = 'supervisor-' || u.id || '@units.invalid')`, [tokenDigest(token), userId],
   );
   return rows[0] ?? null;
 }

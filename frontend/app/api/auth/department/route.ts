@@ -3,6 +3,7 @@ import { audit, createSession, type SessionUser } from '@/lib/auth';
 import { dbConfigured, getPool } from '@/lib/db';
 import { checkUnitPassword, newUnitToken, RISK_UNIT_COOKIE, riskCookieOptions, tokenDigest } from '@/lib/riskUnitAuth';
 import { departmentAttemptKey, departmentCodeLookup } from '@/lib/departmentLoginCode';
+import { ensureSupervisorCredentials } from '@/lib/supervisorCredentials';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
   const denied = () => NextResponse.json({ error: 'หน่วยงานหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกพักชั่วคราว' }, { status: 401 });
   if (name !== null ? !name || name.length > 255 : typeof requestedId !== 'number' || !Number.isSafeInteger(requestedId) || requestedId < 1) return denied();
   if (typeof password !== 'string' || !password || password.length > 128) return denied();
+  try { await ensureSupervisorCredentials(); } catch { return NextResponse.json({ error: 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน' }, { status: 503 }); }
   let client;
   try { client = await getPool().connect(); } catch {
     return NextResponse.json({ error: 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน' }, { status: 503 });
@@ -48,15 +50,17 @@ export async function POST(request: NextRequest) {
     const adminUnit = unit.name.trim().toLowerCase() === 'admin';
     const adminPassword = adminUnit && password !== 'QSMH' && await checkUnitPassword(password, unit.password_hash);
     if (adminUnit && !adminPassword) return await fail(id);
+    const supervisorRecord = !adminUnit && password !== 'QSMH' ? (await client.query<{ password_hash: string }>('SELECT password_hash FROM risk_unit_supervisors WHERE unit_id=$1 FOR SHARE', [id])).rows[0] : undefined;
+    const supervisorPassword = !!supervisorRecord && await checkUnitPassword(password, supervisorRecord.password_hash);
     const accessCode = password.trim();
     const devPassword = unit.name === 'dev' && await checkUnitPassword(password, unit.password_hash);
-    const credential = accessCode && password !== 'QSMH' && !devPassword && !adminPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
+    const credential = accessCode && password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
       'SELECT id,display_name,password_hash,active FROM department_login_codes WHERE code_lookup=$1 FOR UPDATE',
       [departmentCodeLookup(accessCode,process.env.SESSION_SECRET ?? '')],
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
-    } else if (password !== 'QSMH' && !devPassword && !adminPassword) {
+    } else if (password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);
     }
@@ -67,6 +71,11 @@ export async function POST(request: NextRequest) {
        ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()
        RETURNING id,email,name,picture,role,active`,
       [`admin-unit-${id}@units.invalid`, unit.name],
+    ) : supervisorPassword ? await client.query<SessionUser & { active: boolean }>(
+      `INSERT INTO users (email,name,role,last_login_at) VALUES ($1,$2,'editor',now())
+       ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()
+       RETURNING id,email,name,picture,role,active`,
+      [`supervisor-${id}@units.invalid`, unit.name],
     ) : credential ? await client.query<SessionUser & { active: boolean }>(
       `INSERT INTO users (email,name,role,last_login_at) VALUES ($1,$2,'editor',now())
        ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()

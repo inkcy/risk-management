@@ -118,6 +118,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const [mode,setMode]=useState<PeriodMode>('year'),[year,setYear]=useState(Math.max(2568,...(initial.years??[])));
   const [group,setGroup]=useState(initial.indicators[0].group),[editing,setEditing]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState('');
   const [syncError,setSyncError]=useState(''),[newerRevision,setNewerRevision]=useState(false);
+  const [newIndicatorName, setNewIndicatorName] = useState('');
   useEffect(()=>{
     let active=true;
     let inFlight=false;
@@ -176,6 +177,19 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     }
   }
   const startEditing=()=>{setDraft({...data,notes:data.notes.map(n=>({...n,text:formatSafetyText(n.text)}))});setEditing(true);setMessage('');};
+  const addIndicator = () => {
+    const name = newIndicatorName.trim();
+    if (!name) { setMessage('กรุณาระบุชื่อตัวชี้วัดใหม่'); return; }
+    const base = editing ? draft : data;
+    if (base.indicators.length >= 200) { setMessage('เพิ่มตัวชี้วัดได้ไม่เกิน 200 รายการ'); return; }
+    const indicator: SafetyIndicator = {
+      id: `custom-${crypto.randomUUID()}`, group, name, unit: 'ครั้ง', targetText: 'ยังไม่กำหนด', target: 0,
+      comparison: 'none', values: base.periods.map(() => null), raw: base.periods.map(() => ''),
+      benchmark: '', slide: 0, note: '', measurements: [],
+    };
+    setDraft({ ...base, indicators: [...base.indicators, indicator] });
+    setNewIndicatorName(''); setEditing(true); setMessage('เพิ่มตัวชี้วัดแล้ว กรุณากรอกข้อมูลและกดบันทึกทั้งหมด');
+  };
   const addNextYear=()=>{
     if(year>=2800)return;
     const nextYear=year+1;
@@ -238,7 +252,12 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
           </fieldset>:(item.periods??data.periods).map((p,i)=><p key={`${p}-${i}`} style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{p}: {item.raw[i]||'ไม่มีข้อมูล'}</p>)}
         </details>
         {editing&&<div style={{marginTop:16}}><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>{message&&<p role="status" style={{fontSize:13,marginTop:8}}>{message}</p>}</div>}
-      </article>;})}</div>
+      </article>;})}{canEdit && <div className="card" style={{padding:18,border:'1px solid var(--border2)',borderRadius:14}}>
+        <h3>เพิ่มตัวชี้วัดใหม่</h3>
+        <p style={{fontSize:13,color:'var(--text2)',margin:'8px 0'}}>เพิ่มในหมวด {group}</p>
+        <label>ชื่อตัวชี้วัด<input value={newIndicatorName} maxLength={300} disabled={saving} onChange={event=>setNewIndicatorName(event.target.value)} /></label>
+        <button type="button" className="tb-btn tb-btn-primary" style={{marginTop:12}} disabled={saving} onClick={addIndicator}>เพิ่มตัวชี้วัด</button>
+      </div>}</div>
       <details style={{marginTop:20}}><summary>ข้อมูลประกอบและรายละเอียด</summary>
         <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap',marginTop:16}}><p style={{fontSize:13}}>แหล่งข้อมูล: {data.source}</p>{canEdit&&!editing&&<button className="tb-btn tb-btn-ghost" onClick={startEditing}>แก้ไขข้อความประกอบ</button>}</div>
         <img src="/safety-source-slide6.png" alt="สไลด์ 6: กระบวนการป้องกันและแนวโน้มการแพ้ยาซ้ำ" style={{width:'100%',height:'auto',marginTop:12}}/>

@@ -64,7 +64,14 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
     source.onerror = () => {
       if (active) setImage({ key: imageKey, png: null });
     };
-    source.onload = () => {
+    source.onload = async () => {
+      if (!active) return;
+      const logo = new Image();
+      const logoLoaded = await new Promise<boolean>(resolve => {
+        logo.onload = () => resolve(true);
+        logo.onerror = () => resolve(false);
+        logo.src = '/safety-chart-logo.png';
+      });
       if (!active) return;
       const canvas = document.createElement('canvas');
       const scale = Math.min(2, 8192 / width);
@@ -78,10 +85,10 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
           const details = [...wrapChartText(context, metadata, 510), periodCaption];
           const headerHeight = 28 + titleLines.length * 29 + details.length * 22;
           canvas.width = Math.round(width * scale);
-          canvas.height = Math.round((height + headerHeight) * scale);
+          canvas.height = Math.round((height + headerHeight + 100) * scale);
           context.scale(scale, scale);
           context.fillStyle = '#fff';
-          context.fillRect(0, 0, width, height + headerHeight);
+          context.fillRect(0, 0, width, height + headerHeight + 100);
           context.textBaseline = 'top';
           context.fillStyle = '#193c4b';
           context.font = 'bold 22px Tahoma, sans-serif';
@@ -89,6 +96,7 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
           context.font = '16px Tahoma, sans-serif';
           details.forEach((line, i) => context.fillText(line, 20, 22 + titleLines.length * 29 + i * 22, 510));
           context.drawImage(source, 0, headerHeight, width, height);
+          if (logoLoaded) context.drawImage(logo, (width - 240) / 2, headerHeight + height, 240, 95);
           const url = canvas.toDataURL('image/png');
           if (url.startsWith('data:image/png;base64,')) png = url;
         }

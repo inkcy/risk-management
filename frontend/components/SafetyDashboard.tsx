@@ -145,11 +145,11 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const groups=Array.from(new Set(data.indicators.map(i=>i.group)));
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
   const visible=(editing?draft:data).indicators.filter(i=>i.group===group);
-  async function exportTable() {
+  async function exportTable(indicator: SafetyIndicator) {
     try {
       const { default: JSZip } = await import('jszip');
       const rows: (string | number | null)[][] = [['ตัวชี้วัด', 'หน่วย', 'เป้าหมาย', 'ช่วงเวลา', 'ค่า']];
-      for (const item of visible) {
+      for (const item of [indicator]) {
         for (const row of periodSeries(item, data.periods, mode, year, (editing ? draft : data).years)) {
           rows.push([item.name, item.unit, item.targetText, periodLabel(row.label, mode, mode === 'quarter' ? year : row.year, row.period), row.value]);
         }
@@ -169,7 +169,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       zip.file('xl/worksheets/sheet1.xml', `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="55" customWidth="1"/><col min="2" max="5" width="22" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData></worksheet>`);
       const url = URL.createObjectURL(await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
       const link = document.createElement('a');
-      link.href = url; link.download = `safety-dashboard-${year}-${mode}.xlsx`; link.click();
+      link.href = url; link.download = `safety-${indicator.id}-${year}-${mode}.xlsx`; link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch {
       setMessage('ส่งออกไฟล์ Excel ไม่สำเร็จ กรุณาลองอีกครั้ง');
@@ -212,7 +212,6 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       </div>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>ทุกมุมมองใช้ปีปฏิทิน มกราคม–ธันวาคม: Q1 ม.ค.–มี.ค. · Q2 เม.ย.–มิ.ย. · Q3 ก.ค.–ก.ย. · Q4 ต.ค.–ธ.ค.<br/>ข้อมูลรายเดือนและไตรมาสเดิมจัดตามช่วงเดือนจริง ยอดรวมปีงบประมาณเดิมยังอยู่ในข้อมูลอ้างอิง แอดมินกรอกผลรวมรายปีปฏิทินแยกต่างหาก ไม่มีการเฉลี่ยหรือรวมอัตราอัตโนมัติ</p>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>เส้นประสีส้ม = เป้าหมาย · สีเขียว = ผ่าน · สีแดง = ไม่ผ่าน · — = ไม่มีข้อมูล</p>
-      <button type="button" className="tb-btn tb-btn-ghost" style={{marginBottom:16}} onClick={exportTable}>ส่งออกข้อมูลตาราง Excel (.xlsx)</button>
       <div className="safety-grid">{visible.map(item=>{
         const series=periodSeries(item,data.periods,mode,year,(editing?draft:data).years);
         return <article key={item.id} style={{padding:18,border:'1px solid var(--border2)',borderRadius:14,background:'var(--bg2)',minWidth:0}}>
@@ -227,7 +226,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
           {mode==='year'&&<p style={{fontSize:12,color:'var(--text2)'}}>กรอกผลทั้งปี มกราคม–ธันวาคม ข้อมูลปีงบประมาณอ้างอิงยังเก็บแยกไว้ด้านล่าง</p>}
           <div className="safety-inputs"><label>เกณฑ์<select value={item.comparison} onChange={e=>patch(item.id,{comparison:e.target.value})}><option value="eq">เท่ากับ</option><option value="lt">น้อยกว่า</option><option value="gt">มากกว่า</option><option value="none">ไม่ประเมิน</option></select></label><label>ค่าเป้าหมาย<input type="number" min="0" step="any" value={item.target} onChange={e=>{const target=Number(e.target.value);patch(item.id,{target,targetText:`${item.comparison==='lt'?'< ':item.comparison==='gt'?'> ':''}${target}`});}}/></label></div>
           <label>ข้อความเป้าหมาย<input value={item.targetText} onChange={e=>patch(item.id,{targetText:e.target.value})}/></label><label>หน่วย<input value={item.unit} onChange={e=>patch(item.id,{unit:e.target.value})}/></label><label>Benchmark<input value={item.benchmark} onChange={e=>patch(item.id,{benchmark:e.target.value})}/></label><label>หมายเหตุ<textarea value={item.note} onChange={e=>patch(item.id,{note:e.target.value})}/></label>
-        </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{periodLabel(r.label,mode,mode==='quarter'?year:r.year,r.period)}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table></details>}
+        </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{periodLabel(r.label,mode,mode==='quarter'?year:r.year,r.period)}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table><button type="button" className="tb-btn tb-btn-ghost" style={{marginTop:10}} onClick={() => exportTable(item)}>ส่งออกข้อมูลตาราง Excel (.xlsx)</button></details>}
         <details style={{fontSize:12,marginTop:8}} open={editing?true:undefined}><summary>ข้อมูลอ้างอิงเดิม{editing?' (แก้ไขได้)':''}</summary>
           {item.measurements?.filter(r=>r.mode==='year'&&r.basis!=='calendar').map(r=><p key={`legacy-year-${r.year}`}>ปีงบประมาณ {r.year} (ค่าที่บันทึกก่อนเปลี่ยนระบบปี): {r.value??'ไม่มีข้อมูล'}</p>)}
           {editing?<fieldset disabled={saving} style={{border:0,display:'grid',gap:12,marginTop:12}}>

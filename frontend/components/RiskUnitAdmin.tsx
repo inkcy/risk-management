@@ -9,6 +9,8 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [loginRequired, setLoginRequired] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = event.currentTarget; const data = new FormData(form);
     setBusy(true); setError(''); setNotice('');
@@ -19,12 +21,17 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
   async function resetPassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); setBusy(true); setError(''); setNotice('');
+    event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); setBusy(true); setError(''); setNotice(''); setPasswordError(''); setLoginRequired(false);
     try {
       const response = await fetch('/api/risk-units', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: Number(data.get('id')), password: data.get('password') }) });
-      const body = await response.json(); if (!response.ok) throw new Error(body.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
+      const body = await response.json();
+      if (response.status === 401) {
+        setLoginRequired(true);
+        throw new Error('เซสชันหมดอายุหรือไม่สามารถยืนยันตัวตนได้ กรุณาเข้าสู่ระบบแอดมินอีกครั้ง');
+      }
+      if (!response.ok) throw new Error(response.status === 403 ? 'บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ' : body.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
       form.reset(); setNotice('เปลี่ยนรหัสผ่านแล้ว และออกจากระบบหน่วยงานเดิมทุกเครื่อง');
-    } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
+    } catch (err) { setPasswordError((err as Error).message); } finally { setBusy(false); }
   }
   async function renameUnit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,6 +83,7 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
       <strong>เปลี่ยนรหัสผ่านหน่วยงาน</strong>
       <label>หน่วยงาน<select name="id" required>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.username})</option>)}</select></label>
       <label>รหัสผ่านใหม่<input name="password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /></label>
+      {passwordError && <p className="announcement-error" role="alert">{passwordError}{loginRequired && <> <a href="/login?next=%2Frisk-profile">เข้าสู่ระบบอีกครั้ง</a></>}</p>}
       <button className="tb-btn tb-btn-ghost" disabled={busy} type="submit">เปลี่ยนรหัสผ่าน</button>
     </form>}
   </details>;

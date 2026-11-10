@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { audit, requireRole } from '@/lib/auth';
 import { getPool, query } from '@/lib/db';
 import { getRiskUnit } from '@/lib/riskUnitAuth';
+import { departmentAccess } from '@/lib/departmentAccess';
 export async function POST(request: NextRequest) {
   const auth = await requireRole('viewer'); if (!auth.ok) return auth.response;
+  if (departmentAccess(auth.user) === 'staff') return NextResponse.json({ error: 'เฉพาะหัวหน้างาน' }, { status: 403 });
   try {
     const body = await request.json();
     const {unit_id,year,quarter,category,items} = body;

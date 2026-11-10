@@ -4,6 +4,7 @@ import Link, { useLinkStatus } from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import type { SessionUser } from '@/lib/auth';
+import { departmentAccess } from '@/lib/departmentAccess';
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'ผู้ดูแลระบบ',
@@ -55,6 +56,7 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const canEdit = user?.role === 'admin' || user?.role === 'editor';
   const isAdmin = user?.role === 'admin';
+  const access = departmentAccess(user);
   // เลือกเมนูที่ตรงกับ path มากที่สุด เพื่อไม่ให้ /rca และ /rca/form ถูกไฮไลต์พร้อมกัน
   const matches = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
   const bestMatch = allHrefs.filter(matches).sort((a, b) => b.length - a.length)[0];
@@ -77,7 +79,7 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
         {groups.map((g) => (
           <div key={g.label}>
             <div className="nav-group-label">{g.label}</div>
-            {g.items.filter(it => (it.href !== '/report' || canEdit) && (it.href !== '/incidents' || isAdmin)).map((it) => (
+            {g.items.filter(it => (it.href !== '/report' || canEdit) && (it.href !== '/incidents' || isAdmin) && (it.href !== '/risk-profile' || access !== 'staff')).map((it) => (
               <Link
                 key={it.href}
                 href={it.href}

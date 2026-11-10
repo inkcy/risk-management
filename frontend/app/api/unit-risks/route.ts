@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { audit, requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getRiskUnit } from '@/lib/riskUnitAuth';
+import { departmentAccess } from '@/lib/departmentAccess';
 
 export async function POST(request: NextRequest) {
   const auth = await requireRole('viewer'); if (!auth.ok) return auth.response;
+  if (departmentAccess(auth.user) === 'staff') return NextResponse.json({ error: 'เฉพาะหัวหน้างาน' }, { status: 403 });
   try {
     const body = await request.json() as Record<string, unknown>;
     const requested = Number(body.unit_id);
@@ -21,6 +23,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const auth = await requireRole('viewer'); if (!auth.ok) return auth.response;
+  if (departmentAccess(auth.user) === 'staff') return NextResponse.json({ error: 'เฉพาะหัวหน้างาน' }, { status: 403 });
   try {
     const id = Number(new URL(request.url).searchParams.get('id'));
     if (!Number.isInteger(id) || id < 1) return NextResponse.json({ error: 'รหัสไม่ถูกต้อง' }, { status: 400 });

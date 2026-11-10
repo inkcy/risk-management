@@ -5,6 +5,7 @@ import { RiskUnitAdmin } from '@/components/RiskUnitAdmin';
 import { RiskUnitLogin } from '@/components/RiskUnitLogin';
 import { UnitRiskProfiles } from '@/components/UnitRiskProfiles';
 import { redirect } from 'next/navigation';
+import { departmentAccess } from '@/lib/departmentAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export default async function RiskProfilePage() {
   if (!dbConfigured()) return <div className="card" style={{ padding: 18 }}>ต้องเชื่อมต่อฐานข้อมูลเพื่อใช้งาน Risk Profile</div>;
   const user = await getSessionUser();
   if (!user) redirect('/login?next=%2Frisk-profile');
+  if (departmentAccess(user) === 'staff') return <div className="card" style={{ padding: 18 }}>Risk Profile ของหน่วยงานสำหรับหัวหน้างาน กรุณาเข้าสู่ระบบด้วยรหัสเจ้าหน้าที่</div>;
   try {
     const admin = user.role === 'admin';
     const currentUnit = admin ? null : await getRiskUnit(user.id);

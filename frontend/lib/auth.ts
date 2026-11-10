@@ -139,7 +139,12 @@ export async function getSessionUser(): Promise<SessionUser | null> {
        LEFT JOIN risk_units ru ON ru.id = u.risk_unit_id
        LEFT JOIN department_login_codes rc ON rc.user_id=u.id AND rc.active
        WHERE s.id = $1 AND s.expires_at > now() AND u.active
-         AND (u.risk_unit_id IS NULL OR ru.active)`,
+         AND (u.risk_unit_id IS NULL OR ru.active)
+         AND (u.email !~ '^admin-unit-[0-9]+@units[.]invalid$' OR EXISTS (
+           SELECT 1 FROM risk_units admin_unit
+           WHERE u.email = 'admin-unit-' || admin_unit.id || '@units.invalid'
+             AND admin_unit.active AND lower(trim(admin_unit.name)) = 'admin'
+         ))`,
       [sessionId],
     );
     return rows[0] ?? null;

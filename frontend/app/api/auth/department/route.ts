@@ -45,21 +45,29 @@ export async function POST(request: NextRequest) {
     const unit = rows[0];
     const id = unit?.id;
     if (!unit || !unit.active) return await fail(id);
+    const adminUnit = unit.name.trim().toLowerCase() === 'admin';
+    const adminPassword = adminUnit && password !== 'QSMH' && await checkUnitPassword(password, unit.password_hash);
+    if (adminUnit && !adminPassword) return await fail(id);
     const accessCode = password.trim();
     const devPassword = unit.name === 'dev' && await checkUnitPassword(password, unit.password_hash);
-    const credential = accessCode && password !== 'QSMH' && !devPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
+    const credential = accessCode && password !== 'QSMH' && !devPassword && !adminPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
       'SELECT id,display_name,password_hash,active FROM department_login_codes WHERE code_lookup=$1 FOR UPDATE',
       [departmentCodeLookup(accessCode,process.env.SESSION_SECRET ?? '')],
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
-    } else if (password !== 'QSMH' && !devPassword) {
+    } else if (password !== 'QSMH' && !devPassword && !adminPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);
     }
     // File credentials identify a person (or an explicitly shared code), not the
     // selected department account. Selecting an admin department never grants admin.
-    const users = credential ? await client.query<SessionUser & { active: boolean }>(
+    const users = adminPassword ? await client.query<SessionUser & { active: boolean }>(
+      `INSERT INTO users (email,name,role,last_login_at) VALUES ($1,$2,'admin',now())
+       ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()
+       RETURNING id,email,name,picture,role,active`,
+      [`admin-unit-${id}@units.invalid`, unit.name],
+    ) : credential ? await client.query<SessionUser & { active: boolean }>(
       `INSERT INTO users (email,name,role,last_login_at) VALUES ($1,$2,'editor',now())
        ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()
        RETURNING id,email,name,picture,role,active`,

@@ -4,21 +4,78 @@ import type { SafetyData, SafetyIndicator } from '@/lib/safety';
 import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 import { formatSafetyText } from '@/lib/safety-text';
 
-function Trend({item,periods}:{item:SafetyIndicator;periods:string[]}) {
-  const max=Math.max(...item.values.filter((v):v is number=>v!==null),item.comparison==='none'?0:item.target,0.01)*1.2;
-  const x=(i:number)=>50+i*450/Math.max(periods.length-1,1);
-  const y=(v:number)=>155-v/max*115;
-  const count=item.unit==='ครั้ง';
-  return <svg viewBox={`0 0 550 ${periods.length>6?250:210}`} role="img" aria-label={`${item.name}: ${item.values.map((v,i)=>`${periods[i]} ${v??'ไม่มีข้อมูล'}`).join(', ')}`} style={{width:'100%',minWidth:periods.length>6?660:undefined,display:'block'}}>
-    {[0,0.5,1].map(p=><g key={p}><line x1="45" x2="520" y1={y(max*p)} y2={y(max*p)} stroke="var(--border2)"/><text x="40" y={y(max*p)+4} textAnchor="end" fill="var(--text3)" fontSize="11">{Number((max*p).toPrecision(3))}</text></g>)}
-    {item.comparison!=='none'&&<line x1="45" x2="520" y1={y(item.target)} y2={y(item.target)} stroke="var(--amber)" strokeWidth="2" strokeDasharray="6 5"/>}
-    {!count&&item.values.map((v,i)=>v!==null&&i>0&&item.values[i-1]!==null?<line key={i} x1={x(i-1)} y1={y(item.values[i-1]!)} x2={x(i)} y2={y(v)} stroke="var(--accent)" strokeWidth="3"/>:null)}
-    {item.values.map((v,i)=>{
-      const ok=v!==null&&(item.comparison==='lt'?v<item.target:item.comparison==='gt'?v>item.target:v===item.target);
-      const color=item.comparison==='none'?'var(--accent)':ok?'var(--green)':'var(--red)';
-      return <g key={i}>{v!==null&&(count?<rect x={x(i)-13} y={y(v)} width="26" height={Math.max(2,155-y(v))} rx="4" fill={color}/>:<circle cx={x(i)} cy={y(v)} r="5" fill={color}/>)}<text x={x(i)} y={v===null?145:y(v)-10} textAnchor="middle" fill="var(--text)" fontSize="13">{v??'—'}</text><text x={x(i)} y="181" textAnchor={periods.length>6?'end':'middle'} transform={periods.length>6?`rotate(-45 ${x(i)} 181)`:undefined} fill="var(--text2)" fontSize="11">{periods[i]}</text></g>;
-    })}
-  </svg>;
+function Trend({ item, periods }: { item: SafetyIndicator; periods: string[] }) {
+  const max = Math.max(...item.values.filter((v): v is number => v !== null), item.comparison === 'none' ? 0 : item.target, 0.01) * 1.2;
+  const wide = periods.length > 6;
+  const width = wide ? Math.max(660, periods.length * 42 + 80) : 550;
+  const height = wide ? 250 : 210;
+  const axisLeft = 64;
+  const firstPoint = axisLeft + 40;
+  const lastPoint = width - 45;
+  const x = (i: number) => firstPoint + i * (lastPoint - firstPoint) / Math.max(periods.length - 1, 1);
+  const y = (v: number) => 155 - v / max * 115;
+  const count = item.unit === 'ครั้ง';
+  const escapeText = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const grid = [0, 0.5, 1].map(step => {
+    const tick = max * step;
+    return `<line x1="${axisLeft}" x2="${width - 25}" y1="${y(tick)}" y2="${y(tick)}" stroke="#d3e1e7"/><text x="${axisLeft - 8}" y="${y(tick) + 4}" text-anchor="end" fill="#627f8d">${Number(tick.toPrecision(3))}</text>`;
+  }).join('');
+  const target = item.comparison === 'none' ? '' :
+    `<line x1="${axisLeft}" x2="${width - 25}" y1="${y(item.target)}" y2="${y(item.target)}" stroke="#d98211" stroke-width="2" stroke-dasharray="6 5"/>`;
+  const points = item.values.map((value, i) => {
+    const previous = item.values[i - 1];
+    const label = `<text x="${x(i)}" y="181" ${wide ? `text-anchor="end" transform="rotate(-45 ${x(i)} 181)"` : 'text-anchor="middle"'} fill="#466777">${escapeText(periods[i])}</text>`;
+    if (value === null) return `<text x="${x(i)}" y="145" text-anchor="middle">—</text>${label}`;
+
+    const passed = item.comparison === 'lt' ? value < item.target : item.comparison === 'gt' ? value > item.target : value === item.target;
+    const color = item.comparison === 'none' ? '#148579' : passed ? '#12a06a' : '#e0407c';
+    const line = !count && previous != null ? `<line x1="${x(i - 1)}" y1="${y(previous)}" x2="${x(i)}" y2="${y(value)}" stroke="#148579" stroke-width="3"/>` : '';
+    const mark = count
+      ? `<rect x="${x(i) - 13}" y="${y(value)}" width="26" height="${Math.max(2, 155 - y(value))}" rx="4" fill="${color}"/>`
+      : `<circle cx="${x(i)}" cy="${y(value)}" r="5" fill="${color}"/>`;
+    return `${line}${mark}<text x="${x(i)}" y="${y(value) - 10}" text-anchor="middle" font-size="13">${value}</text>${label}`;
+  }).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="Tahoma, sans-serif" font-size="11" fill="#193c4b"><rect width="100%" height="100%" fill="white" rx="8"/>${grid}${target}${points}</svg>`;
+  const alt = `${item.name}: ${item.values.map((value, i) => `${periods[i]} ${value ?? 'ไม่มีข้อมูล'}`).join(', ')}`;
+
+  const [image, setImage] = useState<{ svg: string; png: string | null }>();
+  useEffect(() => {
+    let active = true;
+    const source = new Image();
+    source.onerror = () => {
+      if (active) setImage({ svg, png: null });
+    };
+    source.onload = () => {
+      if (!active) return;
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(2, 8192 / width);
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const context = canvas.getContext('2d');
+      let png: string | null = null;
+      try {
+        if (context) {
+          context.drawImage(source, 0, 0, canvas.width, canvas.height);
+          const url = canvas.toDataURL('image/png');
+          if (url.startsWith('data:image/png;base64,')) png = url;
+        }
+      } catch {
+        // Some browsers restrict reading canvas pixels.
+      }
+      setImage({ svg, png });
+    };
+    source.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    return () => { active = false; };
+  }, [svg, width, height]);
+
+  const current = image?.svg === svg ? image : undefined;
+  const style = { width: '100%', minWidth: wide ? width : undefined };
+  return current?.png
+    ? <img src={current.png} alt={alt} width={width} height={height} style={{ ...style, height: 'auto', display: 'block' }} />
+    : <div style={{ ...style, aspectRatio: `${width} / ${height}`, display: 'grid', placeItems: 'center' }}>
+        <span role="status">{current ? 'สร้างรูปกราฟไม่สำเร็จ' : 'กำลังสร้างรูปกราฟ…'}</span>
+      </div>;
 }
 
 export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{initial:SafetyData;initialRevision:number;canEdit:boolean;loadError?:string}) {

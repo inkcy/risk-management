@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { SafetyData, SafetyIndicator } from '@/lib/safety';
 import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 import { formatSafetyText } from '@/lib/safety-text';
+import safetySeed from '@/lib/data/safety.json';
 
 function wrapChartText(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
   const words = new Intl.Segmenter('th', { granularity: 'word' }).segment(text);
@@ -146,6 +147,10 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const groups=Array.from(new Set(data.indicators.map(i=>i.group)));
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
   const visible=(editing?draft:data).indicators.filter(i=>i.group===group);
+  const currentData = editing ? draft : data;
+  const storedIds = new Set([...currentData.indicators, ...(currentData.deletedIndicators ?? [])].map(item => item.id));
+  const originalDeleted = (safetySeed.indicators as SafetyIndicator[]).filter(item => !storedIds.has(item.id)).map(item => ({ ...item, periods: item.periods ?? safetySeed.periods }));
+  const recoverable = [...(currentData.deletedIndicators ?? []).map(item => ({ item, original: false })), ...originalDeleted.map(item => ({ item, original: true }))];
   async function exportTable(indicator: SafetyIndicator) {
     try {
       const { default: JSZip } = await import('jszip');
@@ -193,8 +198,15 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const removeIndicator = (item: SafetyIndicator) => {
     if (!window.confirm(`ลบตัวชี้วัด “${item.name}” หรือไม่? การลบจะมีผลเมื่อกดบันทึกทั้งหมด`)) return;
     if (draft.indicators.length <= 1) { setMessage('ต้องมีตัวชี้วัดอย่างน้อย 1 รายการ'); return; }
-    setDraft(current => ({ ...current, indicators: current.indicators.filter(indicator => indicator.id !== item.id) }));
+    setDraft(current => ({ ...current, indicators: current.indicators.filter(indicator => indicator.id !== item.id), deletedIndicators: [...(current.deletedIndicators ?? []).filter(indicator => indicator.id !== item.id), item] }));
     setMessage('ลบตัวชี้วัดออกจากฉบับแก้ไขแล้ว กรุณากดบันทึกทั้งหมด');
+  };
+  const restoreIndicator = (item: SafetyIndicator) => {
+    const base = editing ? draft : data;
+    if (base.indicators.length >= 200) { setMessage('เพิ่มตัวชี้วัดได้ไม่เกิน 200 รายการ'); return; }
+    if (base.indicators.some(indicator => indicator.id === item.id)) return;
+    setDraft({ ...base, indicators: [...base.indicators, item], deletedIndicators: (base.deletedIndicators ?? []).filter(indicator => indicator.id !== item.id) });
+    setGroup(item.group); setEditing(true); setMessage('กู้คืนตัวชี้วัดในฉบับแก้ไขแล้ว กรุณากดบันทึกทั้งหมด');
   };
   const addNextYear=()=>{
     if(year>=2800)return;
@@ -222,6 +234,14 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:12}}>ข้อมูลชุดกลางร่วมกันสำหรับแอดมินทุกคน · อัปเดตอัตโนมัติทุก 15 วินาที · การแก้ไขจะเผยแพร่เมื่อกดบันทึกทั้งหมด</p>
       {syncError&&<p role="alert">ยังยืนยันข้อมูลล่าสุดไม่ได้: {syncError}</p>}
       {newerRevision&&editing&&<p role="alert">มีแอดมินคนอื่นบันทึกข้อมูลใหม่แล้ว ระบบเก็บสิ่งที่คุณกำลังแก้ไขไว้และจะไม่บันทึกทับข้อมูลใหม่ กรุณาคัดลอกสิ่งที่ต้องการเก็บก่อน <button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>{setEditing(false);setMessage('กำลังโหลดข้อมูลกลางล่าสุด');}}>ยกเลิกการแก้ไขและโหลดข้อมูลล่าสุด</button></p>}
+      {canEdit && <details style={{marginBottom:16}}><summary>กู้คืนตัวชี้วัดที่ลบ ({recoverable.length})</summary>
+        {!recoverable.length && <p>ไม่มีตัวชี้วัดที่กู้คืนได้</p>}
+        {recoverable.map(({item,original})=><div key={item.id} style={{display:'flex',gap:12,alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',padding:'8px 0'}}>
+          <span>{item.name} · {item.group}{original && <small> (ข้อมูลต้นฉบับก่อนเปิดใช้ถังพัก)</small>}</span>
+          <button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>restoreIndicator(item)}>กู้คืน</button>
+        </div>)}
+        {originalDeleted.length > 0 && <p style={{fontSize:12,color:'var(--text2)'}}>รายการต้นฉบับที่ลบก่อนเปิดใช้ถังพักจะกู้คืนค่าตั้งต้น ข้อมูลที่เคยแก้ไขก่อนลบอาจไม่ครบ</p>}
+      </details>}
       {editing?<label className="safety-note-label">คำอธิบายและหมายเหตุข้อมูล<textarea className="safety-note-input" rows={4} maxLength={10000} disabled={saving} value={draft.sourceNote} onChange={e=>setDraft(d=>({...d,sourceNote:e.target.value}))}/></label>:<p style={{fontSize:13,color:'var(--text2)',marginBottom:16,whiteSpace:'pre-wrap'}}>{data.sourceNote}</p>}
       <label style={{display:'block',marginBottom:20}}>หมวดตัวชี้วัด <select value={group} onChange={e=>setGroup(e.target.value)} style={{padding:10,maxWidth:'100%',background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}>{groups.map(g=><option key={g}>{g}</option>)}</select></label>
       <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',marginBottom:12}}>

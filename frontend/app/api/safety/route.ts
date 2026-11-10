@@ -22,6 +22,7 @@ export async function PUT(request:NextRequest) {
     const strings=(a:unknown):a is string[]=>Array.isArray(a)&&a.length>0&&a.length<=30&&a.every(v=>typeof v==='string'&&v.length<=3000);
     if (!Number.isInteger(body.revision)||body.revision<0||!data||!strings(data.periods)||!Array.isArray(data.indicators)||data.indicators.length<1||data.indicators.length>200||JSON.stringify(data).length>500000||!Array.isArray(data.notes)||typeof data.source!=='string'||typeof data.sourceNote!=='string') return NextResponse.json({error:'รูปแบบข้อมูลไม่ถูกต้อง'},{status:400});
     if (data.years!==undefined&&(!Array.isArray(data.years)||data.years.length>200||!data.years.every((y:unknown)=>typeof y==='number'&&Number.isInteger(y)&&y>=2400&&y<=2800)||new Set(data.years).size!==data.years.length)) return NextResponse.json({error:'รายการปีไม่ถูกต้อง'},{status:400});
+    if (data.deletedIndicators !== undefined && (!Array.isArray(data.deletedIndicators) || data.deletedIndicators.length > 200)) return NextResponse.json({error:'รายการตัวชี้วัดที่ลบไม่ถูกต้อง'},{status:400});
     const noteSlides=new Set();
     if (data.sourceNote.length>10000||data.notes.length>100) return NextResponse.json({error:'ข้อความยาวเกินกำหนด'},{status:400});
     for (const note of data.notes) {
@@ -29,7 +30,7 @@ export async function PUT(request:NextRequest) {
       noteSlides.add(note.slide);
     }
     const ids=new Set();
-    for (const item of data.indicators) {
+    for (const item of [...data.indicators, ...(data.deletedIndicators ?? [])]) {
       if (item?.measurements !== undefined) {
         const seen=new Set();
         if (!Array.isArray(item.measurements)||item.measurements.length>5000) return NextResponse.json({error:'ข้อมูลช่วงเวลาไม่ถูกต้อง'},{status:400});

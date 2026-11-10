@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !riskUnitDirectory.some(name=>name===unit.name) || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
-    } else if (unit.locked || password !== 'QSMH') {
+    } else if (password !== 'QSMH') {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);
     }

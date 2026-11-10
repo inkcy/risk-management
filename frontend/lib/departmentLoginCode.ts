@@ -5,7 +5,7 @@ function digest(kind: string, value: string, secret: string) {
   return createHmac('sha256', secret).update(`${kind}:v1:${value}`).digest('hex');
 }
 export function departmentCodeLookup(code: string, secret: string) {
-  if (!/^\d{7}[A-Za-z]?$/.test(code)) throw new Error('รูปแบบรหัสไม่ถูกต้อง');
+  if (!code || code.length > 128) throw new Error('รูปแบบรหัสไม่ถูกต้อง');
   return digest('department-login-code', code, secret);
 }
 export function departmentAttemptKey(ip: string, secret: string) {

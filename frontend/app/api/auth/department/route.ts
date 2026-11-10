@@ -47,13 +47,14 @@ export async function POST(request: NextRequest) {
     const id = unit?.id;
     if (!unit || !unit.active) return await fail(id);
     const accessCode = password.trim();
-    const credential = /^\d{7}[A-Za-z]?$/.test(accessCode) ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
+    const devPassword = unit.name === 'dev' && await checkUnitPassword(password, unit.password_hash);
+    const credential = accessCode && password !== 'QSMH' && !devPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
       'SELECT id,display_name,password_hash,active FROM department_login_codes WHERE code_lookup=$1 FOR UPDATE',
       [departmentCodeLookup(accessCode,process.env.SESSION_SECRET ?? '')],
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !riskUnitDirectory.some(name=>name===unit.name) || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
-    } else if (password !== 'QSMH') {
+    } else if (password !== 'QSMH' && !devPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);
     }

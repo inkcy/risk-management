@@ -53,7 +53,7 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
     return `${line}${mark}<text x="${x(i)}" y="${y(value) - 10}" text-anchor="middle" font-size="13">${value}</text>${label}`;
   }).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="Tahoma, sans-serif" font-size="11" fill="#193c4b"><rect width="100%" height="100%" fill="white" rx="8"/>${grid}${target}${points}</svg>`;
-  const metadata = `หน่วย: ${item.unit} · เป้าหมาย: ${item.targetText} · สไลด์ ${item.slide}`;
+  const metadata = `หน่วย: ${item.unit} · เป้าหมาย: ${item.targetText}`;
   const alt = `${item.name} · ${metadata} · ${periodCaption} · ${item.values.map((value, i) => `${periods[i]} ${value ?? 'ไม่มีข้อมูล'}`).join(', ')}`;
   const imageKey = JSON.stringify([svg, item.name, metadata, periodCaption]);
 

@@ -6,6 +6,7 @@ import { RiskUnitLogin } from '@/components/RiskUnitLogin';
 import { UnitRiskProfiles } from '@/components/UnitRiskProfiles';
 import { redirect } from 'next/navigation';
 import { departmentAccess } from '@/lib/departmentAccess';
+import { RiskSubmissionOverview } from '@/components/RiskSubmissionOverview';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export default async function RiskProfilePage() {
     const risks = await query<{ id: number; unit_id: number; year: number; quarter: number; category: 'clinical' | 'nonclinical'; title: string; occurrence_count: number; impact: number; source_title: string | null; source_analysis_level: 'green' | 'yellow' | 'orange' | 'red' | null }>(
       'SELECT id, unit_id, year, quarter, category, title, occurrence_count, impact, source_title, source_analysis_level FROM unit_risks WHERE ($1::boolean OR unit_id=$2) ORDER BY created_at DESC', [admin, currentUnit?.id ?? null],
     );
-    return <>{admin && <RiskUnitAdmin units={adminUnits} pending={pending} />}<UnitRiskProfiles units={units} risks={risks.rows} canLogout={!admin} /></>;
+    return <>{admin && <><RiskUnitAdmin units={adminUnits} pending={pending} /><RiskSubmissionOverview units={adminUnits.filter(unit => !['admin', 'dev'].includes(unit.name.trim().toLowerCase()))} risks={risks.rows} /></>}<UnitRiskProfiles units={units} risks={risks.rows} canLogout={!admin} /></>;
   } catch (err) {
     console.error('risk profile load failed:', err);
     return <div className="announcement-error" role="alert">ไม่สามารถโหลด Risk Profile ได้ กรุณาตรวจสอบฐานข้อมูล</div>;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { audit, requireRole } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { getPool, query } from '@/lib/db';
 import { ensureRcaLessons } from '@/lib/rcaLessons';
 
 const validImage = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
@@ -21,10 +21,19 @@ async function save(request: NextRequest, editing: boolean) {
       return NextResponse.json({ error: 'กรุณาระบุหัวข้อและเลือกรูป JPG, PNG หรือ WebP ไม่เกิน 2 MB' }, { status: 400 });
     }
     await ensureRcaLessons();
-    const result = editing
-      ? await query('UPDATE rca_lessons SET title=$1, image=COALESCE($2,image), year=$3 WHERE id=$4 RETURNING id', [title, image || null, year, id])
-      : await query('INSERT INTO rca_lessons (title,image,year) VALUES ($1,$2,$3) RETURNING id', [title, image, year]);
-    if (!result.rowCount) return NextResponse.json({ error: 'ไม่พบบทเรียน' }, { status: 404 });
+    const client = await getPool().connect();
+    let result;
+    try {
+      await client.query('BEGIN');
+      await client.query("SELECT pg_advisory_xact_lock(hashtext('rca_lessons_init'))");
+      result = editing
+        ? await client.query('UPDATE rca_lessons SET title=$1, image=COALESCE($2,image), year=$3 WHERE id=$4 RETURNING id', [title, image || null, year, id])
+        : await client.query('INSERT INTO rca_lessons (title,image,year) VALUES ($1,$2,$3) RETURNING id', [title, image, year]);
+      if (!result.rowCount) { await client.query('ROLLBACK'); return NextResponse.json({ error: 'ไม่พบบทเรียน' }, { status: 404 }); }
+      if (year !== null) await client.query('INSERT INTO rca_lesson_years (year) VALUES ($1) ON CONFLICT DO NOTHING', [year]);
+      await client.query('COMMIT');
+    } catch (error) { await client.query('ROLLBACK'); throw error; }
+    finally { client.release(); }
     await audit(auth.user, editing ? 'rca_lesson.update' : 'rca_lesson.create', 'rca_lesson', result.rows[0].id, { title });
     return NextResponse.json({ ok: true });
   } catch (error) {

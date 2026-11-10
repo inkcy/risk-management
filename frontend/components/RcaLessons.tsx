@@ -4,15 +4,28 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RcaLesson } from '@/lib/rcaLessons';
 
-export function RcaLessons({ lessons, canEdit }: { lessons: RcaLesson[]; canEdit: boolean }) {
+export function RcaLessons({ lessons, years, canEdit }: { lessons: RcaLesson[]; years: number[]; canEdit: boolean }) {
   const router = useRouter();
   const [editing, setEditing] = useState<RcaLesson | null>(null);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [yearFilter, setYearFilter] = useState('all');
-  const years = Array.from(new Set(lessons.flatMap(lesson => lesson.year === null ? [] : [lesson.year]))).sort((a, b) => b - a);
   const visible = lessons.filter(lesson => yearFilter === 'all' || (yearFilter === 'unspecified' ? lesson.year === null : lesson.year === Number(yearFilter)));
+
+  async function changeYear(action: 'add' | 'rename' | 'delete', year: number, nextYear?: number) {
+    if (action === 'delete' && !window.confirm(`ลบปี ${year} หรือไม่? บทเรียนในปีนี้จะย้ายไปอยู่ในกลุ่มไม่ระบุปี`)) return;
+    setBusy(true); setError('');
+    try {
+      const response = await fetch('/api/rca-lessons/years', { method: action === 'add' ? 'POST' : action === 'rename' ? 'PATCH' : 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ year, nextYear }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'จัดการปีไม่สำเร็จ');
+      if (action === 'delete' && yearFilter === String(year)) setYearFilter('unspecified');
+      if (action === 'rename' && yearFilter === String(year)) setYearFilter(String(nextYear));
+      router.refresh();
+    } catch (err) { setError(err instanceof Error ? err.message : 'จัดการปีไม่สำเร็จ'); }
+    finally { setBusy(false); }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +69,15 @@ export function RcaLessons({ lessons, canEdit }: { lessons: RcaLesson[]; canEdit
   return <section aria-label="บทเรียนจาก RCA" style={{ display: 'grid', gap: 20 }}>
     {canEdit && <div><button className="tb-btn tb-btn-primary" type="button" disabled={busy} onClick={() => { setAdding(true); setEditing(null); setError(''); }}>เพิ่มบทเรียน</button></div>}
     <label>ปี พ.ศ. <select value={yearFilter} onChange={event => setYearFilter(event.target.value)}><option value="all">ทุกปี</option>{years.map(year => <option key={year} value={year}>{year}</option>)}{lessons.some(lesson => lesson.year === null) && <option value="unspecified">ไม่ระบุปี</option>}</select></label>
+    {canEdit && <details className="card" style={{ padding: 16 }}><summary>จัดการปีบทเรียน</summary>
+      <form className="survey-form" onSubmit={event => { event.preventDefault(); const form = event.currentTarget; const year = Number(new FormData(form).get('year')); void changeYear('add', year); }}>
+        <label>เพิ่มปี พ.ศ.<input type="number" name="year" min={2400} max={2800} required /></label><button className="tb-btn tb-btn-ghost" disabled={busy}>เพิ่มปี</button>
+      </form>
+      {years.map(year => <form className="survey-form" key={year} onSubmit={event => { event.preventDefault(); const nextYear = Number(new FormData(event.currentTarget).get('nextYear')); void changeYear('rename', year, nextYear); }}>
+        <label>แก้ไขปี {year}<input type="number" name="nextYear" min={2400} max={2800} defaultValue={year} required /></label>
+        <div style={{ display: 'flex', gap: 8 }}><button className="tb-btn tb-btn-ghost" disabled={busy}>บันทึกปี</button><button type="button" className="tb-btn tb-btn-ghost" disabled={busy} onClick={() => changeYear('delete', year)}>ลบปี</button></div>
+      </form>)}
+    </details>}
     {canEdit && (adding || editing) && <form key={editing?.id ?? 'new'} className="card survey-form" style={{ padding: 20 }} onSubmit={submit}>
       <h2>{editing ? 'แก้ไขบทเรียน' : 'เพิ่มบทเรียน'}</h2>
       <label>หัวข้อ<input name="title" required maxLength={250} defaultValue={editing?.title ?? ''} /></label>

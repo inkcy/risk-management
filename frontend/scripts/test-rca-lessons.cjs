@@ -9,7 +9,13 @@ const json = (body, options = {}) => ({ body, status: options.status ?? 200 });
 const modules = {
   'next/server': { NextResponse: { json } },
   '@/lib/auth': { requireRole: async () => role === 'admin' ? { ok: true, user: { id: 1 } } : { ok: false, response: json({}, { status: 403 }) }, audit: async () => {} },
-  '@/lib/db': { query: async () => { writes++; return { rowCount: 1, rows: [{ id: 1 }] }; } },
+  '@/lib/db': {
+    query: async () => { writes++; return { rowCount: 1, rows: [{ id: 1 }] }; },
+    getPool: () => ({ connect: async () => ({ release() {}, query: async sql => {
+      if (sql.startsWith('INSERT INTO rca_lessons ') || sql.startsWith('UPDATE rca_lessons ')) writes++;
+      return { rowCount: 1, rows: [{ id: 1 }] };
+    } }) }),
+  },
   '@/lib/rcaLessons': { ensureRcaLessons: async () => {} },
 };
 const mod = { exports: {} };

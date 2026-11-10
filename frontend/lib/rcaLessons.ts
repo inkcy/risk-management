@@ -13,11 +13,13 @@ export async function ensureRcaLessons() {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('rca_lessons_init'))");
     await client.query('CREATE TABLE IF NOT EXISTS rca_lessons (id SERIAL PRIMARY KEY, title TEXT NOT NULL, image TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())');
     await client.query('ALTER TABLE rca_lessons ADD COLUMN IF NOT EXISTS year INTEGER');
+    await client.query('CREATE TABLE IF NOT EXISTS rca_lesson_years (year INTEGER PRIMARY KEY CHECK (year BETWEEN 2400 AND 2800))');
     await client.query('CREATE TABLE IF NOT EXISTS rca_lessons_initialized (id INTEGER PRIMARY KEY CHECK (id = 1))');
     const initialized = await client.query('INSERT INTO rca_lessons_initialized (id) VALUES (1) ON CONFLICT DO NOTHING RETURNING id');
     if (initialized.rowCount) {
       for (const lesson of defaults) await client.query('INSERT INTO rca_lessons (title, image) VALUES ($1, $2)', [lesson.title, lesson.image]);
     }
+    await client.query('INSERT INTO rca_lesson_years (year) SELECT DISTINCT year FROM rca_lessons WHERE year BETWEEN 2400 AND 2800 ON CONFLICT DO NOTHING');
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
@@ -25,6 +27,11 @@ export async function ensureRcaLessons() {
   } finally {
     client.release();
   }
+}
+
+export async function loadRcaLessonYears(): Promise<number[]> {
+  if (!dbConfigured()) return [];
+  return (await query<{ year: number }>('SELECT year FROM rca_lesson_years ORDER BY year DESC')).rows.map(row => row.year);
 }
 
 export async function loadRcaLessons(): Promise<RcaLesson[]> {

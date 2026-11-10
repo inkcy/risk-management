@@ -1,4 +1,5 @@
 import { cookies, headers } from 'next/headers';
+import { cache } from 'react';
 import { NextResponse } from 'next/server';
 import { dbConfigured, query } from './db';
 import {
@@ -125,7 +126,7 @@ export async function destroySession(): Promise<void> {
  * ผู้ใช้ปัจจุบัน — ตรวจทั้งลายเซ็น cookie, วันหมดอายุใน DB และสถานะบัญชี
  * middleware ตรวจแค่ลายเซ็น การเพิกถอนสิทธิ์จริงเกิดขึ้นที่นี่
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   if (!dbConfigured()) return null;
   const jar = await cookies();
   const sessionId = await verifyValue(jar.get(SESSION_COOKIE)?.value);
@@ -151,7 +152,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
-}
+});
 
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
 

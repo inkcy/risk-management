@@ -40,11 +40,8 @@ export default async function LoginPage({
       minHeight: '100dvh',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px 20px',
-      background: `
-        radial-gradient(760px 420px at 12% -8%, var(--purple-bg), transparent 60%),
-        radial-gradient(640px 380px at 92% 108%, var(--tile-blue), transparent 62%),
-        var(--bg)
-      `,
+      backgroundImage: "linear-gradient(var(--page-bg-overlay), var(--page-bg-overlay)), url('/hospital-watercolor-background.png')",
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <div style={{ width: '100%', maxWidth: 412 }}>
         <div style={{

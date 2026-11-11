@@ -1,10 +1,10 @@
 import JSZip from 'jszip';
 
 /** Export one incident form as text cells, including fields that are still empty. */
-export async function exportReportXlsx(rows: [string, string][]): Promise<void> {
+export async function exportReportXlsx(rows: string[][], headers = ['รายการ', 'ข้อมูล'], filename = 'incident-report.xlsx'): Promise<void> {
   const escape = (value: string) => value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const sheetRows = [['รายการ', 'ข้อมูล'], ...rows].map((row, index) =>
-    `<row r="${index + 1}">${row.map((value, column) => `<c r="${column ? 'B' : 'A'}${index + 1}" t="inlineStr"><is><t xml:space="preserve">${escape(value)}</t></is></c>`).join('')}</row>`,
+  const sheetRows = [headers, ...rows].map((row, index) =>
+    `<row r="${index + 1}">${row.map((value, column) => `<c r="${String.fromCharCode(65 + column)}${index + 1}" t="inlineStr"><is><t xml:space="preserve">${escape(value)}</t></is></c>`).join('')}</row>`,
   ).join('');
   const zip = new JSZip();
   zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
@@ -16,7 +16,7 @@ export async function exportReportXlsx(rows: [string, string][]): Promise<void> 
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'incident-report.xlsx';
+  link.download = filename;
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

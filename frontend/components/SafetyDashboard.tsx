@@ -5,6 +5,7 @@ import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@
 import { formatSafetyText } from '@/lib/safety-text';
 import safetySeed from '@/lib/data/safety.json';
 import { passesSafetyTarget } from '@/lib/safetyComparison';
+import { listSafetyGroups } from '@/lib/safetyGroups';
 
 function wrapChartText(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
   const words = new Intl.Segmenter('th', { granularity: 'word' }).segment(text);
@@ -148,10 +149,10 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     document.addEventListener('visibilitychange',sync);
     return ()=>{active=false;controller.abort();window.clearInterval(timer);window.removeEventListener('focus',sync);document.removeEventListener('visibilitychange',sync);};
   },[editing,revision]);
-  const groups=Array.from(new Set((editing ? draft : data).indicators.map(i=>i.group)));
+  const groups=listSafetyGroups(editing ? draft : data);
   useEffect(() => {
-    const available = (editing ? draft : data).indicators;
-    if (!available.some(item => item.group === group) && available.length) setGroup(available[0].group);
+    const available = listSafetyGroups(editing ? draft : data);
+    if (!available.includes(group) && available.length) setGroup(available[0]);
   }, [data, draft, editing, group]);
   const patch=(id:string,update:Partial<SafetyIndicator>)=>setDraft(d=>({...d,indicators:d.indicators.map(i=>i.id===id?{...i,...update}:i)}));
   const visible=(editing?draft:data).indicators.filter(i=>i.group===group);
@@ -190,6 +191,18 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     }
   }
   const startEditing=()=>{setDraft({...data,notes:data.notes.map(n=>({...n,text:formatSafetyText(n.text)}))});setEditing(true);setMessage('');};
+  const addGroup = () => {
+    const value = window.prompt('ชื่อหมวดตัวชี้วัดใหม่');
+    if (value === null) return;
+    const name = value.trim();
+    if (!name || name.length > 300) { setMessage('กรุณาระบุชื่อหมวดไม่เกิน 300 ตัวอักษร'); return; }
+    const base = editing ? draft : data;
+    const existing = listSafetyGroups(base);
+    if (existing.includes(name)) { setMessage('มีชื่อหมวดนี้อยู่แล้ว กรุณาใช้ชื่ออื่น'); return; }
+    if (existing.length >= 200) { setMessage('เพิ่มหมวดได้ไม่เกิน 200 หมวด'); return; }
+    setDraft({ ...base, indicatorGroups: [...existing, name] });
+    setGroup(name); setEditing(true); setMessage('เพิ่มหมวดแล้ว กรุณากดบันทึกทั้งหมด');
+  };
   const renameGroup = () => {
     const value = window.prompt('ชื่อหมวดตัวชี้วัดใหม่', group);
     if (value === null) return;
@@ -197,9 +210,9 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     if (!name || name.length > 300) { setMessage('กรุณาระบุชื่อหมวดไม่เกิน 300 ตัวอักษร'); return; }
     if (name === group) return;
     const base = editing ? draft : data;
-    if (base.indicators.some(item => item.group === name)) { setMessage('มีชื่อหมวดนี้อยู่แล้ว กรุณาใช้ชื่ออื่น'); return; }
+    if (listSafetyGroups(base).includes(name)) { setMessage('มีชื่อหมวดนี้อยู่แล้ว กรุณาใช้ชื่ออื่น'); return; }
     const move = (item: SafetyIndicator) => item.group === group ? { ...item, group: name } : item;
-    setDraft({ ...base, indicators: base.indicators.map(move), deletedIndicators: (base.deletedIndicators ?? []).map(move) });
+    setDraft({ ...base, indicatorGroups: listSafetyGroups(base).map(existing => existing === group ? name : existing), indicators: base.indicators.map(move), deletedIndicators: (base.deletedIndicators ?? []).map(move) });
     setGroup(name); setEditing(true); setMessage('แก้ไขชื่อหมวดแล้ว กรุณากดบันทึกทั้งหมด');
   };
   const deleteGroup = () => {
@@ -207,8 +220,11 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     if (!window.confirm(`ลบหมวด “${group}” หรือไม่? ตัวชี้วัดในหมวดนี้จะย้ายไปอยู่ในหมวดไม่ระบุหมวด และมีผลเมื่อกดบันทึกทั้งหมด`)) return;
     const base = editing ? draft : data;
     const move = (item: SafetyIndicator) => item.group === group ? { ...item, group: 'ไม่ระบุหมวด' } : item;
-    setDraft({ ...base, indicators: base.indicators.map(move), deletedIndicators: (base.deletedIndicators ?? []).map(move) });
-    setGroup('ไม่ระบุหมวด'); setEditing(true); setMessage('ลบหมวดในฉบับแก้ไขแล้ว กรุณากดบันทึกทั้งหมด');
+    const indicators = base.indicators.map(move);
+    const remainingGroups = listSafetyGroups(base).filter(existing => existing !== group);
+    if (indicators.some(item => item.group === 'ไม่ระบุหมวด') && !remainingGroups.includes('ไม่ระบุหมวด')) remainingGroups.push('ไม่ระบุหมวด');
+    setDraft({ ...base, indicatorGroups: remainingGroups, indicators, deletedIndicators: (base.deletedIndicators ?? []).map(move) });
+    setGroup(remainingGroups.includes('ไม่ระบุหมวด') ? 'ไม่ระบุหมวด' : remainingGroups[0]); setEditing(true); setMessage('ลบหมวดในฉบับแก้ไขแล้ว กรุณากดบันทึกทั้งหมด');
   };
   const addIndicator = () => {
     const name = newIndicatorName.trim();
@@ -252,7 +268,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       if(response.status===409)setNewerRevision(true);
       if(!response.ok) throw new Error(result.error||'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
       setData(draft);setRevision(result.revision);setEditing(false);
-      if (!draft.indicators.some(indicator => indicator.group === group)) setGroup(draft.indicators[0].group);
+      if (!listSafetyGroups(draft).includes(group)) setGroup(listSafetyGroups(draft)[0]);
       setMessage('บันทึกลงข้อมูลกลางแล้ว แอดมินทุกคนจะได้รับข้อมูลล่าสุดอัตโนมัติภายใน 15 วินาที');
     }catch(error){setMessage(error instanceof Error?error.message:'บันทึกไม่สำเร็จ');}finally{setSaving(false);}
   }
@@ -273,7 +289,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
         {originalDeleted.length > 0 && <p style={{fontSize:12,color:'var(--text2)'}}>รายการต้นฉบับที่ลบก่อนเปิดใช้ถังพักจะกู้คืนค่าตั้งต้น ข้อมูลที่เคยแก้ไขก่อนลบอาจไม่ครบ</p>}
       </details>}
       {editing?<label className="safety-note-label">คำอธิบายและหมายเหตุข้อมูล<textarea className="safety-note-input" rows={4} maxLength={10000} disabled={saving} value={draft.sourceNote} onChange={e=>setDraft(d=>({...d,sourceNote:e.target.value}))}/></label>:<p style={{fontSize:13,color:'var(--text2)',marginBottom:16,whiteSpace:'pre-wrap'}}>{data.sourceNote}</p>}
-      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:20}}><label>หมวดตัวชี้วัด <select value={group} onChange={e=>setGroup(e.target.value)} style={{padding:10,maxWidth:'100%',background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}>{groups.map(g=><option key={g}>{g}</option>)}</select></label>{canEdit&&<><button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={renameGroup}>แก้ไขชื่อหมวด</button><button type="button" className="tb-btn tb-btn-ghost" disabled={saving||group==='ไม่ระบุหมวด'} onClick={deleteGroup}>ลบหมวด</button></>}</div>
+      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:20}}><label>หมวดตัวชี้วัด <select value={group} onChange={e=>setGroup(e.target.value)} style={{padding:10,maxWidth:'100%',background:'var(--bg2)',color:'var(--text)',border:'1px solid var(--border2)',borderRadius:8}}>{groups.map(g=><option key={g}>{g}</option>)}</select></label>{canEdit&&<><button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={addGroup}>เพิ่มหมวด</button><button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={renameGroup}>แก้ไขชื่อหมวด</button><button type="button" className="tb-btn tb-btn-ghost" disabled={saving||group==='ไม่ระบุหมวด'} onClick={deleteGroup}>ลบหมวด</button></>}</div>
       <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center',marginBottom:12}}>
         <div role="group" aria-label="รูปแบบช่วงเวลา" style={{display:'flex',gap:6}}>{([['month','รายเดือน'],['quarter','รายไตรมาส'],['year','รายปี']] as const).map(([value,label])=><button key={value} className={`tb-btn ${mode===value?'tb-btn-primary':'tb-btn-ghost'}`} aria-pressed={mode===value} onClick={()=>setMode(value)}>{label}</button>)}</div>
         <button className="tb-btn tb-btn-ghost" disabled={saving||year<=2400} onClick={()=>setYear(y=>y-1)}>ปีก่อนหน้า</button>

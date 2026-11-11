@@ -7,6 +7,7 @@ import type { Incident } from '@/lib/types';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
 import { incidentCategories } from '@/lib/incident-categories';
 import { validIncidentSeverity } from '@/lib/incident-severity';
+import { ensureIncidentOtherDetail } from '@/lib/incidentOtherDetail';
 
 const CATEGORIES = incidentCategories.map(category => category.value);
 
@@ -14,10 +15,11 @@ export async function GET() {
   const denied = await requireReadAccess();
   if (denied) return denied;
   const result = await envelope<Incident[]>(async () => {
+    await ensureIncidentOtherDetail();
     const { rows } = await query<Incident>(`
       SELECT i.id, i.ir_code, i.occurred_at, i.title, i.description,
              i.unit_id, u.name_th AS unit_name,
-             i.category, i.severity, i.rca_status, i.reported_by
+             i.category, i.other_detail, i.severity, i.rca_status, i.reported_by
       FROM incidents i
       LEFT JOIN units u ON u.id = i.unit_id
       ORDER BY i.occurred_at DESC
@@ -34,12 +36,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
     const { ir_code, occurred_at, title, description, unit_id, unit_code, category, severity } = body;
+    const otherDetail = typeof body.other_detail === 'string' ? body.other_detail.trim() : '';
     if (
       typeof ir_code !== 'string' || !ir_code.trim() ||
       typeof occurred_at !== 'string' || !occurred_at.trim() ||
       typeof title !== 'string' || !title.trim() ||
       typeof category !== 'string' || !CATEGORIES.includes(category as (typeof CATEGORIES)[number]) ||
-      typeof severity !== 'string' || !validIncidentSeverity(category, severity)
+      typeof severity !== 'string' || !validIncidentSeverity(category, severity) ||
+      (category === 'other' && (!otherDetail || otherDetail.length > 300))
     ) {
       return NextResponse.json({ error: 'ข้อมูลรายงานไม่ครบหรือมีค่าไม่ถูกต้อง' }, { status: 400 });
     }
@@ -66,14 +70,15 @@ export async function POST(request: NextRequest) {
       }
       resolvedUnitId = unit.rows[0].id;
     }
+    await ensureIncidentOtherDetail();
     const { rows } = await query<Incident>(
-      `INSERT INTO incidents (ir_code, occurred_at, title, description, unit_id, category, severity, reported_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO incidents (ir_code, occurred_at, title, description, unit_id, category, severity, reported_by, other_detail)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         ir_code.trim(), occurred_at, title.trim(),
         typeof description === 'string' && description.trim() ? description.trim() : null,
-        resolvedUnitId, category, severity, auth.user.name ?? auth.user.email,
+        resolvedUnitId, category, severity, auth.user.name ?? auth.user.email, category === 'other' ? otherDetail : null,
       ],
     );
     await audit(auth.user, 'incident.create', 'incident', rows[0].id, { ir_code: ir_code.trim(), severity });

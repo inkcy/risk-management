@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { getIncidents, categoryLabel } from '@/lib/api';
+import { getIncidents } from '@/lib/api';
+import { incidentCategoryParts } from '@/lib/incident-categories';
 import { DemoBanner } from '@/components/DemoBanner';
 import { getSessionUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -43,7 +44,8 @@ export default async function IncidentsPage() {
                 <th>วันที่</th>
                 <th>เหตุการณ์</th>
                 <th>หน่วยงาน</th>
-                <th>ประเภท</th>
+                <th>ด้านความเสี่ยง</th>
+                <th>ประเภท/ประเภทย่อย</th>
                 <th>ระดับ</th>
                 <th>สถานะ RCA</th>
               </tr>
@@ -61,7 +63,8 @@ export default async function IncidentsPage() {
                   </td>
                   <td>{inc.title}</td>
                   <td style={{ color: 'var(--text3)' }}>{inc.unit_name ?? '—'}</td>
-                  <td style={{ color: 'var(--text3)' }}>{categoryLabel[inc.category] ?? inc.category}</td>
+                  <td style={{ color: 'var(--text3)' }}>{incidentCategoryParts(inc.category, inc.other_detail).group}</td>
+                  <td style={{ color: 'var(--text3)' }}>{incidentCategoryParts(inc.category, inc.other_detail).subtype}</td>
                   <td><span className={`badge ${sevBadge(inc.severity)}`}>{inc.severity}</span></td>
                   <td><span className={`badge ${rcaBadge(inc.rca_status)}`}>{rcaLabel(inc.rca_status)}</span></td>
                 </tr>

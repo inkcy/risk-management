@@ -20,15 +20,19 @@ const mocks={
  '@/lib/db':{query:async(sql,params)=>{assert.ok(sql.includes('INSERT INTO incidents'));inserted.push(params[5]);return {rows:[{id:1,category:params[5]}]};}},
  '@/lib/incident-categories':categories.exports,
  '@/lib/incident-severity':severity.exports,
+ '@/lib/incidentOtherDetail':{ensureIncidentOtherDetail:async()=>{}},
  '@/lib/riskUnitDirectory':{riskUnitDirectory:[]},
  '@/lib/envelope':{},'@/lib/demo':{},
 };
 vm.runInNewContext(compile('app/api/incidents/route.ts'),{exports:mod.exports,require:name=>{if(!(name in mocks))throw Error(name);return mocks[name];},console});
-const post=(category,level=incidentRiskGroup(category)==='clinical'?'A':'1')=>mod.exports.POST({json:async()=>({ir_code:'TEST',occurred_at:'2026-11-06T12:00:00+07:00',title:'Test',category,severity:level,unit_id:1})});
+const post=(category,level=incidentRiskGroup(category)==='clinical'?'A':'1',other_detail=category==='other'?'ทดสอบ':'')=>mod.exports.POST({json:async()=>({ir_code:'TEST',occurred_at:'2026-11-06T12:00:00+07:00',title:'Test',category,severity:level,unit_id:1,other_detail})});
 (async()=>{
  for(const {value} of incidentCategories){const response=await post(value);assert.equal(response.status,201);assert.equal(response.body.incident.category,value);assert.ok(categoryLabel[value]);}
  assert.equal(inserted.length,17);
  assert.equal((await post('unknown')).status,400);
+ assert.equal((await post('other','A','')).status,400);
+ assert.equal(categories.exports.incidentCategoryParts('other','ทดสอบ').subtype,'อื่นๆ · ทดสอบ');
+ assert.equal(categories.exports.incidentCategoryParts('other',null).subtype,'อื่นๆ');
  assert.equal(inserted.length,17);
  for(const {value} of incidentCategories.filter(c=>c.value.startsWith('complaint_'))){
   for(const level of ['A','B','C','D','E','F','G','H','I'])assert.equal((await post(value,level)).status,201);

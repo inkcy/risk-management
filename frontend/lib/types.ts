@@ -13,6 +13,7 @@ export interface Incident {
   unit_id: number | null;
   unit_name?: string;
   category: Category;
+  other_detail?: string | null;
   severity: Severity;
   rca_status: RcaStatus;
   reported_by: string | null;

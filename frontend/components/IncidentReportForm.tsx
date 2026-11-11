@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
-import { categoryLabel, incidentCategoryGroups, incidentRiskGroup } from '@/lib/incident-categories';
+import { incidentCategoryParts, incidentCategoryGroups, incidentRiskGroup } from '@/lib/incident-categories';
 import { generalSeverities, validIncidentSeverity } from '@/lib/incident-severity';
 import { thaiDateTime } from '@/lib/thai-date-time';
 
@@ -26,6 +26,7 @@ const EMPTY_FORM = {
   unit: '',
   risk_group: '',
   category: '',
+  other_detail: '',
   severity: '',
   description: '',
   immediate_action: '',
@@ -121,7 +122,7 @@ export default function IncidentReportForm({ canExportSaved }: { canExportSaved:
       await exportReportXlsx([
         ['วันที่เกิดเหตุ', form.occurred_at], ['เวลา (ประเทศไทย)', form.time],
         ['หน่วยงาน', units.find(unit => unit.code === form.unit)?.label ?? form.unit],
-        ['ด้านความเสี่ยง', group?.label ?? ''], ['ประเภทความเสี่ยง', category?.label ?? ''],
+        ['ด้านความเสี่ยง', group?.label ?? ''], ['ประเภทความเสี่ยง', category?.label ?? ''], ['ระบุประเภทอื่นๆ', form.category === 'other' ? form.other_detail : ''],
         ['ระดับความรุนแรง', form.severity], ['รายละเอียดเหตุการณ์', form.description],
         ['การดำเนินการเบื้องต้น', form.immediate_action],
       ]);
@@ -136,11 +137,11 @@ export default function IncidentReportForm({ canExportSaved }: { canExportSaved:
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'โหลดข้อมูลไม่สำเร็จ');
       const { exportReportXlsx } = await import('@/lib/exportReport');
-      const rows = data.incidents.map((item: { ir_code: string; occurred_at: string; unit_name: string | null; category: string; severity: string; title: string; description: string | null; rca_status: string; reported_by: string | null }) => [
-        item.ir_code, new Date(item.occurred_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }), item.unit_name ?? '', categoryLabel[item.category] ?? item.category,
+      const rows = data.incidents.map((item: { ir_code: string; occurred_at: string; unit_name: string | null; category: string; other_detail: string | null; severity: string; title: string; description: string | null; rca_status: string; reported_by: string | null }) => [
+        item.ir_code, new Date(item.occurred_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }), item.unit_name ?? '', incidentCategoryParts(item.category, item.other_detail).group, incidentCategoryParts(item.category, item.other_detail).subtype,
         item.severity, item.title, item.description ?? '', item.rca_status, item.reported_by ?? '',
       ]);
-      await exportReportXlsx(rows, ['รหัส IR', 'วันที่และเวลาเกิดเหตุ', 'หน่วยงาน', 'ประเภทความเสี่ยง', 'ระดับความรุนแรง', 'หัวข้อ', 'รายละเอียดและการดำเนินการเบื้องต้น', 'สถานะ RCA', 'ผู้รายงาน'], 'incident-reports.xlsx');
+      await exportReportXlsx(rows, ['รหัส IR', 'วันที่และเวลาเกิดเหตุ', 'หน่วยงาน', 'ด้านความเสี่ยง', 'ประเภท/ประเภทย่อย', 'ระดับความรุนแรง', 'หัวข้อ', 'รายละเอียดและการดำเนินการเบื้องต้น', 'สถานะ RCA', 'ผู้รายงาน'], 'incident-reports.xlsx');
     } catch (error) {
       setStatus('error'); setMessage(error instanceof Error ? error.message : 'ส่งออกรายการไม่สำเร็จ');
     }
@@ -155,6 +156,9 @@ export default function IncidentReportForm({ canExportSaved }: { canExportSaved:
     }
     if (!form.risk_group || incidentRiskGroup(form.category) !== form.risk_group) {
       setStatus('error');setMessage('กรุณาเลือกด้านและประเภทความเสี่ยงให้ตรงกัน');return;
+    }
+    if (form.category === 'other' && !form.other_detail.trim()) {
+      setStatus('error'); setMessage('กรุณาระบุประเภทความเสี่ยงอื่นๆ'); return;
     }
     if (!units.some(unit => unit.code === form.unit)) {
       setStatus('error');
@@ -183,6 +187,7 @@ export default function IncidentReportForm({ canExportSaved }: { canExportSaved:
           description,
           unit_code: form.unit,
           category: form.category,
+          other_detail: form.category === 'other' ? form.other_detail.trim() : null,
           severity: form.severity,
         }),
       });
@@ -261,6 +266,7 @@ export default function IncidentReportForm({ canExportSaved }: { canExportSaved:
                   {incidentCategoryGroups.find(group => group.value === form.risk_group)?.categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
             </div>
+            {form.category === 'other' && <div className="form-group"><label className="form-label" htmlFor="report-other-detail">ระบุประเภทความเสี่ยงอื่นๆ</label><input id="report-other-detail" value={form.other_detail} onChange={event => set('other_detail', event.target.value)} maxLength={300} required /></div>}
             <div className="form-group">
               <label className="form-label">ระดับความรุนแรง{usesGeneralSeverity ? 'ด้านทั่วไป (1–5)' : 'ด้านคลินิก (A–I)'}</label>
               <div className="sev-grid">

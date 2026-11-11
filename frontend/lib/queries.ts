@@ -1,4 +1,5 @@
 import { query } from './db';
+import { ensureIncidentOtherDetail } from './incidentOtherDetail';
 import { envelope } from './envelope';
 import { demoActions, demoCauti, demoIncidents, demoRcaBundle, demoStats } from './demo';
 import type { ActionItem, CautiPatient, Incident, RcaBundle, RcaCase, RcaCause, RcaTimelineEvent, RiskRegisterItem, Stats } from './types';
@@ -18,10 +19,11 @@ const EMPTY_STATS: Stats = {
 
 export function loadIncidents() {
   return envelope<Incident[]>(async () => {
+    await ensureIncidentOtherDetail();
     const { rows } = await query<Incident>(`
       SELECT i.id, i.ir_code, i.occurred_at, i.title, i.description,
              i.unit_id, u.name_th AS unit_name,
-             i.category, i.severity, i.rca_status, i.reported_by
+             i.category, i.other_detail, i.severity, i.rca_status, i.reported_by
       FROM incidents i
       LEFT JOIN units u ON u.id = i.unit_id
       ORDER BY i.occurred_at DESC

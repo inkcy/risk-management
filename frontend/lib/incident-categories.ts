@@ -31,3 +31,9 @@ export const categoryLabel: Record<string, string> = Object.fromEntries(
 export function incidentRiskGroup(category: string): IncidentRiskGroup | '' {
   return incidentCategoryGroups.find(group => group.categories.some(item => item.value === category))?.value ?? '';
 }
+
+export function incidentCategoryParts(category: string, otherDetail?: string | null): { group: string; subtype: string } {
+  const group = incidentCategoryGroups.find(item => item.categories.some(entry => entry.value === category));
+  const subtype = group?.categories.find(item => item.value === category)?.label ?? category;
+  return { group: group?.label ?? 'ไม่ระบุ', subtype: category === 'other' && otherDetail?.trim() ? `อื่นๆ · ${otherDetail.trim()}` : subtype };
+}

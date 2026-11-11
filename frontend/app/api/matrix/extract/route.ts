@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { extractSpreadsheetText } from '@/lib/matrixSpreadsheet';
 import { calculateMatrix, type MatrixOptions } from '@/lib/matrix-analysis';
+import { consumeMatrixUpload } from '@/lib/matrixUploads';
+import { extractUnitRisks } from '@/lib/unitRiskImport';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -10,16 +12,27 @@ export async function POST(request: NextRequest) {
   const auth = await requireRole('viewer');
   if (!auth.ok) return auth.response;
   if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'คำขอไม่ถูกต้อง' }, { status: 403 });
-  const key = process.env.GEMINI_API_KEY?.trim();
-  if (!key) return NextResponse.json({ error: 'ยังไม่ได้เปิดบริการ AI สำหรับอ่านไฟล์ กรุณาติดต่อผู้ดูแลระบบ' }, { status: 503 });
   try {
-    const form = await request.formData();
-    const file = form.get('file');
-    const options = JSON.parse(String(form.get('options') || '{}')) as MatrixOptions;
-    if (!(file instanceof File) || !file.size || file.size > 3 * 1024 * 1024) return NextResponse.json({ error: 'กรุณาเลือกไฟล์ขนาดไม่เกิน 3 MB' }, { status: 400 });
-    const data = Buffer.from(await file.arrayBuffer());
+    let filename: string;
+    let data: Buffer;
+    let options: MatrixOptions;
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      const body = await request.json();
+      const uploaded = await consumeMatrixUpload(String(body.uploadId ?? ''), auth.user.id);
+      filename = uploaded.filename; data = uploaded.data; options = body.options;
+    } else {
+      const form = await request.formData();
+      const file = form.get('file');
+      options = JSON.parse(String(form.get('options') || '{}')) as MatrixOptions;
+      if (!(file instanceof File) || !file.size || file.size > 3 * 1024 * 1024) return NextResponse.json({ error: 'กรุณาเลือกไฟล์ขนาดไม่เกิน 3 MB' }, { status: 400 });
+      filename = file.name; data = Buffer.from(await file.arrayBuffer());
+    }
+    const wordExtension = /\.(docx?)$/i.exec(filename)?.[1]?.toLowerCase();
+    if (wordExtension) return NextResponse.json(await extractUnitRisks(data, wordExtension), { headers: { 'Cache-Control': 'no-store' } });
+    const key = process.env.GEMINI_API_KEY?.trim();
+    if (!key) return NextResponse.json({ error: 'ยังไม่ได้เปิดบริการ AI สำหรับอ่านไฟล์ กรุณาติดต่อผู้ดูแลระบบ' }, { status: 503 });
     let part: object;
-    if (/\.xlsx$/i.test(file.name)) {
+    if (/\.xlsx$/i.test(filename)) {
       part = { text: await extractSpreadsheetText(data) };
     } else {
       const png = data.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));

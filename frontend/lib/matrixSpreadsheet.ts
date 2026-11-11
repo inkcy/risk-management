@@ -21,7 +21,7 @@ export async function extractSpreadsheetText(buffer: Buffer): Promise<string> {
     if (typeof length !== 'number') throw new Error('ไฟล์ Excel ไม่ถูกต้อง');
     size += length;
   }
-  if (size > 8_000_000) throw new Error('ตาราง Excel มีขนาดข้อมูลใหญ่เกินไป');
+  if (size > 32_000_000) throw new Error('ตาราง Excel มีขนาดข้อมูลใหญ่เกินไป');
   const sharedEntry = zip.file('xl/sharedStrings.xml');
   const sharedXml = sharedEntry ? await sharedEntry.async('string') : '';
   const shared = [...sharedXml.matchAll(/<(?:\w+:)?si(?:\s[^>]*)?>([\s\S]*?)<\/(?:\w+:)?si>/g)].map(match => textContent(match[1]));

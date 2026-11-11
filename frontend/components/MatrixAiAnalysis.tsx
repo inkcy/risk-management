@@ -21,8 +21,39 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
     setFileBusy(true); setFileWarnings([]); setItems([]); setRows([]); setAdvice([]); setTreatments([]); setMessage('กำลังอ่านไฟล์…');
     try {
       const wordFile = /\.docx?$/i.test(file.name);
-      const form = new FormData(); form.set('file', file); form.set('options', JSON.stringify(options));
-      const response = await fetch(wordFile ? '/api/unit-risks/extract' : '/api/matrix/extract', { method: 'POST', body: form });
+      if (!file.size || file.size > 20 * 1024 * 1024) throw new Error('กรุณาเลือกไฟล์ขนาดไม่เกิน 20 MB');
+      let uploadFile = file;
+      if (!wordFile && !/\.xlsx$/i.test(file.name) && file.size > 3 * 1024 * 1024) {
+        const { prepareLessonImage } = await import('@/lib/lessonImage');
+        const encoded = await prepareLessonImage(file);
+        const [header, base64] = encoded.split(',');
+        const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+        const type = /^data:([^;]+);base64$/.exec(header)?.[1] ?? 'image/webp';
+        uploadFile = new File([bytes], file.name, { type });
+      }
+      let response: Response;
+      if (uploadFile.size > 3 * 1024 * 1024) {
+        const start = await fetch('/api/matrix/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: uploadFile.name, size: uploadFile.size }) });
+        const init = await start.json();
+        if (!start.ok) throw new Error(init.error || 'เริ่มอัปโหลดไม่สำเร็จ');
+        const uploadId = String(init.id);
+        try {
+          const chunkSize = Number(init.chunkSize);
+          if (!Number.isSafeInteger(chunkSize) || chunkSize < 1 || chunkSize > 512 * 1024) throw new Error('ขนาดส่วนไฟล์ไม่ถูกต้อง');
+          for (let offset = 0; offset < uploadFile.size; offset += chunkSize) {
+            setMessage(`กำลังอัปโหลด ${Math.min(100, Math.round(offset / uploadFile.size * 100))}%`);
+            const chunk = await fetch('/api/matrix/uploads', { method: 'PUT', headers: { 'Content-Type': 'application/octet-stream', 'X-Upload-Id': uploadId, 'X-Upload-Offset': String(offset) }, body: uploadFile.slice(offset, offset + chunkSize) });
+            if (!chunk.ok) { const failure = await chunk.json(); throw new Error(failure.error || 'อัปโหลดไฟล์ไม่สำเร็จ'); }
+          }
+          setMessage('กำลังอ่านไฟล์…');
+          response = await fetch('/api/matrix/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uploadId, options }) });
+        } finally {
+          await fetch(`/api/matrix/uploads?id=${encodeURIComponent(uploadId)}`, { method: 'DELETE' }).catch(() => {});
+        }
+      } else {
+        const form = new FormData(); form.set('file', uploadFile); form.set('options', JSON.stringify(options));
+        response = await fetch(wordFile ? '/api/unit-risks/extract' : '/api/matrix/extract', { method: 'POST', body: form });
+      }
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'อ่านไฟล์ไม่สำเร็จ');
       const parsed: MatrixInput[] = [];
@@ -99,19 +130,19 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
           <label>ไตรมาส<select value={options.quarter} onChange={e=>{setOptions({...options,quarter:Number(e.target.value)});invalidate();}}>{[1,2,3,4].map(q=><option key={q} value={q}>ไตรมาส {q}</option>)}</select></label>
         </div>
         <label style={{display:'block',marginTop:12}}>หน่วยงาน / ชื่อรายงานสำหรับไฟล์ Word<input value={unitName} maxLength={200} onChange={e=>setUnitName(e.target.value)} placeholder="ระบุหน่วยงาน"/></label>
-        <label style={{display:'block',marginTop:16}}>นำเข้าไฟล์ Risk Profile (.doc, .docx, .xlsx หรือรูป JPG, PNG, WebP)
-          <input type="file" accept=".doc,.docx,.xlsx,image/jpeg,image/png,image/webp" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void readRiskFile(file);}} />
-        </label>
-        <p style={{fontSize:13,color:'var(--text2)'}}>ไฟล์ Word ไม่เกิน 5 MB · Excel และรูปภาพไม่เกิน 3 MB ระบบส่งข้อมูลไปยังบริการ AI เพื่ออ่านและวิเคราะห์ กรุณาตรวจทานผล</p>
-        {fileBusy && <p role="status">กำลังอ่านและวิเคราะห์ไฟล์…</p>}
-        {fileWarnings.map((warning,index)=><p key={index} role="alert">{warning}</p>)}
         <label style={{display:'block',marginTop:16}}>ตารางนำเข้า (เรื่อง · เรื่องย่อย · ความรุนแรง · ความถี่)
           <textarea rows={7} style={{width:'100%',marginTop:8}} value={text} onChange={e=>{setText(e.target.value);setItems([]);invalidate();}} placeholder="วางตารางจาก Excel หรือรูปแบบ | เรื่อง | เรื่องย่อย | ความรุนแรง | ความถี่ |" maxLength={50000}/>
         </label>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:12}}>
+          <label className="tb-btn tb-btn-ghost" style={{cursor:'pointer',position:'relative'}}>＋ เพิ่มไฟล์
+            <input aria-label="เพิ่มไฟล์ Risk Profile" type="file" accept=".doc,.docx,.xlsx,image/jpeg,image/png,image/webp" style={{position:'absolute',width:1,height:1,opacity:0,overflow:'hidden'}} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void readRiskFile(file);}} />
+          </label>
           <button type="button" className="tb-btn tb-btn-ghost" onClick={()=>{setText(example);setItems([]);invalidate();}}>ใช้ตัวอย่าง CPE405 / CPP401</button>
-          <button type="button" className="tb-btn tb-btn-primary" onClick={prepare} disabled={!text.trim()}>{busy?'AI กำลังวิเคราะห์…':aiEnabled?'วิเคราะห์และเติมมาตรการด้วย AI':'อ่านตารางและคำนวณ'}</button>
+          <button type="button" className="tb-btn tb-btn-primary" style={{marginLeft:'auto'}} onClick={prepare} disabled={!text.trim()}>{busy?'AI กำลังวิเคราะห์…':aiEnabled?'วิเคราะห์ด้วย AI':'อ่านตารางและคำนวณ'}</button>
         </div>
+        <p style={{fontSize:13,color:'var(--text2)',marginTop:10}}>รองรับ Word, Excel (.xlsx) และรูป JPG, PNG, WebP ขนาดไม่เกิน 20 MB รูปภาพขนาดใหญ่จะปรับขนาดก่อนส่ง ระบบส่งข้อมูลไปยังบริการ AI เพื่ออ่านและวิเคราะห์ กรุณาตรวจทานผล</p>
+        {fileBusy && <p role="status">กำลังอ่านและวิเคราะห์ไฟล์…</p>}
+        {fileWarnings.map((warning,index)=><p key={index} role="alert">{warning}</p>)}
         {!!items.length&&<><div style={{overflowX:'auto',marginTop:16}}><table className="data-table"><thead><tr><th>เรื่อง</th><th>เรื่องย่อย</th><th>ความรุนแรง</th><th>ความถี่</th></tr></thead><tbody>{items.map((item,index)=><tr key={index}><td>{item.title}</td><td>{item.subtopic||'—'}</td><td><input aria-label={`ความรุนแรงรายการ ${index+1}`} value={item.severity} maxLength={3} style={{width:70}} onChange={e=>{setItems(items.map((row,i)=>i===index?{...row,severity:e.target.value.toUpperCase()}:row));invalidate();}}/></td><td><input aria-label={`ความถี่รายการ ${index+1}`} type="number" min={options.basis==='level'?1:0} max={options.basis==='level'?5:10000000} value={item.frequency} style={{width:90}} onChange={e=>{setItems(items.map((row,i)=>i===index?{...row,frequency:Number(e.target.value)}:row));invalidate();}}/></td></tr>)}</tbody></table></div>
         </>}
       </fieldset>

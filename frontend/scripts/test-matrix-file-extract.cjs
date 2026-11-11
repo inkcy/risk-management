@@ -27,6 +27,8 @@ function load(file, mocks, extra = {}) {
     'next/server': { NextResponse: { json } },
     '@/lib/auth': { requireRole: async () => role ? { ok: true, user: { id: 1 } } : { ok: false, response: json({}, { status: 401 }) } },
     '@/lib/matrixSpreadsheet': { extractSpreadsheetText },
+    '@/lib/matrixUploads': { consumeMatrixUpload: async () => ({ filename: 'risk.xlsx', data: workbook }) },
+    '@/lib/unitRiskImport': { extractUnitRisks: async () => ({ items: [] }) },
     '@/lib/matrix-analysis': { calculateMatrix: items => { if (!Array.isArray(items) || items.some(item => !Number.isInteger(item.frequency))) throw new Error('invalid'); } },
   }, { fetch: async (_url, options) => { modelPart = JSON.parse(options.body).contents[0].parts[1]; return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ items: [{ title: 'ความเสี่ยง', subtopic: '', severity: 'E', frequency: 2 }], warnings: [] }) }] } }] }) }; } });
   process.env.GEMINI_API_KEY = 'test-only';
@@ -37,6 +39,8 @@ function load(file, mocks, extra = {}) {
   role = 'viewer';
   assert.equal((await module.POST(request(new File([workbook], 'risk.xlsx')))).status, 200);
   assert.ok(modelPart.text.includes('ความเสี่ยง & งาน'));
+  const uploadRequest = { headers: new Headers({ origin: 'https://example.test', 'content-type': 'application/json' }), nextUrl: { origin: 'https://example.test' }, json: async () => ({ uploadId: 'test', options }) };
+  assert.equal((await module.POST(uploadRequest)).status, 200);
   const image = new File([Buffer.from([137,80,78,71,13,10,26,10,1,2])], 'risk.png', { type: 'image/png' });
   assert.equal((await module.POST(request(image))).status, 200);
   assert.equal(modelPart.inlineData.mimeType, 'image/png');

@@ -6,4 +6,6 @@ export async function ensureSupervisorCredentials() {
     password_hash TEXT NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`);
+  await query('ALTER TABLE risk_unit_supervisors ADD COLUMN IF NOT EXISTS reviewer_password_hash TEXT');
+  await query('ALTER TABLE risk_unit_supervisors ALTER COLUMN password_hash DROP NOT NULL');
 }

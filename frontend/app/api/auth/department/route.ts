@@ -50,17 +50,18 @@ export async function POST(request: NextRequest) {
     const adminUnit = unit.name.trim().toLowerCase() === 'admin';
     const adminPassword = adminUnit && password !== 'QSMH' && await checkUnitPassword(password, unit.password_hash);
     if (adminUnit && !adminPassword) return await fail(id);
-    const supervisorRecord = !adminUnit && password !== 'QSMH' ? (await client.query<{ password_hash: string }>('SELECT password_hash FROM risk_unit_supervisors WHERE unit_id=$1 FOR SHARE', [id])).rows[0] : undefined;
-    const supervisorPassword = !!supervisorRecord && await checkUnitPassword(password, supervisorRecord.password_hash);
+    const supervisorRecord = !adminUnit && password !== 'QSMH' ? (await client.query<{ password_hash: string | null; reviewer_password_hash: string | null }>('SELECT password_hash, reviewer_password_hash FROM risk_unit_supervisors WHERE unit_id=$1 FOR SHARE', [id])).rows[0] : undefined;
+    const supervisorPassword = !!supervisorRecord?.password_hash && await checkUnitPassword(password, supervisorRecord.password_hash);
+    const reviewerPassword = !!supervisorRecord?.reviewer_password_hash && await checkUnitPassword(password, supervisorRecord.reviewer_password_hash);
     const accessCode = password.trim();
     const devPassword = unit.name === 'dev' && await checkUnitPassword(password, unit.password_hash);
-    const credential = accessCode && password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
+    const credential = accessCode && password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword && !reviewerPassword ? (await client.query<{ id:number;display_name:string;password_hash:string;active:boolean }>(
       'SELECT id,display_name,password_hash,active FROM department_login_codes WHERE code_lookup=$1 FOR UPDATE',
       [departmentCodeLookup(accessCode,process.env.SESSION_SECRET ?? '')],
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
-    } else if (password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword) {
+    } else if (password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword && !reviewerPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);
     }
@@ -71,11 +72,11 @@ export async function POST(request: NextRequest) {
        ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()
        RETURNING id,email,name,picture,role,active`,
       [`admin-unit-${id}@units.invalid`, unit.name],
-    ) : supervisorPassword ? await client.query<SessionUser & { active: boolean }>(
+    ) : supervisorPassword || reviewerPassword ? await client.query<SessionUser & { active: boolean }>(
       `INSERT INTO users (email,name,role,last_login_at) VALUES ($1,$2,'editor',now())
        ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()
        RETURNING id,email,name,picture,role,active`,
-      [`supervisor-${id}@units.invalid`, unit.name],
+      [reviewerPassword && !supervisorPassword ? `supervisor-reviewer-${id}@units.invalid` : `supervisor-${id}@units.invalid`, unit.name],
     ) : credential ? await client.query<SessionUser & { active: boolean }>(
       `INSERT INTO users (email,name,role,last_login_at) VALUES ($1,$2,'editor',now())
        ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name,last_login_at=now()

@@ -17,7 +17,7 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
     try {
       const response = await fetch('/api/risk-units', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(data.entries())) });
       const body = await response.json(); if (!response.ok) throw new Error(body.error || 'บันทึกไม่สำเร็จ');
-      form.reset(); setNotice('สร้างบัญชีหน่วยงานแล้ว'); router.refresh();
+      form.reset(); setNotice('เพิ่มหน่วยงานแล้ว'); router.refresh();
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
   async function resetPassword(event: FormEvent<HTMLFormElement>) {
@@ -62,16 +62,15 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
       setNotice('ปฏิเสธคำขอแล้ว'); router.refresh();
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
-  return <details className="card" style={{ marginBottom: 16, padding: 16 }}><summary>จัดการบัญชี Risk Profile {pending.length > 0 && `· คำขอรออนุมัติ ${pending.length} รายการ`}</summary>
+  return <details className="card" style={{ marginBottom: 16, padding: 16 }}><summary>จัดการหน่วยงาน Risk Profile {pending.length > 0 && `· คำขอรออนุมัติ ${pending.length} รายการ`}</summary>
     {pending.length > 0 && <div style={{ marginTop: 16 }}><strong>คำขอรออนุมัติ ({pending.length})</strong>
       {pending.map(unit => <div key={unit.id} className="unit-risk-list-item"><span>{unit.name} · {unit.username}<br /><small>ผู้ขอ: {unit.requester || 'ไม่ทราบ'}</small></span><div style={{ display: 'flex', gap: 8 }}><button type="button" className="tb-btn tb-btn-primary" disabled={busy} onClick={() => approve(unit.id)}>อนุมัติ</button><button type="button" className="tb-btn tb-btn-ghost" disabled={busy} onClick={() => reject(unit.id)}>ปฏิเสธ</button></div></div>)}
     </div>}
     <form className="survey-form" onSubmit={submit} style={{ marginTop: 12 }}>
-      <label>ชื่อหน่วยงาน<select name="name" required defaultValue=""><option value="" disabled>เลือกหน่วยงาน</option>{riskUnitDirectory.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-      <label>ชื่อผู้ใช้<input name="username" required minLength={3} maxLength={64} pattern="[A-Za-z0-9._-]+" autoComplete="off" /></label>
+      <label>ชื่อหน่วยงาน<input name="name" list="risk-unit-names" required maxLength={255} placeholder="เลือกหรือพิมพ์ชื่อหน่วยงานใหม่" autoComplete="off" /><datalist id="risk-unit-names">{Array.from(new Set(['admin', ...riskUnitDirectory, ...units.map(unit => unit.name)])).map(name => <option key={name} value={name} />)}</datalist></label>
       <label>รหัสผ่าน<input name="password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /><small>อย่างน้อย 7 ตัวอักษร</small></label>
       {error && <p className="announcement-error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
-      <button className="tb-btn tb-btn-primary" type="submit" disabled={busy}>{busy ? 'กำลังสร้าง…' : 'สร้างบัญชี'}</button>
+      <button className="tb-btn tb-btn-primary" type="submit" disabled={busy}>{busy ? 'กำลังเพิ่ม…' : 'เพิ่มหน่วยงาน'}</button>
     </form>
     {units.length > 0 && <form className="survey-form" onSubmit={renameUnit} style={{ marginTop: 20 }}>
       <strong>แก้ไขชื่อหน่วยงาน</strong>
@@ -81,7 +80,7 @@ export function RiskUnitAdmin({ units, pending }: { units: { id: number; name: s
     </form>}
     {units.length > 0 && <form className="survey-form" onSubmit={resetPassword} style={{ marginTop: 20 }}>
       <strong>เปลี่ยนรหัสผ่านหน่วยงาน</strong>
-      <label>หน่วยงาน<select name="id" required>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name} ({unit.username})</option>)}</select></label>
+      <label>หน่วยงาน<select name="id" required>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label>
       <label>รหัสผ่านใหม่<input name="password" type="password" required minLength={7} maxLength={128} autoComplete="new-password" /></label>
       {passwordError && <p className="announcement-error" role="alert">{passwordError}{loginRequired && <> <a href="/login?next=%2Frisk-profile">เข้าสู่ระบบอีกครั้ง</a></>}</p>}
       <button className="tb-btn tb-btn-ghost" disabled={busy} type="submit">เปลี่ยนรหัสผ่าน</button>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { audit, requireRole } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { hashUnitPassword } from '@/lib/riskUnitAuth';
-import { riskUnitDirectory } from '@/lib/riskUnitDirectory';
+import { randomUUID } from 'node:crypto';
 
 export async function GET() {
   const auth = await requireRole('admin'); if (!auth.ok) return auth.response;
@@ -14,14 +14,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
     const name = typeof body.name === 'string' ? body.name.trim() : '';
-    const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
+    const username = `unit-${randomUUID()}`;
     const password = typeof body.password === 'string' ? body.password : '';
-    if (!riskUnitDirectory.some(unit => unit === name) || !/^[a-z0-9._-]{3,64}$/.test(username) || password.length < 7 || password.length > 128) return NextResponse.json({ error: 'กรุณาเลือกหน่วยงาน ชื่อผู้ใช้ต้องเป็น a-z, 0-9 หรือ ._- และรหัสผ่านต้องมี 7–128 ตัวอักษร' }, { status: 400 });
+    if (!name || name.length > 255 || password.length < 7 || password.length > 128) return NextResponse.json({ error: 'กรุณาระบุชื่อหน่วยงานไม่เกิน 255 ตัวอักษร และรหัสผ่านต้องมี 7–128 ตัวอักษร' }, { status: 400 });
     const { rows } = await query<{ id: number }>('INSERT INTO risk_units (name, username, password_hash) VALUES ($1,$2,$3) RETURNING id', [name, username, await hashUnitPassword(password)]);
     await audit(auth.user, 'risk_unit.create', 'risk_unit', rows[0].id, { name, username });
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
-    if ((err as { code?: string }).code === '23505') return NextResponse.json({ error: 'ชื่อหน่วยงานหรือชื่อผู้ใช้นี้มีอยู่แล้ว' }, { status: 409 });
+    if ((err as { code?: string }).code === '23505') return NextResponse.json({ error: 'ชื่อหน่วยงานนี้มีอยู่แล้ว' }, { status: 409 });
     console.error('risk unit create failed:', err); return NextResponse.json({ error: 'สร้างบัญชีไม่สำเร็จ' }, { status: 500 });
   }
 }

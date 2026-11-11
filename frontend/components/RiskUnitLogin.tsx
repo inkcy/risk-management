@@ -31,8 +31,8 @@ export function RiskUnitLogin() {
     </div>
     {notice && <p role="status" style={{ marginBottom: 12, color: 'var(--green)' }}>{notice}</p>}
     {mode === 'login' ? <form className="survey-form" onSubmit={login}>
-      <p>ใช้ชื่อผู้ใช้และรหัสผ่านหน่วยงานที่ผู้ดูแลระบบกำหนด</p>
-      <label>ชื่อผู้ใช้หน่วยงาน<input name="username" required autoComplete="username" /></label>
+      <p>ใช้ชื่อหน่วยงานและรหัสผ่านที่ผู้ดูแลระบบกำหนด</p>
+      <label>ชื่อหน่วยงาน<input name="name" required maxLength={255} autoComplete="username" /></label>
       <label>รหัสผ่านหน่วยงาน<input name="password" type="password" required autoComplete="current-password" /></label>
       {error && <p className="announcement-error" role="alert">{error}</p>}
       <button className="tb-btn tb-btn-primary" type="submit" disabled={busy}>{busy ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบหน่วยงาน'}</button>

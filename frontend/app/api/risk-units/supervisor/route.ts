@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { audit, requireRole } from '@/lib/auth';
 import { getPool } from '@/lib/db';
-import { hashUnitPassword } from '@/lib/riskUnitAuth';
+import { checkUnitPassword, hashUnitPassword } from '@/lib/riskUnitAuth';
 import { ensureSupervisorCredentials } from '@/lib/supervisorCredentials';
 
 export async function POST(request: NextRequest) {
@@ -11,22 +11,31 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const id = Number(body.unit_id);
+    const slot = body.slot === undefined ? 'supervisor' : body.slot;
     const password = typeof body.password === 'string' ? body.password : '';
-    if (!Number.isSafeInteger(id) || id < 1 || password.length < 7 || password.length > 128 || password.trim() !== password || password === 'QSMH') return NextResponse.json({ error: 'รหัสหัวหน้าต้องมี 7–128 ตัวอักษรและไม่ใช่รหัสกลาง' }, { status: 400 });
+    if (!Number.isSafeInteger(id) || id < 1 || !['supervisor', 'reviewer'].includes(slot) || password.length < 7 || password.length > 128 || password.trim() !== password || password === 'QSMH') return NextResponse.json({ error: 'รหัสต้องมี 7–128 ตัวอักษรและไม่ใช่รหัสกลาง' }, { status: 400 });
     await ensureSupervisorCredentials();
     const passwordHash = await hashUnitPassword(password);
     const client = await getPool().connect();
     try {
     await client.query('BEGIN');
-    const result = await client.query(`INSERT INTO risk_unit_supervisors (unit_id,password_hash)
+    const column = slot === 'reviewer' ? 'reviewer_password_hash' : 'password_hash';
+    const result = await client.query(`INSERT INTO risk_unit_supervisors (unit_id,${column})
       SELECT id,$2 FROM risk_units WHERE id=$1 AND active AND lower(trim(name)) <> 'admin'
-      ON CONFLICT (unit_id) DO UPDATE SET password_hash=EXCLUDED.password_hash,updated_at=now() RETURNING unit_id`, [id, passwordHash]);
+      ON CONFLICT (unit_id) DO UPDATE SET ${column}=EXCLUDED.${column},updated_at=now() RETURNING unit_id`, [id, passwordHash]);
     if (!result.rowCount) { await client.query('ROLLBACK'); return NextResponse.json({ error: 'ไม่พบหน่วยงาน' }, { status: 404 }); }
-    await client.query('DELETE FROM risk_unit_sessions WHERE user_id IN (SELECT id FROM users WHERE email=$1)', [`supervisor-${id}@units.invalid`]);
-    await client.query('DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE email=$1)', [`supervisor-${id}@units.invalid`]);
+    const otherColumn = slot === 'reviewer' ? 'password_hash' : 'reviewer_password_hash';
+    const other = await client.query<{ password_hash: string | null }>(`SELECT ${otherColumn} AS password_hash FROM risk_unit_supervisors WHERE unit_id=$1`, [id]);
+    if (other.rows[0]?.password_hash && await checkUnitPassword(password, other.rows[0].password_hash)) {
+      await client.query('ROLLBACK');
+      return NextResponse.json({ error: 'รหัสหัวหน้าและผู้ตรวจต้องแตกต่างกัน' }, { status: 400 });
+    }
+    const email = slot === 'reviewer' ? `supervisor-reviewer-${id}@units.invalid` : `supervisor-${id}@units.invalid`;
+    await client.query('DELETE FROM risk_unit_sessions WHERE user_id IN (SELECT id FROM users WHERE email=$1)', [email]);
+    await client.query('DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE email=$1)', [email]);
     await client.query('COMMIT');
     } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
-    await audit(auth.user, 'risk_unit.supervisor_password', 'risk_unit', id);
+    await audit(auth.user, 'risk_unit.supervisor_password', 'risk_unit', id, { slot });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('supervisor setup failed', error);

@@ -113,6 +113,23 @@ export default function ReportPage() {
     }
   };
 
+  const exportForm = async () => {
+    try {
+      const { exportReportXlsx } = await import('@/lib/exportReport');
+      const group = incidentCategoryGroups.find(item => item.value === form.risk_group);
+      const category = group?.categories.find(item => item.value === form.category);
+      await exportReportXlsx([
+        ['วันที่เกิดเหตุ', form.occurred_at], ['เวลา (ประเทศไทย)', form.time],
+        ['หน่วยงาน', units.find(unit => unit.code === form.unit)?.label ?? form.unit],
+        ['ด้านความเสี่ยง', group?.label ?? ''], ['ประเภทความเสี่ยง', category?.label ?? ''],
+        ['ระดับความรุนแรง', form.severity], ['รายละเอียดเหตุการณ์', form.description],
+        ['การดำเนินการเบื้องต้น', form.immediate_action],
+      ]);
+    } catch {
+      setStatus('error'); setMessage('ส่งออกข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.occurred_at || !form.unit || !form.category || !form.severity || !form.description.trim()) {
@@ -262,6 +279,7 @@ export default function ReportPage() {
                 {status === 'submitting' ? 'กำลังบันทึก...' : 'บันทึกรายงาน'}
               </button>
               <button type="button" className="tb-btn tb-btn-ghost" onClick={saveDraft}>บันทึกร่าง</button>
+              <button type="button" className="tb-btn tb-btn-ghost" onClick={exportForm}>ส่งออกข้อมูลในฟอร์ม Excel (.xlsx)</button>
             </div>
             {status === 'success' && (
               <div style={{

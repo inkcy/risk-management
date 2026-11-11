@@ -12,9 +12,37 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
   const [options, setOptions] = useState<MatrixOptions>({ type: 'clinical', basis: 'quarter', year: Number(today.slice(0,4)) + 543 + (month >= 10 ? 1 : 0), quarter: Math.floor(((month + 2) % 12) / 3) + 1 });
   const [text,setText] = useState(''), [items,setItems] = useState<MatrixInput[]>([]), [rows,setRows] = useState<MatrixResult[]>([]);
   const [advice,setAdvice] = useState<MatrixAdvice[]>([]), [message,setMessage] = useState(''), [busy,setBusy] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [fileWarnings, setFileWarnings] = useState<string[]>([]);
   const [treatments,setTreatments] = useState<MatrixTreatment[]>([]), [unitName,setUnitName] = useState(profileUnitName === 'ทุกหน่วยงานที่มีสิทธิ์ดู' ? '' : profileUnitName), [exporting,setExporting] = useState(false);
   const patchTreatment = (id:number, patch:Partial<MatrixTreatment>) => setTreatments(previous => previous.map(item => item.id === id ? {...item,...patch} : item));
   const invalidate = () => { setRows([]); setAdvice([]); setTreatments([]); setMessage(''); };
+  async function readRiskFile(file: File) {
+    setFileBusy(true); setFileWarnings([]); setItems([]); setRows([]); setAdvice([]); setTreatments([]); setMessage('กำลังอ่านไฟล์…');
+    try {
+      const form = new FormData(); form.set('file', file);
+      const response = await fetch('/api/unit-risks/extract', { method: 'POST', body: form });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'อ่านไฟล์ไม่สำเร็จ');
+      const parsed: MatrixInput[] = [];
+      for (const item of result.items as { title: string; levels: string }[]) {
+        for (const level of item.levels.split(', ')) {
+          const match = /^([A-I])\s+(\d+)$/.exec(level.trim());
+          if (!match) throw new Error('ไม่สามารถอ่านระดับความรุนแรงจากไฟล์ กรุณาตรวจสอบ');
+          parsed.push({ title: item.title, subtopic: '', severity: match[1], frequency: Number(match[2]) });
+        }
+      }
+      if (!parsed.length || parsed.length > 50) throw new Error('รองรับครั้งละ 1–50 รายการหลังแยกระดับความรุนแรง');
+      const nextOptions: MatrixOptions = { ...options, type: 'clinical', basis: 'quarter', year: result.year ?? options.year, quarter: result.quarter ?? options.quarter };
+      const matrix = calculateMatrix(parsed, nextOptions);
+      setOptions(nextOptions); setUnitName(result.unitName ?? unitName); setItems(parsed);
+      setText('รหัส: เรื่อง\tเรื่องย่อย\tความรุนแรง\tความถี่\n' + parsed.map(item => [item.title.replace(/\s+/g, ' '), item.subtopic, item.severity, item.frequency].join('\t')).join('\n'));
+      setRows(matrix); setTreatments(normalizeTreatments(matrix.map(row => row.id), [])); setAdvice([]);
+      setFileWarnings(Array.isArray(result.warnings) ? result.warnings : []);
+      await analyze(parsed, nextOptions);
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'อ่านไฟล์ไม่สำเร็จ'); }
+    finally { setFileBusy(false); }
+  }
   async function prepare() {
     try {
       const parsed = parseMatrixTable(text);
@@ -59,7 +87,7 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
     <div className="card-header"><div><h2 className="card-title">วิเคราะห์ตารางความเสี่ยงด้วย AI</h2><p className="announcement-subtitle">วางตารางจาก Excel หรือข้อความ เมื่ออ่านตารางแล้ว AI จะประเมินและเติมมาตรการให้อัตโนมัติ</p></div></div>
     <div className="card-body">
       {!aiEnabled&&<p role="status" style={{marginBottom:12,color:'var(--text2)'}}>คำนวณ Risk Matrix ได้ตามปกติ ส่วนการวิเคราะห์ด้วย AI จะใช้งานได้เมื่อผู้ดูแลระบบเปิดบริการ AI</p>}
-      <fieldset disabled={busy||exporting} style={{border:0,padding:0,minWidth:0}}>
+      <fieldset disabled={busy||exporting||fileBusy} style={{border:0,padding:0,minWidth:0}}>
         {profileOptions&&<div style={{marginBottom:16}}><button type="button" className="tb-btn tb-btn-primary" disabled={!profileItems.length||profileItems.length>50} onClick={useProfileRows}>นำรายการตามตัวกรองด้านบนมาใช้ ({profileItems.length} รายการ)</button>{profileItems.length>50&&<p>กรุณากรองให้เหลือไม่เกิน 50 รายการต่อการวิเคราะห์หนึ่งครั้ง</p>}</div>}
         <div className="risk-assessment-fields">
           <label>ประเภท<select value={options.type} onChange={e=>{setOptions({...options,type:e.target.value as MatrixOptions['type']});invalidate();}}><option value="clinical">ด้านคลินิก (A–I)</option><option value="nonclinical">ด้านทั่วไป (1–5)</option></select></label>
@@ -68,6 +96,11 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
           <label>ไตรมาส<select value={options.quarter} onChange={e=>{setOptions({...options,quarter:Number(e.target.value)});invalidate();}}>{[1,2,3,4].map(q=><option key={q} value={q}>ไตรมาส {q}</option>)}</select></label>
         </div>
         <label style={{display:'block',marginTop:12}}>หน่วยงาน / ชื่อรายงานสำหรับไฟล์ Word<input value={unitName} maxLength={200} onChange={e=>setUnitName(e.target.value)} placeholder="ระบุหน่วยงาน"/></label>
+        <label style={{display:'block',marginTop:16}}>นำเข้าไฟล์ Risk Profile (.doc หรือ .docx ไม่เกิน 5 MB)
+          <input type="file" accept=".doc,.docx" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void readRiskFile(file);}} />
+        </label>
+        {fileBusy && <p role="status">กำลังอ่านและวิเคราะห์ไฟล์…</p>}
+        {fileWarnings.map((warning,index)=><p key={index} role="alert">{warning}</p>)}
         <label style={{display:'block',marginTop:16}}>ตารางนำเข้า (เรื่อง · เรื่องย่อย · ความรุนแรง · ความถี่)
           <textarea rows={7} style={{width:'100%',marginTop:8}} value={text} onChange={e=>{setText(e.target.value);setItems([]);invalidate();}} placeholder="วางตารางจาก Excel หรือรูปแบบ | เรื่อง | เรื่องย่อย | ความรุนแรง | ความถี่ |" maxLength={50000}/>
         </label>

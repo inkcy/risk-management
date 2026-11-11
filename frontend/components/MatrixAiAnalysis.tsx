@@ -20,20 +20,23 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
   async function readRiskFile(file: File) {
     setFileBusy(true); setFileWarnings([]); setItems([]); setRows([]); setAdvice([]); setTreatments([]); setMessage('กำลังอ่านไฟล์…');
     try {
-      const form = new FormData(); form.set('file', file);
-      const response = await fetch('/api/unit-risks/extract', { method: 'POST', body: form });
+      const wordFile = /\.docx?$/i.test(file.name);
+      const form = new FormData(); form.set('file', file); form.set('options', JSON.stringify(options));
+      const response = await fetch(wordFile ? '/api/unit-risks/extract' : '/api/matrix/extract', { method: 'POST', body: form });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'อ่านไฟล์ไม่สำเร็จ');
       const parsed: MatrixInput[] = [];
-      for (const item of result.items as { title: string; levels: string }[]) {
-        for (const level of item.levels.split(', ')) {
-          const match = /^([A-I])\s+(\d+)$/.exec(level.trim());
-          if (!match) throw new Error('ไม่สามารถอ่านระดับความรุนแรงจากไฟล์ กรุณาตรวจสอบ');
-          parsed.push({ title: item.title, subtopic: '', severity: match[1], frequency: Number(match[2]) });
+      if (wordFile) {
+        for (const item of result.items as { title: string; levels: string }[]) {
+          for (const level of item.levels.split(', ')) {
+            const match = /^([A-I])\s+(\d+)$/.exec(level.trim());
+            if (!match) throw new Error('ไม่สามารถอ่านระดับความรุนแรงจากไฟล์ กรุณาตรวจสอบ');
+            parsed.push({ title: item.title, subtopic: '', severity: match[1], frequency: Number(match[2]) });
+          }
         }
-      }
+      } else parsed.push(...result.items);
       if (!parsed.length || parsed.length > 50) throw new Error('รองรับครั้งละ 1–50 รายการหลังแยกระดับความรุนแรง');
-      const nextOptions: MatrixOptions = { ...options, type: 'clinical', basis: 'quarter', year: result.year ?? options.year, quarter: result.quarter ?? options.quarter };
+      const nextOptions: MatrixOptions = wordFile ? { ...options, type: 'clinical', basis: 'quarter', year: result.year ?? options.year, quarter: result.quarter ?? options.quarter } : options;
       const matrix = calculateMatrix(parsed, nextOptions);
       setOptions(nextOptions); setUnitName(result.unitName ?? unitName); setItems(parsed);
       setText('รหัส: เรื่อง\tเรื่องย่อย\tความรุนแรง\tความถี่\n' + parsed.map(item => [item.title.replace(/\s+/g, ' '), item.subtopic, item.severity, item.frequency].join('\t')).join('\n'));
@@ -96,9 +99,10 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
           <label>ไตรมาส<select value={options.quarter} onChange={e=>{setOptions({...options,quarter:Number(e.target.value)});invalidate();}}>{[1,2,3,4].map(q=><option key={q} value={q}>ไตรมาส {q}</option>)}</select></label>
         </div>
         <label style={{display:'block',marginTop:12}}>หน่วยงาน / ชื่อรายงานสำหรับไฟล์ Word<input value={unitName} maxLength={200} onChange={e=>setUnitName(e.target.value)} placeholder="ระบุหน่วยงาน"/></label>
-        <label style={{display:'block',marginTop:16}}>นำเข้าไฟล์ Risk Profile (.doc หรือ .docx ไม่เกิน 5 MB)
-          <input type="file" accept=".doc,.docx" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void readRiskFile(file);}} />
+        <label style={{display:'block',marginTop:16}}>นำเข้าไฟล์ Risk Profile (.doc, .docx, .xlsx หรือรูป JPG, PNG, WebP)
+          <input type="file" accept=".doc,.docx,.xlsx,image/jpeg,image/png,image/webp" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void readRiskFile(file);}} />
         </label>
+        <p style={{fontSize:13,color:'var(--text2)'}}>ไฟล์ Word ไม่เกิน 5 MB · Excel และรูปภาพไม่เกิน 3 MB ระบบส่งข้อมูลไปยังบริการ AI เพื่ออ่านและวิเคราะห์ กรุณาตรวจทานผล</p>
         {fileBusy && <p role="status">กำลังอ่านและวิเคราะห์ไฟล์…</p>}
         {fileWarnings.map((warning,index)=><p key={index} role="alert">{warning}</p>)}
         <label style={{display:'block',marginTop:16}}>ตารางนำเข้า (เรื่อง · เรื่องย่อย · ความรุนแรง · ความถี่)

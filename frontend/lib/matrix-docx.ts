@@ -29,7 +29,7 @@ function fill(cell: Element, value: string, centered = false, font = 'Cordia New
   const props = property(paragraph, 'pPr');
   for (const name of ['jc', 'ind', 'rPr', 'spacing']) children(props,name).forEach(node=>props.removeChild(node));
   props.appendChild(element(doc,'jc',{val:centered?'center':'left'}));
-  props.appendChild(element(doc,'spacing',{before:'0',after:'0'}));
+  props.appendChild(element(doc,'spacing',{before:'0',after:'0',line:'240',lineRule:'auto'}));
   props.appendChild(element(doc,'snapToGrid',{val:'0'}));
   const run = element(doc,'r'), runProps = element(doc,'rPr');
   runProps.appendChild(element(doc,'rFonts',{ascii:font,hAnsi:font,cs:font}));
@@ -45,7 +45,10 @@ function fill(cell: Element, value: string, centered = false, font = 'Cordia New
   children(cellProps,'tcMar').forEach(node=>cellProps.removeChild(node));
   const margins=element(doc,'tcMar');
   margins.appendChild(element(doc,'left',{w:centered?'10':'45',type:'dxa'}));
-  margins.appendChild(element(doc,'right',{w:centered?'10':'45',type:'dxa'}));cellProps.appendChild(margins);
+  margins.appendChild(element(doc,'right',{w:centered?'10':'45',type:'dxa'}));
+  margins.appendChild(element(doc,'top',{w:'45',type:'dxa'}));
+  margins.appendChild(element(doc,'bottom',{w:'45',type:'dxa'}));cellProps.appendChild(margins);
+  property(cellProps,'vAlign').setAttributeNS(ns,'w:val',centered?'center':'top');
 }
 function span(cell: Element, widths: number[]) {
   const props=property(cell,'tcPr');
@@ -92,6 +95,10 @@ export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTr
       const cell=baseCells[index].cloneNode(true) as Element;fill(cell,value,centered,font,size);result.appendChild(cell);return cell;
     };
     const content = matrixReportContent(row, item, notes.find(note => note.id === row.id));
+    // Keep ordinary records together. Oversized records must still be able to flow.
+    const fields: [string, number][] = [[content.title,35],[content.measures,30],[content.reviewFrequency,10]];
+    const estimatedLines = Math.max(...fields.map(([text,width])=>text.split('\n').reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/width)),0)));
+    if(estimatedLines<=18)rowProps.appendChild(element(doc,'cantSplit'));
     append(0,content.title);
     append(1,String(row.frequency),true,'Arial',16);
     const range=row.severity.toUpperCase().split(/[–-]/), start=labels.indexOf(range[0]), end=labels.indexOf(range.at(-1)!);

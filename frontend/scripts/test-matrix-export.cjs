@@ -35,6 +35,15 @@ const payload={items,options,treatments:treatment,unitName:'ห้องฉุ�
  assert.ok(emptyXml.includes('ติดตาม:'));
  assert.ok(emptyXml.includes('ข้อเสนอมาตรการ (รอยืนยัน)'));
  assert.ok(!emptyXml.includes('มาตรการปัจจุบัน:'));
+ const recordRows=[...emptyXml.matchAll(/<w:tr(?: [^>]*)?>([\s\S]*?)<\/w:tr>/g)].slice(5,7);
+ assert.equal(recordRows.length,2);
+ for(const record of recordRows)assert.ok(record[1].includes('<w:cantSplit'), 'ordinary records stay on one page');
+ assert.ok(emptyXml.includes('w:line="240" w:lineRule="auto"'));
+ assert.ok(emptyXml.includes('w:vAlign w:val="top"'));
+ const oversizedArchive=await JSZip.loadAsync(await buildMatrixDocx([rows[0]],[{...treatment[0],measures:'ข้อความยาวสำหรับตรวจการแบ่งหน้าที่ปลอดภัย '.repeat(100)}],options,'ทดสอบ'));
+ const oversizedXml=await oversizedArchive.file('word/document.xml').async('string');
+ const oversizedRecord=[...oversizedXml.matchAll(/<w:tr(?: [^>]*)?>([\s\S]*?)<\/w:tr>/g)][5][1];
+ assert.ok(!oversizedRecord.includes('<w:cantSplit'), 'oversized records can flow without clipping');
  assert.ok(xml.includes('w:orient="landscape"'));assert.ok(xml.includes('00B050'));assert.ok(xml.includes('FF0000'));assert.ok((xml.match(/w:tblHeader/g)||[]).length>=3);assert.equal((xml.match(/<w:tbl>/g)||[]).length,2);
  assert.equal((await api.POST({text:async()=>JSON.stringify({...payload,treatments:[treatment[0],treatment[0]]})})).status,400);assert.equal(builds,1);
  // Frequency is repeated as a count in its severity column; only color and response cells use ticks.

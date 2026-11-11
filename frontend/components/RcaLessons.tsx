@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RcaLesson } from '@/lib/rcaLessons';
+import { prepareLessonImage } from '@/lib/lessonImage';
 
 export function RcaLessons({ lessons, years, canEdit }: { lessons: RcaLesson[]; years: number[]; canEdit: boolean }) {
   const router = useRouter();
@@ -36,13 +37,7 @@ export function RcaLessons({ lessons, years, canEdit }: { lessons: RcaLesson[]; 
     try {
       let image = '';
       if (file instanceof File && file.size) {
-        if (file.size > 2 * 1024 * 1024 || !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw new Error('กรุณาเลือกรูป JPG, PNG หรือ WebP ไม่เกิน 2 MB');
-        image = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error('อ่านรูปไม่สำเร็จ'));
-          reader.readAsDataURL(file);
-        });
+        image = await prepareLessonImage(file);
       }
       const year = String(fields.get('year') ?? '').trim();
       const response = await fetch('/api/rca-lessons', { method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editing?.id, title: fields.get('title'), image, year: year ? Number(year) : null }) });
@@ -83,7 +78,7 @@ export function RcaLessons({ lessons, years, canEdit }: { lessons: RcaLesson[]; 
       <label>หัวข้อ<input name="title" required maxLength={250} defaultValue={editing?.title ?? ''} /></label>
       <label>ปี พ.ศ. <input name="year" type="number" min={2400} max={2800} defaultValue={editing ? editing.year ?? '' : new Date().getFullYear() + 543} placeholder="ไม่ระบุปี" /></label>
       <label>{editing ? 'เปลี่ยนรูปภาพ (เลือกเมื่อต้องการเปลี่ยน)' : 'รูปภาพ'}<input name="image" type="file" accept="image/png,image/jpeg,image/webp" required={!editing} /></label>
-      <p>รองรับ JPG, PNG และ WebP ขนาดไม่เกิน 2 MB</p>
+      <p>รองรับ JPG, PNG และ WebP ขนาดไม่เกิน 20 MB รูปขนาดใหญ่จะปรับขนาดอัตโนมัติก่อนบันทึก</p>
       <div style={{ display: 'flex', gap: 8 }}><button className="tb-btn tb-btn-primary" disabled={busy}>บันทึก</button><button className="tb-btn tb-btn-ghost" type="button" disabled={busy} onClick={() => { setEditing(null); setAdding(false); setError(''); }}>ยกเลิก</button></div>
     </form>}
     {error && <p className="announcement-error" role="alert">{error}</p>}

@@ -34,6 +34,10 @@ export async function middleware(request: NextRequest) {
     return nextWithPath();
   }
 
+  // The safety route verifies the session and role against the database itself.
+  // Keep that check authoritative for background sync and writes.
+  if (pathname === '/api/safety') return nextWithPath();
+
   const sessionId = await verifyValue(request.cookies.get(SESSION_COOKIE)?.value);
   if (sessionId) return nextWithPath();
 

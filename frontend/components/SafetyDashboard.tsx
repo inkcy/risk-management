@@ -120,6 +120,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
   const [mode,setMode]=useState<PeriodMode>('year'),[year,setYear]=useState(Math.max(2568,...(initial.years??[])));
   const [group,setGroup]=useState(initial.indicators[0].group),[editing,setEditing]=useState(false),[saving,setSaving]=useState(false),[message,setMessage]=useState('');
   const [syncError,setSyncError]=useState(''),[newerRevision,setNewerRevision]=useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [newIndicatorName, setNewIndicatorName] = useState('');
   useEffect(()=>{
     let active=true;
@@ -131,8 +132,10 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       try{
         const response=await fetch('/api/safety',{cache:'no-store',signal:controller.signal});
         const latest=await response.json();
+        if (response.status === 401) { if (active) setSessionExpired(true); throw new Error('เซสชันหมดอายุหรือไม่สามารถยืนยันตัวตนได้'); }
         if(!response.ok)throw new Error(latest.error||'โหลดข้อมูลกลางไม่สำเร็จ');
         if(!active)return;
+        setSessionExpired(false);
         setSyncError('');
         if(editing){setNewerRevision(latest.revision!==revision);return;}
         setData(latest.data);setDraft(latest.data);setRevision(latest.revision);setNewerRevision(false);
@@ -221,6 +224,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     try {
       const response=await fetch('/api/safety',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:draft,revision})});
       const result=await response.json();
+      if(response.status===401){setSessionExpired(true);throw new Error('เซสชันหมดอายุหรือไม่สามารถยืนยันตัวตนได้');}
       if(response.status===409)setNewerRevision(true);
       if(!response.ok) throw new Error(result.error||'บันทึกไม่สำเร็จ กรุณาลองอีกครั้ง');
       setData(draft);setRevision(result.revision);setEditing(false);
@@ -234,6 +238,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
       {loadError&&<p role="alert">{loadError}</p>}{message&&<p role="status" style={{marginBottom:16}}>{message}</p>}
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:12}}>ข้อมูลชุดกลางร่วมกันสำหรับแอดมินทุกคน · อัปเดตอัตโนมัติทุก 15 วินาที · การแก้ไขจะเผยแพร่เมื่อกดบันทึกทั้งหมด</p>
       {syncError&&<p role="alert">ยังยืนยันข้อมูลล่าสุดไม่ได้: {syncError}</p>}
+      {sessionExpired&&<p role="alert">กรุณาเข้าสู่ระบบอีกครั้ง{editing?' โปรดคัดลอกข้อมูลที่กำลังแก้ไขไว้ก่อน':''} <a href="/login?next=%2Fdashboard">เข้าสู่ระบบ</a></p>}
       {newerRevision&&editing&&<p role="alert">มีแอดมินคนอื่นบันทึกข้อมูลใหม่แล้ว ระบบเก็บสิ่งที่คุณกำลังแก้ไขไว้และจะไม่บันทึกทับข้อมูลใหม่ กรุณาคัดลอกสิ่งที่ต้องการเก็บก่อน <button type="button" className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>{setEditing(false);setMessage('กำลังโหลดข้อมูลกลางล่าสุด');}}>ยกเลิกการแก้ไขและโหลดข้อมูลล่าสุด</button></p>}
       {canEdit && <details style={{marginBottom:16}}><summary>กู้คืนตัวชี้วัดที่ลบ ({recoverable.length})</summary>
         {!recoverable.length && <p>ไม่มีตัวชี้วัดที่กู้คืนได้</p>}

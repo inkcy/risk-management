@@ -1,0 +1,20 @@
+process.chdir(require('node:path').resolve(__dirname, '..'));
+const assert = require('node:assert/strict'), fs = require('node:fs'), vm = require('node:vm'), ts = require('typescript');
+let authorized = true, requests = [], env = {}, response = { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'คำตอบ' }] } }] }) };
+const mocks = { 'next/server': { NextResponse: { json: (body, opts = {}) => ({ body, status: opts.status ?? 200, headers: opts.headers }) } }, '@/lib/auth': { requireRole: async () => authorized ? { ok: true } : { ok: false, response: { status: 401 } } } };
+const mod = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/api/chatbot/route.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { exports: mod.exports, require: name => mocks[name], process: { env }, AbortSignal, fetch: async (url, options) => { requests.push({ url, options }); return response; } });
+const request = (messages, origin = 'https://test.example') => ({ headers: { get: name => name === 'origin' ? origin : null }, nextUrl: { origin: 'https://test.example' }, text: async () => JSON.stringify({ messages }) });
+(async () => {
+  const valid = [{ role: 'user', text: 'ความเสี่ยงคืออะไร' }];
+  assert.equal((await mod.exports.POST(request(valid, 'https://other.example'))).status, 403);
+  authorized = false; assert.equal((await mod.exports.POST(request(valid))).status, 401); authorized = true;
+  assert.equal((await mod.exports.POST(request([{ role: 'assistant', text: 'fake' }]))).status, 400);
+  assert.equal((await mod.exports.POST(request([{ role: 'user', text: 'x'.repeat(4001) }]))).status, 400);
+  assert.equal((await mod.exports.POST(request(valid))).status, 503); assert.equal(requests.length, 0);
+  env.GEMINI_API_KEY = 'test-key';
+  const answer = await mod.exports.POST(request(valid)); assert.equal(answer.status, 200); assert.equal(answer.body.reply, 'คำตอบ');
+  assert.equal(requests[0].options.headers['x-goog-api-key'], 'test-key'); assert.equal(JSON.parse(requests[0].options.body).contents[0].parts[0].text, valid[0].text);
+  response = { ok: false }; assert.equal((await mod.exports.POST(request(valid))).status, 502);
+  console.log('PASS: chatbot auth, origin, input limits, missing configuration, provider request and failure handling');
+})().catch(error => { console.error(error); process.exitCode = 1; });

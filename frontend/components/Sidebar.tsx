@@ -31,6 +31,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
       { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA 5 Tier' },
       { href: '/risk-profile', icon: '▤', label: 'Risk Profile' },
       { href: '/smart-risk-profile', icon: '◈', label: 'Smart Risk Profile' },
+      { href: '/chatbot', icon: '✦', label: 'Chatbot' },
     ],
   },
   {

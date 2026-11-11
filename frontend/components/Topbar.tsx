@@ -13,6 +13,7 @@ const titles: Record<string, [string, string]> = {
   '/rca': ['การวิเคราะห์ RCA 5 Tier', 'วิเคราะห์สาเหตุและติดตามมาตรการ'],
   '/risk-profile': ['Risk Profile', 'ทะเบียนความเสี่ยงองค์กร'],
   '/smart-risk-profile': ['Smart Risk Profile', 'ภาพรวมและลำดับความสำคัญของความเสี่ยง'],
+  '/chatbot': ['Chatbot', 'ผู้ช่วยตอบคำถามด้านบริหารความเสี่ยง'],
   '/actions': ['บทเรียนจาก RCA', 'ติดตามความคืบหน้า'],
   '/report': ['E-SAFE · รายงานอุบัติการณ์ใหม่', 'Just Culture · Patient Safety First'],
   '/culture': ['HSCS', 'HRO · Safety Culture · System Thinking'],

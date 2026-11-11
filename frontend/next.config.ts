@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    '/api/matrix/export': ['./templates/risk-profile-form.docx'],
+    '/api/matrix/export-pdf': ['./public/risk-profile/risk-profile-form.pdf', './public/fonts/Sarabun-Regular.ttf'],
+  },
   async headers() {
     return [
       {

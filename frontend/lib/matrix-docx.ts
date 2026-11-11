@@ -1,74 +1,137 @@
-import { AlignmentType, BorderStyle, Document, HeadingLevel, Packer, PageOrientation, Paragraph, Table, TableCell, TableLayoutType, TableRow, TextRun, WidthType } from 'docx';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import JSZip from 'jszip';
+import { DOMParser, XMLSerializer, type Element, type Document } from '@xmldom/xmldom';
 import type { MatrixOptions, MatrixResult } from './matrix-analysis';
 import type { MatrixExportNote, MatrixTreatment } from './matrix-treatment';
-import { thaiDateTime } from './thai-date-time';
 
-const font = 'Tahoma';
-const fills = { green: 'BCEAD0', yellow: 'FFF0A6', orange: 'FFC18C', red: 'FF9EAB' };
-const width = 15360;
-function paragraph(text: string, bold = false, centered = false, size = 22) {
-  return new Paragraph({ alignment: centered ? AlignmentType.CENTER : AlignmentType.LEFT, spacing: { before: 0, after: 80 }, children: [new TextRun({ text, bold, size, font, color: '000000' })] });
+const ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const children = (parent: Element, name: string) => Array.from(parent.childNodes).filter(node => node.nodeType === 1 && node.localName === name && node.namespaceURI === ns) as Element[];
+const first = (parent: Element, name: string) => children(parent, name)[0];
+function element(doc: Document, name: string, attrs: Record<string, string> = {}) {
+  const node = doc.createElementNS(ns, `w:${name}`);
+  Object.entries(attrs).forEach(([key, value]) => node.setAttributeNS(ns, `w:${key}`, value));
+  return node;
 }
-function cell(text: string, size: number, header = false, span = 1, fill?: string, centered = false) {
-  return new TableCell({ width: { size, type: WidthType.DXA }, columnSpan: span, shading: header || fill ? { fill: fill || 'D9D9D9' } : undefined, margins: { top: 90, bottom: 90, left: 90, right: 90 }, children: text.split('\n').map(line => paragraph(line, header, header || centered, header ? 14 : 20)) });
+function property(parent: Element, name: string) {
+  const existing = first(parent, name);
+  if (existing) return existing;
+  const node = element(parent.ownerDocument!, name); parent.insertBefore(node, parent.firstChild); return node;
 }
-const borders = Object.fromEntries(['top','bottom','left','right','insideHorizontal','insideVertical'].map(edge => [edge, { style: BorderStyle.SINGLE, size: 4, color: '606060' }]));
-function table(widths: number[], rows: TableRow[]) {
-  return new Table({ width: { size: width, type: WidthType.DXA }, columnWidths: widths, layout: TableLayoutType.FIXED, borders, rows });
+function fill(cell: Element, value: string, centered = false, font = 'Cordia New', size = 28) {
+  const doc = cell.ownerDocument!;
+  const original = first(cell, 'p');
+  const paragraph = original ? original.cloneNode(true) as Element : element(doc, 'p');
+  Array.from(paragraph.childNodes).forEach(node => { if (node.nodeType !== 1 || node.localName !== 'pPr') paragraph.removeChild(node); });
+  const props = property(paragraph, 'pPr');
+  for (const name of ['jc', 'ind', 'rPr', 'spacing']) children(props,name).forEach(node=>props.removeChild(node));
+  props.appendChild(element(doc,'jc',{val:centered?'center':'left'}));
+  props.appendChild(element(doc,'spacing',{before:'0',after:'0'}));
+  props.appendChild(element(doc,'snapToGrid',{val:'0'}));
+  const run = element(doc,'r'), runProps = element(doc,'rPr');
+  runProps.appendChild(element(doc,'rFonts',{ascii:font,hAnsi:font,cs:font}));
+  runProps.appendChild(element(doc,'sz',{val:String(size)})); runProps.appendChild(element(doc,'szCs',{val:String(size)}));
+  run.appendChild(runProps);
+  value.split('\n').forEach((line,index)=>{
+    if(index)run.appendChild(element(doc,'br'));
+    const text=element(doc,'t');text.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');text.appendChild(doc.createTextNode(line));run.appendChild(text);
+  });
+  paragraph.appendChild(run);
+  children(cell,'p').forEach(node=>cell.removeChild(node));cell.appendChild(paragraph);
+  const cellProps=property(cell,'tcPr');
+  children(cellProps,'tcMar').forEach(node=>cellProps.removeChild(node));
+  const margins=element(doc,'tcMar');
+  margins.appendChild(element(doc,'left',{w:centered?'10':'45',type:'dxa'}));
+  margins.appendChild(element(doc,'right',{w:centered?'10':'45',type:'dxa'}));cellProps.appendChild(margins);
 }
-export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string, notes: MatrixExportNote[] = []) {
-  const severityLabels = options.type === 'clinical' ? ['A','B','C','D','E','F','G','H','I'] : ['1','2','3','4','5'];
-  const severityWidth = options.type === 'clinical' ? 300 : 540;
-  const widths = [2600, 650, ...severityLabels.map(() => severityWidth), 300, 300, 300, 300, 700, 700, 700, 4510, 1600];
-  const sum = (from: number, count: number) => widths.slice(from, from + count).reduce((total, value) => total + value, 0);
-  const colorStart = 2 + severityLabels.length;
-  const responseStart = colorStart + 4;
-  const colors = ['green','yellow','orange','red'] as const;
-  const summary = table(widths, [
-    new TableRow({ tableHeader: true, cantSplit: true, children: [
-      cell('การระบุความเสี่ยง (Risk Identification)',sum(0,colorStart),true,colorStart),
-      cell('การวิเคราะห์ความเสี่ยง (Risk Analysis)',sum(colorStart,4),true,4),
-      cell('การจัดการความเสี่ยง (Risk Treatment)',sum(responseStart,4),true,4),
-      cell('Risk Monitoring & Review',widths.at(-1)!,true),
-    ] }),
-    new TableRow({ tableHeader: true, cantSplit: true, children: [
-      cell('ประเภทความเสี่ยง',widths[0],true),cell('ความถี่',widths[1],true),
-      cell('ความรุนแรง (Impact)',sum(2,severityLabels.length),true,severityLabels.length),
-      cell('ระดับความเสี่ยง',sum(colorStart,4),true,4),
-      cell('การตอบสนองความเสี่ยง',sum(responseStart,3),true,3),
-      cell('มาตรการป้องกัน/การแก้ไข',widths[responseStart+3],true),
-      cell('ความถี่ในการทบทวน (Review Frequency)',widths.at(-1)!,true),
-    ] }),
-    new TableRow({ tableHeader: true, cantSplit: true, children: [
-      cell('',widths[0],true),cell('',widths[1],true),
-      ...severityLabels.map((label,index)=>cell(label,widths[2+index],true)),
-      ...colors.map((color,index)=>cell('',widths[colorStart+index],false,1,fills[color],true)),
-      ...['Transfer &\nPrevention','Monitor &\nControl','Mitigation'].map((label,index)=>cell(label,widths[responseStart+index],true)),
-      cell('',widths[responseStart+3],true),cell('',widths.at(-1)!,true),
-    ] }),
-    ...rows.map(row => {
-      const item = treatments.find(item => item.id === row.id)!;
-      const severity = row.severity.replace(/\s/g, '').toUpperCase();
-      const selectedSeverity = severityLabels.indexOf(severity);
-      const severityText = selectedSeverity < 0 ? severity : '';
-      const measure = `${item.confirmedCurrent ? '' : '[ร่าง] '}${item.measures || 'ยังไม่ระบุมาตรการ'}`;
-      return new TableRow({ children: [
-        cell(row.title + (row.subtopic ? '\n'+row.subtopic : ''),widths[0]),cell(String(row.frequency),widths[1],false,1,undefined,true),
-        ...severityLabels.map((label,index)=>cell(index===selectedSeverity?'✓':index===0?severityText:'',widths[2+index],false,1,undefined,true)),
-        ...colors.map((color,index)=>cell(row.color===color?'✓':'',widths[colorStart+index],false,1,fills[color],true)),
-        ...[item.transferPrevention,item.monitorControl,item.mitigation].map((selected,index)=>cell(selected?'✓':'',widths[responseStart+index],false,1,undefined,true)),
-        cell(measure,widths[responseStart+3]),cell(item.reviewFrequency||'ยังไม่ระบุ',widths.at(-1)!),
-      ] });
-    }),
-  ]);
-  const basis = options.basis === 'quarter' ? 'จำนวนครั้งในไตรมาส (แปลงเป็นอัตราต่อปีก่อนจัดระดับโอกาสเกิด)' : options.basis === 'year' ? 'จำนวนครั้งต่อปี' : 'ระดับโอกาสเกิด 1–5';
-  const doc = new Document({ creator: 'Hospital Risk Management', title: 'รายงานการประเมินและจัดการความเสี่ยง', styles: { default: { document: { run: { font, size: 28 }, paragraph: { spacing: { after: 80 } } } } }, sections: [{ properties: { page: { size: { width: 11906, height: 16838, orientation: PageOrientation.LANDSCAPE }, margin: { top: 650, bottom: 650, left: 739, right: 739 } } }, children: [
-    new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun({ text: 'รายงานการประเมินและจัดการความเสี่ยง', font, size: 40, bold: true, color: '000000' })] }),
-    paragraph(`หน่วยงาน: ${unitName || 'ยังไม่ระบุ'}    ปีงบประมาณ ${options.year}    ไตรมาส ${options.quarter}    ด้าน${options.type === 'clinical' ? 'คลินิก' : 'ทั่วไป'}`),
-    paragraph(`วันที่ส่งออก ${thaiDateTime().occurred_at}    เกณฑ์ความถี่: ${basis}`),
-    paragraph('คะแนน = ผลกระทบ × ระดับโอกาสเกิด สีประเมินตามตารางโรงพยาบาล ไม่ได้แบ่งจากช่วงคะแนน'),
-    summary,
-    paragraph('ข้อเสนอจาก AI เป็นร่าง โปรดทบทวนและยืนยันมาตรการก่อนนำไปใช้'),
-  ] }] });
-  return Packer.toBuffer(doc);
+function span(cell: Element, widths: number[]) {
+  const props=property(cell,'tcPr');
+  children(props,'gridSpan').forEach(node=>props.removeChild(node));
+  property(props,'tcW').setAttributeNS(ns,'w:w',String(widths.reduce((sum,width)=>sum+width,0)));
+  if(widths.length>1)props.appendChild(element(cell.ownerDocument!,'gridSpan',{val:String(widths.length)}));
+}
+
+/** Fill a copy of the user's Word form; all other ZIP members stay unchanged. */
+export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string, _notes: MatrixExportNote[] = []) {
+  const zip=await JSZip.loadAsync(await readFile(path.join(process.cwd(),'templates/risk-profile-form.docx')));
+  const source=await zip.file('word/document.xml')!.async('string');
+  const doc=new DOMParser().parseFromString(source,'application/xml');
+  const body=doc.getElementsByTagNameNS(ns,'body')[0];
+  const [heading,table]=children(body,'tbl');
+  const headingRows=children(heading,'tr');
+  const months=[['ตุลาคม','ธันวาคม'],['มกราคม','มีนาคม'],['เมษายน','มิถุนายน'],['กรกฎาคม','กันยายน']][options.quarter-1];
+  const metadata=first(headingRows[1],'tc');
+  fill(metadata,`ชื่อหน่วยงาน ${unitName || 'ยังไม่ระบุ'}    ไตรมาสที่ ${options.quarter} (เดือน${months[0]}–เดือน${months[1]}) ประจำปีงบประมาณ ${options.year}`,true,'Cordia New',28);
+  const templateRows=children(table,'tr'), original=templateRows[4].cloneNode(true) as Element;
+  const baseCells=children(original,'tc');
+  const widths=children(first(table,'tblGrid'),'gridCol').map(node=>Number(node.getAttributeNS(ns,'w')));
+  const clinical=options.type==='clinical';
+  const labels=clinical?['A','B','C','D','E','F','G','H','I']:['1','2','3','4','5'];
+  const groups=clinical?labels.map((_,i)=>[i]):[[0,1],[2,3],[4,5],[6,7],[8]];
+  if(!clinical){
+    const header=templateRows[2], cells=children(header,'tc');
+    groups.forEach((group,index)=>{
+      const cell=cells[2+group[0]].cloneNode(true) as Element;
+      span(cell,group.map(i=>widths[2+i]));fill(cell,labels[index],true,'Arial',16);header.insertBefore(cell,cells[2]);
+    });
+    cells.slice(2,11).forEach(cell=>header.removeChild(cell));
+  }
+  templateRows.slice(3).forEach(row=>table.removeChild(row));
+  for(const row of rows){
+    const item=treatments.find(item=>item.id===row.id);
+    if(!item)throw new Error('ข้อมูลการจัดการความเสี่ยงไม่ครบ');
+    const result=original.cloneNode(true) as Element;
+    children(result,'tc').forEach(cell=>result.removeChild(cell));
+    // Let long rows flow over a page, avoiding clipped paragraphs.
+    const rowProps=property(result,'trPr');children(rowProps,'cantSplit').forEach(node=>rowProps.removeChild(node));
+    const append=(index:number,value:string,centered=false,font='Cordia New',size=28)=>{
+      const cell=baseCells[index].cloneNode(true) as Element;fill(cell,value,centered,font,size);result.appendChild(cell);return cell;
+    };
+    append(0,[row.title,row.subtopic].filter(Boolean).join('\n'));
+    append(1,String(row.frequency),true,'Arial',16);
+    const range=row.severity.toUpperCase().split(/[–-]/), start=labels.indexOf(range[0]), end=labels.indexOf(range.at(-1)!);
+    if(start<0||end<start)throw new Error('ระดับความรุนแรงไม่ตรงกับแบบฟอร์ม');
+    for(let i=0;i<labels.length;i++){
+      const selected=i===start;
+      const covered=selected?groups.slice(start,end+1).flat():groups[i];
+      const cell=append(2+covered[0],selected?String(row.frequency):'',true,'Arial',16);
+      span(cell,covered.map(index=>widths[2+index]));
+      if(selected)i=end;
+    }
+    ['green','yellow','orange','red'].forEach((color,index)=>append(11+index,row.color===color?'✓':'',true,'Segoe UI Symbol',20));
+    [item.transferPrevention,item.monitorControl,item.mitigation].forEach((selected,index)=>append(15+index,selected?'✓':'',true,'Segoe UI Symbol',20));
+    append(18,item.measures.replace(/\[\s*ร่าง\s*\]\s*/gu, '').trim() || 'ยังไม่ระบุมาตรการ');
+    append(19,item.reviewFrequency || 'ยังไม่ระบุ');
+    table.appendChild(result);
+  }
+  // Repeat the source title and metadata with its table headers, leaving room for the logo on every page.
+  const anchor=children(table,'tr')[0];
+  for(const row of headingRows){
+    const copy=row.cloneNode(true) as Element;
+    span(first(copy,'tc'),widths);
+    property(copy,'trPr').appendChild(element(doc,'tblHeader'));
+    table.insertBefore(copy,anchor);
+  }
+  body.removeChild(heading);
+  // Blank rows are source rows, not recreated styling. Keep a short single-page form filled out.
+  const estimatedLines=rows.reduce((sum,row)=>{
+    const item=treatments.find(item=>item.id===row.id)!;
+    return sum+Math.max(1,[row.title,row.subtopic].filter(Boolean).join('\n').split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil(line.length/40)),0),(item.confirmedCurrent?0:1)+item.measures.split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil((line.length+6)/30)),0),Math.ceil(item.reviewFrequency.length/17));
+  },0);
+  for(let i=estimatedLines;i<12;i++){
+    const blank=original.cloneNode(true) as Element;
+    if(!clinical){
+      const cells=children(blank,'tc');
+      groups.forEach(group=>{const cell=cells[2+group[0]].cloneNode(true) as Element;span(cell,group.map(i=>widths[2+i]));blank.insertBefore(cell,cells[2]);});
+      cells.slice(2,11).forEach(cell=>blank.removeChild(cell));
+    }
+    table.appendChild(blank);
+  }
+  // Keep the signature block attached to the last table row on continuation pages.
+  const lastRow=children(table,'tr').at(-1)!;
+  Array.from(lastRow.getElementsByTagNameNS(ns,'p')).forEach(p=>property(p,'pPr').appendChild(element(doc,'keepNext')));
+  let following=table.nextSibling;
+  while(following && following.nodeType===1 && following.localName==='p'){property(following as Element,'pPr').appendChild(element(doc,'keepNext'));following=following.nextSibling;}
+  zip.file('word/document.xml',new XMLSerializer().serializeToString(doc));
+  return zip.generateAsync({type:'nodebuffer',compression:'DEFLATE'});
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { calculateMatrix, parseMatrixTable, type MatrixInput, type MatrixOptions, type MatrixResult } from '@/lib/matrix-analysis';
 import type { MatrixAdvice } from '@/lib/matrix-ai';
 import { thaiDateTime } from '@/lib/thai-date-time';
@@ -15,6 +15,16 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
   const [fileBusy, setFileBusy] = useState(false);
   const [fileWarnings, setFileWarnings] = useState<string[]>([]);
   const [treatments,setTreatments] = useState<MatrixTreatment[]>([]), [unitName,setUnitName] = useState(profileUnitName === 'ทุกหน่วยงานที่มีสิทธิ์ดู' ? '' : profileUnitName), [exporting,setExporting] = useState(false);
+  const exportActionsRef = useRef<HTMLDivElement>(null);
+  const [scrollToExport, setScrollToExport] = useState(false);
+  useEffect(() => {
+    if (!scrollToExport || busy || !exportActionsRef.current) return;
+    exportActionsRef.current.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    setScrollToExport(false);
+  }, [scrollToExport, busy]);
   const patchTreatment = (id:number, patch:Partial<MatrixTreatment>) => setTreatments(previous => previous.map(item => item.id === id ? {...item,...patch} : item));
   const invalidate = () => { setRows([]); setAdvice([]); setTreatments([]); setMessage(''); };
   async function readRiskFile(file: File) {
@@ -89,7 +99,7 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
     }
   }
   async function analyze(sourceItems: MatrixInput[] = items, sourceOptions: MatrixOptions = options) {
-    setBusy(true);setMessage('AI กำลังประเมินและเติมมาตรการอัตโนมัติ…');setAdvice([]);
+    setScrollToExport(false);setBusy(true);setMessage('AI กำลังประเมินและเติมมาตรการอัตโนมัติ…');setAdvice([]);
     try {
       const computed=calculateMatrix(sourceItems,sourceOptions);setRows(computed);setTreatments(previous=>normalizeTreatments(computed.map(row=>row.id),previous));
       if(!aiEnabled){setMessage('คำนวณ Risk Matrix แล้ว ส่วน AI ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');return;}
@@ -97,18 +107,19 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'วิเคราะห์ไม่สำเร็จ');
       setRows(result.rows);setAdvice(result.advice);
+      if (!result.aiError) setScrollToExport(true);
       setTreatments(previous=>applyMatrixAdvice(result.rows.map((row:MatrixResult)=>row.id),previous,result.advice));setMessage(result.aiError || 'AI ประเมินและเติมมาตรการ แนวทางตอบสนอง และรอบทบทวนในตารางแล้ว โดยคงข้อมูลที่กรอกไว้ โปรดตรวจสอบก่อนยืนยัน');
     } catch(error) { setMessage(error instanceof Error ? error.message : 'วิเคราะห์ไม่สำเร็จ'); }
     finally {setBusy(false);}
   }
-  async function exportDocx() {
+  async function exportReport(format: 'docx' | 'pdf') {
     setExporting(true);setMessage('');
     try {
-      const response=await fetch('/api/matrix/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,options,treatments,unitName,advice})});
+      const response=await fetch(format === 'pdf' ? '/api/matrix/export-pdf' : '/api/matrix/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,options,treatments,unitName,advice})});
       if(!response.ok){const error=await response.json();throw new Error(error.error||'ส่งออกไม่สำเร็จ');}
       const url=URL.createObjectURL(await response.blob());
-      const link=document.createElement('a');link.href=url;link.download=`Risk_Profile_${options.year}_Q${options.quarter}.docx`;document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
-      setMessage('ส่งออกไฟล์ Word แล้ว');
+      const link=document.createElement('a');link.href=url;link.download=`Risk_Profile_${options.year}_Q${options.quarter}.${format}`;document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+      setMessage(format === 'pdf' ? 'ส่งออก PDF ตามแบบฟอร์ม FM-QPS-QSH-001/04 แล้ว' : 'ส่งออกไฟล์ Word แล้ว');
     }catch(error){setMessage(error instanceof Error?error.message:'ส่งออกไม่สำเร็จ');}finally{setExporting(false);}
   }
   async function useProfileRows() {
@@ -150,9 +161,10 @@ export function MatrixAiAnalysis({aiEnabled,profileItems=[],profileOptions,profi
       {!!rows.length&&<><p style={{marginTop:16,color:'var(--text2)'}}>คะแนน = ผลกระทบ × ระดับโอกาสเกิด · สีตามตารางของโรงพยาบาล ไม่ได้แบ่งจากช่วงคะแนน{options.basis==='quarter'?' · จำนวนครั้งในไตรมาสแปลงเป็นอัตราต่อปีก่อนจัดระดับโอกาสเกิด เช่นเดียวกับ Smart Risk Profile':''}</p>
         <div style={{overflowX:'auto',marginTop:12}}><table className="data-table"><thead><tr><th>เรื่อง</th><th>ความรุนแรง</th><th>ผลกระทบ</th><th>โอกาสเกิด</th><th>คะแนน</th><th>ระดับความเสี่ยง</th><th>AI วิเคราะห์และข้อเสนอแนะ</th></tr></thead><tbody>{rows.map(row=>{const note=advice.find(item=>item.id===row.id);return <tr key={row.id}><td>{row.title}{row.subtopic&&<p>{row.subtopic}</p>}</td><td>{row.severity}</td><td>{row.impact}</td><td>{row.likelihood}</td><td>{row.score}</td><td><span className={`risk-color-${row.color}`} style={{display:'inline-block',padding:'6px 10px',borderRadius:8,color:'#172033',background:{green:'#bcead0',yellow:'#fff0a6',orange:'#ffc18c',red:'#ff9eab'}[row.color]}}>{row.level}</span></td><td style={{minWidth:260,whiteSpace:'pre-wrap'}}>{note?<><p>{note.analysis}</p><p><strong>มาตรการ: </strong>{note.actions}</p><p><strong>ติดตาม: </strong>{note.followUp}</p></>:'ยังไม่มีผลวิเคราะห์จาก AI'}</td></tr>;})}</tbody></table></div>
         <section className="matrix-treatment" aria-busy={busy} style={{marginTop:24}}>
-          <div style={{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',alignItems:'center'}}><h3>การจัดการความเสี่ยงและการติดตามทบทวน</h3><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button type="button" className="tb-btn tb-btn-ghost" disabled={busy||exporting} onClick={exportDocx}>{exporting?'กำลังสร้างไฟล์…':'Export Word (.docx)'}</button></div></div>
+          <h3>การจัดการความเสี่ยงและการติดตามทบทวน</h3>
           <p style={{color:'var(--text2)',margin:'10px 0'}}>AI จะประเมินและเติมแนวทางตอบสนอง มาตรการป้องกัน/แก้ไข และความถี่ทบทวนอัตโนมัติหลังอ่านตารางหรือนำรายการมาใช้ แก้ไขได้ก่อนยืนยันว่าเป็นมาตรการปัจจุบัน</p>
           <div style={{overflowX:'auto'}}><table className="data-table"><thead><tr><th>เรื่อง</th><th>Transfer &amp; Prevention</th><th>Monitor &amp; Control</th><th>Mitigation</th><th>มาตรการป้องกัน/การแก้ไข</th><th>ความถี่ในการทบทวน</th></tr></thead><tbody>{rows.map(row=>{const item=treatments.find(item=>item.id===row.id);if(!item)return null;return <tr key={row.id}><td style={{minWidth:180}}>{row.title}</td>{(['transferPrevention','monitorControl','mitigation'] as const).map((key,index)=><td key={key}><input type="checkbox" style={{width:'auto'}} disabled={busy||exporting} aria-label={`${['Transfer & Prevention','Monitor & Control','Mitigation'][index]} รายการ ${row.id}`} checked={item[key]} onChange={e=>patchTreatment(row.id,{[key]:e.target.checked})}/></td>)}<td style={{minWidth:340}}><textarea aria-label={`มาตรการรายการ ${row.id}`} rows={6} maxLength={5000} disabled={busy||exporting} value={item.measures} onChange={e=>patchTreatment(row.id,{measures:e.target.value})} placeholder="กรอกมาตรการป้องกัน/แก้ไข หรือแก้ไขข้อเสนอจาก AI"/><label style={{display:'flex',alignItems:'flex-start',gap:8,marginTop:8}}><input type="checkbox" style={{width:'auto',marginTop:5}} disabled={busy||exporting} checked={item.confirmedCurrent} onChange={e=>patchTreatment(row.id,{confirmedCurrent:e.target.checked})}/>ยืนยันว่าเป็นมาตรการที่ใช้อยู่ในปัจจุบัน</label></td><td style={{minWidth:170}}><input aria-label={`ความถี่ทบทวนรายการ ${row.id}`} list="matrix-review-periods" disabled={busy||exporting} maxLength={300} value={item.reviewFrequency} onChange={e=>patchTreatment(row.id,{reviewFrequency:e.target.value})} placeholder="เช่น ทุกเดือน"/></td></tr>;})}</tbody></table></div>
+          <div ref={exportActionsRef} role="group" aria-label="ส่งออกผลการวิเคราะห์" style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:20,scrollMarginTop:90}}><button type="button" className="tb-btn tb-btn-primary" disabled={busy||exporting} onClick={()=>exportReport('docx')}>{exporting?'กำลังสร้างไฟล์…':'ส่งออก Word ตามแบบฟอร์ม'}</button><button type="button" className="tb-btn tb-btn-ghost" disabled={busy||exporting} onClick={()=>exportReport('pdf')}>{exporting?'กำลังสร้างไฟล์…':'ส่งออก PDF ตามแบบฟอร์ม'}</button></div>
           {message&&<p role="status" style={{marginTop:12,whiteSpace:'pre-wrap'}}>{message}</p>}
           <datalist id="matrix-review-periods">{['ทุกสัปดาห์','ทุกเดือน','ทุกไตรมาส','ทุก 6 เดือน','ทุกปี','หลังเกิดเหตุทุกครั้ง'].map(period=><option key={period} value={period}/>)}</datalist>
         </section>

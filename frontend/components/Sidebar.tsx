@@ -29,7 +29,6 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
       { href: '/dashboard', icon: '⬡', label: 'แดชบอร์ด' },
       { href: '/incidents', icon: '⚠', label: 'อุบัติการณ์' },
       { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA' },
-      { href: '/rca/form', icon: '▤', label: 'แบบฟอร์ม RCA' },
       { href: '/risk-profile', icon: '▤', label: 'Risk Profile' },
       { href: '/smart-risk-profile', icon: '◈', label: 'Smart Risk Profile' },
     ],
@@ -56,7 +55,7 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const canEdit = user?.role === 'admin' || user?.role === 'editor';
   const isAdmin = user?.role === 'admin';
-  // เลือกเมนูที่ตรงกับ path มากที่สุด เพื่อไม่ให้ /rca และ /rca/form ถูกไฮไลต์พร้อมกัน
+  // เลือกเมนูที่ตรงกับ path มากที่สุด
   const matches = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
   const bestMatch = allHrefs.filter(matches).sort((a, b) => b.length - a.length)[0];
   const isActive = (href: string) => href === bestMatch;

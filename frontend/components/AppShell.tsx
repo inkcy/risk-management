@@ -10,7 +10,6 @@ export function AppShell({ user, children, selectedUnitName }: { user: SessionUs
   const pathname = usePathname();
 
   if (pathname === '/login') return <>{children}</>;
-  if (pathname === '/rca/form') return <main className="rca-standalone">{children}</main>;
 
   return (
     <>

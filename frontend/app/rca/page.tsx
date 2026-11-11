@@ -78,12 +78,6 @@ export default async function RcaPage({ searchParams }: { searchParams: Promise<
               ระดับ {incident.severity}
             </span>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <a
-                href={`/rca/form?ir=${encodeURIComponent(incident.ir_code)}`}
-                className="tb-btn tb-btn-primary"
-              >
-                ▤ กรอกแบบฟอร์ม RCA
-              </a>
               <a href={exportHref} className="tb-btn tb-btn-ghost" download>
                 ⤓ ส่งออก Word
               </a>

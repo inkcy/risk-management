@@ -6,22 +6,31 @@ export type MatrixOptions = { type: RiskType; basis: FrequencyBasis; year: numbe
 export const matrixLevelLabels = { green: 'ต่ำ', yellow: 'ปานกลาง', orange: 'สูง', red: 'สูงมาก' };
 
 /** Read the supplied severity and frequency without inferring either from the title. */
-export function parseMatrixTable(text: string): MatrixInput[] {
+export function parseMatrixTable(text: string, allowMissingFrequency = true): MatrixInput[] {
   const rows: MatrixInput[] = [];
   const invalid: number[] = [];
+  const severityPattern = /^(?:[A-I1-5]|A[–-]B|C[–-]D|G[–-]I)$/;
+  let headerMissingFrequency = false;
   text.split(/\r?\n/).forEach((line, index) => {
     if (!line.trim()) return;
     const cells = line.trim().split(line.includes('\t') ? '\t' : '|').map(cell => cell.trim());
     if (line.includes('|')) { if (cells[0] === '') cells.shift(); if (cells.at(-1) === '') cells.pop(); }
     while (cells[0] === '') cells.shift();
-    if (cells.some(cell => /^(?:รหัส.*เรื่อง|เรื่องย่อย|ความรุนแรง|ความถี่)$/.test(cell)) || cells.every(cell => /^[\s:\-]*$/.test(cell))) return;
-    const count = cells.at(-1) ?? '';
-    const severity = cells.at(-2)?.toUpperCase() ?? '';
-    if (cells.length < 3 || !/^(?:[A-I1-5]|A[–-]B|C[–-]D|G[–-]I)$/.test(severity) || !/^\d+$/.test(count)) { invalid.push(index + 1); return; }
-    const fields = cells.slice(0, -2);
+    if (allowMissingFrequency) while (cells.length > 1 && cells.at(-1) === '') cells.pop();
+    if (cells.some(cell => /^(?:รหัส.*เรื่อง|เรื่องย่อย|ความรุนแรง|ความถี่)$/.test(cell))) {
+      headerMissingFrequency = cells.includes('ความรุนแรง') && !cells.includes('ความถี่');
+      return;
+    }
+    if (cells.every(cell => /^[\s:\-]*$/.test(cell))) return;
+    const last = cells.at(-1)?.toUpperCase() ?? '';
+    const missing = allowMissingFrequency && severityPattern.test(last) && ((headerMissingFrequency && cells.length === 3) || !/^\d+$/.test(last) || !severityPattern.test(cells.at(-2)?.toUpperCase() ?? ''));
+    const count = missing ? '' : cells.at(-1) ?? '';
+    const severity = missing ? last : cells.at(-2)?.toUpperCase() ?? '';
+    if (cells.length < (missing ? 2 : 3) || !severityPattern.test(severity) || (!missing && !/^\d+$/.test(count))) { invalid.push(index + 1); return; }
+    const fields = cells.slice(0, missing ? -1 : -2);
     const title = fields[0];
     if (!title) { invalid.push(index + 1); return; }
-    rows.push({ title, subtopic: fields.slice(1).join(' / '), severity, frequency: Number(count) });
+    rows.push({ title, subtopic: fields.slice(1).join(' / '), severity, frequency: missing ? 0 : Number(count) });
   });
   if (invalid.length) throw new Error(`อ่านแถว ${invalid.join(', ')} ไม่สำเร็จ กรุณาใช้คอลัมน์ เรื่อง | เรื่องย่อย | ความรุนแรง | ความถี่`);
   if (!rows.length || rows.length > 50) throw new Error('กรุณาใส่ตาราง 1–50 รายการ');
@@ -38,12 +47,12 @@ export function calculateMatrix(items: MatrixInput[], options: MatrixOptions) {
     const impact = options.type === 'clinical' ? ('AB'.includes(severity)||/^A[–-]B$/.test(severity) ? 1 : 'CD'.includes(severity)||/^C[–-]D$/.test(severity) ? 2 : severity === 'E' ? 3 : severity === 'F' ? 4 : 5) : Number(severity);
     let likelihood: number;
     if (options.basis === 'level') {
-      if (item.frequency < 1 || item.frequency > 5) throw new Error(`รายการ ${index + 1}: ระดับโอกาสเกิดต้องเป็น 1–5`);
-      likelihood = item.frequency;
+      if (item.frequency < 0 || item.frequency > 5) throw new Error(`รายการ ${index + 1}: ระดับโอกาสเกิดต้องเป็น 1–5 (ไม่ระบุใช้ 0)`);
+      likelihood = item.frequency === 0 ? 1 : item.frequency;
     } else if (options.basis === 'quarter') likelihood = riskFrequency(item.frequency, options.year, options.quarter).column;
     else likelihood = item.frequency === 0 ? 1 : item.frequency <= 1 ? 2 : item.frequency <= 36 ? 3 : item.frequency <= 624 ? 4 : 5;
     const color = unitRiskColors[options.type][impact - 1][likelihood - 1];
-    return { title: item.title.trim(), subtopic: item.subtopic.trim(), frequency: item.frequency, severity, id: index + 1, impact, likelihood, score: impact * likelihood, color, level: matrixLevelLabels[color] };
+    return { title: item.title.trim(), subtopic: item.subtopic.trim(), frequency: item.frequency, severity, id: index + 1, impact, likelihood, pair: `${impact},${likelihood}`, color, level: matrixLevelLabels[color] };
   });
 }
 export type MatrixResult = ReturnType<typeof calculateMatrix>[number];

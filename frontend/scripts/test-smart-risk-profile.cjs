@@ -49,10 +49,10 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('components/SmartRiskProfi
   const render = () => require('react-dom/server').renderToStaticMarkup(clientModule.exports.SmartRiskProfile({ units: [{ id: 7, name: 'Unit 7' }], risks: rows }));
   let html = render();
   assert.ok(html.indexOf('<strong>Highest risk') < html.indexOf('<strong>Low risk'));
-  assert.ok(!html.includes('Other quarter'));
-  stateValues = ['', '2570', '1', 'clinical', '', { impact: 1, frequency: 1 }];
+  assert.ok(!html.includes('Other quarter'));assert.ok(!html.includes('<th>คะแนน</th>'));assert.ok(html.includes('(5,5)'));
+  stateValues = ['', '2570', '1', 'clinical', 'Low'];
   html = render(); assert.ok(html.includes('<strong>Low risk')); assert.ok(!html.includes('<strong>Highest risk'));
-  stateValues = ['', '2570', '1', 'clinical', 'Highest', null];
+  stateValues = ['', '2570', '1', 'clinical', 'Highest'];
   html = render(); assert.ok(html.includes('<strong>Highest risk')); assert.ok(!html.includes('<strong>Low risk'));
   console.log('Smart Risk Profile access checks passed: login required, department required, scoped member queries, admin queries and database error.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

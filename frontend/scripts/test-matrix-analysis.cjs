@@ -8,18 +8,28 @@ assert.equal(JSON.stringify(date.thaiDateTime(new Date('2026-11-05T17:08:00Z')))
 const input='| | รหัส: เรื่อง | เรื่องย่อย | ความรุนแรง | ความถี่ |\n| - | - | - | - | - |\n| | CPE405: Delay Diagnosis | | E | 1 |\n| | CPP401: Complications | | F | 1 |';
 const items=matrix.parseMatrixTable(input);assert.equal(items.length,2);assert.equal(items[0].title,'CPE405: Delay Diagnosis');assert.equal(items[0].subtopic,'');
 const options={type:'clinical',basis:'quarter',year:2570,quarter:1};
-const rows=matrix.calculateMatrix(items,options);assert.equal(JSON.stringify(rows.map(r=>[r.impact,r.likelihood,r.score,r.color])),JSON.stringify([[3,3,9,'orange'],[4,3,12,'red']]));
+const rows=matrix.calculateMatrix(items,options);assert.equal(JSON.stringify(rows.map(r=>[r.impact,r.likelihood,r.pair,r.color])),JSON.stringify([[3,3,'3,3','orange'],[4,3,'4,3','red']]));
 assert.equal(matrix.parseMatrixTable('รหัส: เรื่อง\tเรื่องย่อย\tความรุนแรง\tความถี่\nCPE405\tFast Track\tE\t1')[0].subtopic,'Fast Track');
 assert.throws(()=>matrix.parseMatrixTable('Unknown\tE\tnot-a-number'));
+const noCount='รหัส: เรื่อง\tเรื่องย่อย\tความรุนแรง\nCPM201:Medication error : Prescribing\tCPM201.1 HAD : สั่งยา High Alert ผิดพลาด\tE\nCPL101:ท่อ เลื่อนหลุดเกิด re-intubation\t\tE';
+assert.throws(()=>matrix.parseMatrixTable(noCount,false));
+const pending=matrix.parseMatrixTable(noCount,true);assert.equal(pending.length,2);assert.equal(pending[0].severity,'E');assert.equal(pending[1].subtopic,'');assert.ok(pending.every(row=>row.frequency===0));
+assert.equal(matrix.calculateMatrix(pending,options)[0].pair,'3,1');
+assert.equal(matrix.parseMatrixTable('| Topic | Subtopic | E | |',true)[0].frequency,0);
+assert.equal(matrix.parseMatrixTable('Topic\t\tE\t0',true)[0].frequency,0);
+assert.equal(matrix.parseMatrixTable('รหัส: เรื่อง\tเรื่องย่อย\tความรุนแรง\nGeneral\t1\t5',true)[0].frequency,0);
+
 assert.throws(()=>matrix.parseMatrixTable('CPE405\tE\t1\nUnparsed data'));
-for(const [type,severities] of [['clinical',['A','C','E','F','I']],['nonclinical',['1','2','3','4','5']]])for(let i=0;i<5;i++)for(let l=1;l<=5;l++){const result=matrix.calculateMatrix([{title:'Test',subtopic:'',severity:severities[i],frequency:l}],{...options,type,basis:'level'})[0];assert.equal(result.impact,i+1);assert.equal(result.likelihood,l);assert.equal(result.score,(i+1)*l);}
+for(const [type,severities] of [['clinical',['A','C','E','F','I']],['nonclinical',['1','2','3','4','5']]])for(let i=0;i<5;i++)for(let l=1;l<=5;l++){const result=matrix.calculateMatrix([{title:'Test',subtopic:'',severity:severities[i],frequency:l}],{...options,type,basis:'level'})[0];assert.equal(result.impact,i+1);assert.equal(result.likelihood,l);assert.equal(result.pair,`${i+1},${l}`);}
 assert.equal(matrix.calculateMatrix(items,{...options,basis:'year'})[0].likelihood,2);
+const paired=matrix.calculateMatrix([{title:'Low impact frequent',subtopic:'',severity:'A',frequency:5},{title:'High impact remote',subtopic:'',severity:'I',frequency:1}],{...options,basis:'level'});assert.equal(paired[0].color,'yellow');assert.equal(paired[1].color,'red');assert.ok(paired.every(row=>!('score' in row)));
+
 for(const [severity,impact]of [['A–B',1],['C–D',2],['G–I',5]])assert.equal(matrix.calculateMatrix([{...items[0],severity}],options)[0].impact,impact);
 assert.equal(matrix.parseMatrixTable('กลุ่มผลกระทบ\t\tG–I\t1')[0].severity,'G–I');
 assert.equal(matrix.calculateMatrix([{title:'Test',subtopic:'',severity:'5',frequency:3}],{...options,type:'nonclinical',basis:'level'})[0].color,'orange');
 for(const bad of [-1,0.5,NaN,Infinity])assert.throws(()=>matrix.calculateMatrix([{...items[0],frequency:bad}],options));
 assert.throws(()=>matrix.calculateMatrix(items,{...options,type:'nonclinical'}));
-assert.throws(()=>matrix.calculateMatrix([{...items[0],frequency:0}],{...options,basis:'level'}));
+assert.equal(matrix.calculateMatrix([{...items[0],frequency:0}],{...options,basis:'level'})[0].likelihood,1);
 const {MatrixAiError}=moduleAt('lib/matrix-ai.ts');
 let allowed=false,aiCalls=0,failAi=false,invalidKey=false;
 const json=(body,opts={})=>({body,status:opts.status??200});
@@ -32,9 +42,9 @@ const api=moduleAt('app/api/matrix/analyze/route.ts',{
 const request=body=>({text:async()=>JSON.stringify(body)});
 (async()=>{
  assert.equal((await api.POST(request({items,options}))).status,401);assert.equal(aiCalls,0);
- allowed=true;const response=await api.POST(request({items,options}));assert.equal(response.status,200);assert.equal(response.body.rows[0].score,9);assert.equal(response.body.advice.length,2);
+ allowed=true;const response=await api.POST(request({items,options}));assert.equal(response.status,200);assert.equal(response.body.rows[0].pair,'3,3');assert.equal(response.body.advice.length,2);
  assert.equal((await api.POST(request({items:[{...items[0],frequency:-1}],options}))).status,400);assert.equal(aiCalls,1);
- failAi=true;const fallback=await api.POST(request({items,options}));assert.equal(fallback.status,200);assert.equal(fallback.body.rows[1].score,12);assert.equal(fallback.body.advice.length,0);assert.ok(fallback.body.aiError);
- invalidKey=true;const keyFailure=await api.POST(request({items,options}));assert.equal(keyFailure.body.aiError,'คีย์บริการ AI ไม่ถูกต้อง');assert.equal(keyFailure.body.rows[0].score,9);
+ failAi=true;const fallback=await api.POST(request({items,options}));assert.equal(fallback.status,200);assert.equal(fallback.body.rows[1].pair,'4,3');assert.equal(fallback.body.advice.length,0);assert.ok(fallback.body.aiError);
+ invalidKey=true;const keyFailure=await api.POST(request({items,options}));assert.equal(keyFailure.body.aiError,'คีย์บริการ AI ไม่ถูกต้อง');assert.equal(keyFailure.body.rows[0].pair,'3,3');
  console.log('PASS: Bangkok midnight, Markdown/Excel input, E/F quarterly examples, 50 matrix cells, invalid inputs, auth and AI failure fallback');
 })().catch(error=>{console.error(error);process.exitCode=1;});

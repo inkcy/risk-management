@@ -12,7 +12,7 @@ export type MatrixTreatment = {
 export function applyMatrixAdvice(ids: number[], previous: MatrixTreatment[], advice: MatrixAdvice[]): MatrixTreatment[] {
   return normalizeTreatments(ids, previous).map(item => {
     const note = advice.find(note => note.id === item.id);
-    if (!note || item.confirmedCurrent) return item;
+    if (!note || (item.confirmedCurrent && item.measures.trim())) return item;
     const hasResponse = item.transferPrevention || item.monitorControl || item.mitigation;
     return {
       ...item,

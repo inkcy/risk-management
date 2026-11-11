@@ -3,7 +3,9 @@ import path from 'node:path';
 import fontkit from '@pdf-lib/fontkit';
 import { PDFDocument, degrees, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 import type { MatrixOptions, MatrixResult } from './matrix-analysis';
-import type { MatrixTreatment } from './matrix-treatment';
+import { applyMatrixAdvice } from './matrix-treatment';
+import { baselineMatrixAdvice, matrixReportContent } from './matrix-content';
+import type { MatrixExportNote, MatrixTreatment } from './matrix-treatment';
 
 const pageWidth = 842, pageHeight = 595.22;
 const top = 239.16, bottom = 468.48;
@@ -27,7 +29,8 @@ function wrap(text: string, font: PDFFont, width: number): string[] {
   });
 }
 
-export async function buildMatrixPdf(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string) {
+export async function buildMatrixPdf(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string, notes: MatrixExportNote[] = []) {
+  treatments = applyMatrixAdvice(rows.map(row => row.id), treatments, baselineMatrixAdvice(rows));
   const [templateBytes, fontBytes] = await Promise.all([
     readFile(path.join(process.cwd(), 'public/risk-profile/risk-profile-form.pdf')),
     readFile(path.join(process.cwd(), 'public/fonts/Sarabun-Regular.ttf')),
@@ -82,9 +85,10 @@ export async function buildMatrixPdf(rows: MatrixResult[], treatments: MatrixTre
   for (const row of rows) {
     const treatment = treatments.find(item=>item.id===row.id);
     if (!treatment) throw new Error('ข้อมูลการจัดการความเสี่ยงไม่ครบ');
-    const title = [row.title,row.subtopic].filter(Boolean).join('\n');
-    const measures = treatment.measures.replace(/\[\s*ร่าง\s*\]\s*/gu, '').trim() || 'ยังไม่ระบุมาตรการ';
-    const columns = [wrap(title,font,titleEnd-left-6),wrap(measures,font,measureEnd-responseEdges[3]-6),wrap(treatment.reviewFrequency || 'ยังไม่ระบุ',font,right-measureEnd-6)];
+    const content = matrixReportContent(row, treatment, notes.find(note => note.id === row.id));
+    const title = content.title;
+    const measures = content.measures;
+    const columns = [wrap(title,font,titleEnd-left-6),wrap(measures,font,measureEnd-responseEdges[3]-6),wrap(content.reviewFrequency,font,right-measureEnd-6)];
     let offset=0; const totalLines = Math.max(...columns.map(lines=>lines.length));
     while (offset<totalLines) {
       if (bottom-cursor<16) {page=createPage();cursor=top;}

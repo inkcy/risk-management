@@ -5,6 +5,9 @@ import { DOMParser, XMLSerializer, type Element, type Document } from '@xmldom/x
 import type { MatrixOptions, MatrixResult } from './matrix-analysis';
 import type { MatrixExportNote, MatrixTreatment } from './matrix-treatment';
 
+import { applyMatrixAdvice } from './matrix-treatment';
+import { baselineMatrixAdvice, matrixReportContent } from './matrix-content';
+
 const ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const children = (parent: Element, name: string) => Array.from(parent.childNodes).filter(node => node.nodeType === 1 && node.localName === name && node.namespaceURI === ns) as Element[];
 const first = (parent: Element, name: string) => children(parent, name)[0];
@@ -52,7 +55,8 @@ function span(cell: Element, widths: number[]) {
 }
 
 /** Fill a copy of the user's Word form; all other ZIP members stay unchanged. */
-export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string, _notes: MatrixExportNote[] = []) {
+export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTreatment[], options: MatrixOptions, unitName: string, notes: MatrixExportNote[] = []) {
+  treatments = applyMatrixAdvice(rows.map(row => row.id), treatments, baselineMatrixAdvice(rows));
   const zip=await JSZip.loadAsync(await readFile(path.join(process.cwd(),'templates/risk-profile-form.docx')));
   const source=await zip.file('word/document.xml')!.async('string');
   const doc=new DOMParser().parseFromString(source,'application/xml');
@@ -87,7 +91,8 @@ export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTr
     const append=(index:number,value:string,centered=false,font='Cordia New',size=28)=>{
       const cell=baseCells[index].cloneNode(true) as Element;fill(cell,value,centered,font,size);result.appendChild(cell);return cell;
     };
-    append(0,[row.title,row.subtopic].filter(Boolean).join('\n'));
+    const content = matrixReportContent(row, item, notes.find(note => note.id === row.id));
+    append(0,content.title);
     append(1,String(row.frequency),true,'Arial',16);
     const range=row.severity.toUpperCase().split(/[–-]/), start=labels.indexOf(range[0]), end=labels.indexOf(range.at(-1)!);
     if(start<0||end<start)throw new Error('ระดับความรุนแรงไม่ตรงกับแบบฟอร์ม');
@@ -100,8 +105,8 @@ export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTr
     }
     ['green','yellow','orange','red'].forEach((color,index)=>append(11+index,row.color===color?'✓':'',true,'Segoe UI Symbol',20));
     [item.transferPrevention,item.monitorControl,item.mitigation].forEach((selected,index)=>append(15+index,selected?'✓':'',true,'Segoe UI Symbol',20));
-    append(18,item.measures.replace(/\[\s*ร่าง\s*\]\s*/gu, '').trim() || 'ยังไม่ระบุมาตรการ');
-    append(19,item.reviewFrequency || 'ยังไม่ระบุ');
+    append(18,content.measures);
+    append(19,content.reviewFrequency);
     table.appendChild(result);
   }
   // Repeat the source title and metadata with its table headers, leaving room for the logo on every page.
@@ -116,7 +121,8 @@ export async function buildMatrixDocx(rows: MatrixResult[], treatments: MatrixTr
   // Blank rows are source rows, not recreated styling. Keep a short single-page form filled out.
   const estimatedLines=rows.reduce((sum,row)=>{
     const item=treatments.find(item=>item.id===row.id)!;
-    return sum+Math.max(1,[row.title,row.subtopic].filter(Boolean).join('\n').split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil(line.length/40)),0),(item.confirmedCurrent?0:1)+item.measures.split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil((line.length+6)/30)),0),Math.ceil(item.reviewFrequency.length/17));
+    const content=matrixReportContent(row,item,notes.find(note=>note.id===row.id));
+    return sum+Math.max(1,content.title.split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil(line.length/40)),0),content.measures.split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil((line.length+6)/30)),0),Math.ceil(content.reviewFrequency.length/17));
   },0);
   for(let i=estimatedLines;i<12;i++){
     const blank=original.cloneNode(true) as Element;

@@ -42,7 +42,7 @@ export async function PUT(request:NextRequest) {
           seen.add(key);
         }
       }
-      if (!item||!['id','group','name','unit','targetText','benchmark','note'].every(k=>typeof item[k]==='string'&&item[k].length<=5000)||ids.has(item.id)||!['lt','gt','eq','none'].includes(item.comparison)||!Number.isFinite(item.target)||item.target<0||!Number.isInteger(item.slide)||!Array.isArray(item.raw)||!item.raw.every((v:unknown)=>typeof v==='string')||(item.periods&&!strings(item.periods))||!Array.isArray(item.values)||item.values.length!==(item.periods??data.periods).length||!item.values.every((v:unknown)=>v===null||(typeof v==='number'&&Number.isFinite(v)&&v>=0))) return NextResponse.json({error:'กรุณาตรวจสอบตัวชี้วัดและค่าตัวเลข (ต้องไม่ติดลบ)'},{status:400});
+      if (!item||!['id','group','name','unit','targetText','benchmark','note'].every(k=>typeof item[k]==='string'&&item[k].length<=5000)||ids.has(item.id)||!['lt','gt','lte','gte','eq','none'].includes(item.comparison)||!Number.isFinite(item.target)||item.target<0||!Number.isInteger(item.slide)||!Array.isArray(item.raw)||!item.raw.every((v:unknown)=>typeof v==='string')||(item.periods&&!strings(item.periods))||!Array.isArray(item.values)||item.values.length!==(item.periods??data.periods).length||!item.values.every((v:unknown)=>v===null||(typeof v==='number'&&Number.isFinite(v)&&v>=0))) return NextResponse.json({error:'กรุณาตรวจสอบตัวชี้วัดและค่าตัวเลข (ต้องไม่ติดลบ)'},{status:400});
       ids.add(item.id);
     }
     await query('CREATE TABLE IF NOT EXISTS safety_dashboard (id INTEGER PRIMARY KEY CHECK (id=1), data JSONB NOT NULL, revision INTEGER NOT NULL DEFAULT 1, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())');

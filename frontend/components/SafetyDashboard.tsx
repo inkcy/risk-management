@@ -4,6 +4,7 @@ import type { SafetyData, SafetyIndicator } from '@/lib/safety';
 import { periodLabel, periodSeries, updateMeasurement, type PeriodMode } from '@/lib/safety-periods';
 import { formatSafetyText } from '@/lib/safety-text';
 import safetySeed from '@/lib/data/safety.json';
+import { passesSafetyTarget } from '@/lib/safetyComparison';
 
 function wrapChartText(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
   const words = new Intl.Segmenter('th', { granularity: 'word' }).segment(text);
@@ -45,7 +46,7 @@ function Trend({ item, periods, periodCaption }: { item: SafetyIndicator; period
     const label = `<text x="${x(i)}" y="181" ${wide ? `text-anchor="end" transform="rotate(-45 ${x(i)} 181)"` : 'text-anchor="middle"'} fill="#466777">${escapeText(periods[i])}</text>`;
     if (value === null) return `<text x="${x(i)}" y="145" text-anchor="middle">—</text>${label}`;
 
-    const passed = item.comparison === 'lt' ? value < item.target : item.comparison === 'gt' ? value > item.target : value === item.target;
+    const passed = passesSafetyTarget(value, item.target, item.comparison);
     const color = item.comparison === 'none' ? '#148579' : passed ? '#12a06a' : '#e0407c';
     const line = !count && previous != null ? `<line x1="${x(i - 1)}" y1="${y(previous)}" x2="${x(i)}" y2="${y(value)}" stroke="#148579" stroke-width="3"/>` : '';
     const mark = count
@@ -266,7 +267,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
           <p style={{fontSize:12}}>กรอกค่า{mode==='month'?'รายเดือน':mode==='quarter'?'รายไตรมาส':'รายปีเต็ม'} ช่องว่าง = ไม่มีข้อมูล</p>
           <div className="safety-inputs">{series.map(row=><label key={`${row.year}-${row.period}`}>{periodLabel(row.label,mode,mode==='quarter'?year:row.year,row.period)}<input type="number" min="0" step="any" value={row.value??''} placeholder="ไม่มีข้อมูล" onChange={e=>patch(item.id,{measurements:updateMeasurement(item,mode,row.year,row.period,e.target.value===''?null:Number(e.target.value))})}/></label>)}</div>
           {mode==='year'&&<p style={{fontSize:12,color:'var(--text2)'}}>กรอกผลทั้งปี มกราคม–ธันวาคม ข้อมูลปีงบประมาณอ้างอิงยังเก็บแยกไว้ด้านล่าง</p>}
-          <div className="safety-inputs"><label>เกณฑ์<select value={item.comparison} onChange={e=>patch(item.id,{comparison:e.target.value})}><option value="eq">=</option><option value="lt">&lt;</option><option value="gt">&gt;</option><option value="none">ไม่ประเมิน</option></select></label><label>ค่าเป้าหมาย<input type="number" min="0" step="any" value={item.target} onChange={e=>{const target=Number(e.target.value);patch(item.id,{target,targetText:`${item.comparison==='lt'?'< ':item.comparison==='gt'?'> ':''}${target}`});}}/></label></div>
+          <div className="safety-inputs"><label>เกณฑ์<select value={item.comparison} onChange={e=>{const comparison=e.target.value; const symbol: Record<string,string>={eq:'=',lte:'≤',gte:'≥'}; patch(item.id,{comparison,...(symbol[comparison]?{targetText:`${symbol[comparison]} ${item.target}`}:{})});}}><option value="eq">=</option><option value="lte">≤</option><option value="gte">≥</option>{item.comparison === 'lt' && <option value="lt">&lt; (เกณฑ์เดิม)</option>}{item.comparison === 'gt' && <option value="gt">&gt; (เกณฑ์เดิม)</option>}<option value="none">ไม่ประเมิน</option></select></label><label>ค่าเป้าหมาย<input type="number" min="0" step="any" value={item.target} onChange={e=>{const target=Number(e.target.value);const symbol: Record<string,string>={lt:'<',gt:'>',lte:'≤',gte:'≥',eq:'='};patch(item.id,{target,targetText:`${symbol[item.comparison] ? `${symbol[item.comparison]} ` : ''}${target}`});}}/></label></div>
           <label>ข้อความเป้าหมาย<input value={item.targetText} onChange={e=>patch(item.id,{targetText:e.target.value})}/></label><label>หน่วย<input value={item.unit} onChange={e=>patch(item.id,{unit:e.target.value})}/></label><label>Benchmark<input value={item.benchmark} onChange={e=>patch(item.id,{benchmark:e.target.value})}/></label><label>หมายเหตุ<textarea value={item.note} onChange={e=>patch(item.id,{note:e.target.value})}/></label>
         </fieldset>:<details style={{fontSize:12}}><summary>ดูค่าช่วงเวลาที่เลือก</summary><table style={{width:'100%',marginTop:10}}><thead><tr><th>ช่วงเวลา</th><th>ค่าที่แสดง</th></tr></thead><tbody>{series.map(r=><tr key={`${r.year}-${r.period}`}><td>{periodLabel(r.label,mode,mode==='quarter'?year:r.year,r.period)}</td><td>{r.value??'ไม่มีข้อมูล'}</td></tr>)}</tbody></table><button type="button" className="tb-btn tb-btn-ghost" style={{marginTop:10}} onClick={() => exportTable(item)}>ส่งออกข้อมูลตาราง Excel (.xlsx)</button></details>}
         <details style={{fontSize:12,marginTop:8}} open={editing?true:undefined}><summary>ข้อมูลอ้างอิงเดิม{editing?' (แก้ไขได้)':''}</summary>

@@ -229,7 +229,7 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
     }catch(error){setMessage(error instanceof Error?error.message:'บันทึกไม่สำเร็จ');}finally{setSaving(false);}
   }
   return <section className="card" style={{marginBottom:24}}>
-    <div className="card-header" style={{flexWrap:'wrap',gap:12}}><div><div className="card-title">มาตรฐานสำคัญต่อความปลอดภัย 9 ด้าน</div><p style={{fontSize:13,color:'var(--text2)'}}>ติดตามตัวชี้วัดตามปีปฏิทิน มกราคม–ธันวาคม</p></div>{canEdit&&!editing&&<button className="tb-btn tb-btn-primary" onClick={startEditing}>แก้ไขข้อมูลตัวชี้วัดและข้อความ</button>}{editing&&<div style={{display:'flex',gap:8}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>}</div>
+    <div className="card-header" style={{flexWrap:'wrap',gap:12}}><div><div className="card-title">มาตรฐานสำคัญต่อความปลอดภัย 9 ด้าน</div><p style={{fontSize:13,color:'var(--text2)'}}>ติดตามตัวชี้วัดรายเดือน ไตรมาส และรายปี</p></div>{canEdit&&!editing&&<button className="tb-btn tb-btn-primary" onClick={startEditing}>แก้ไขข้อมูลตัวชี้วัดและข้อความ</button>}{editing&&<div style={{display:'flex',gap:8}}><button className="tb-btn tb-btn-primary" disabled={saving} onClick={save}>{saving?'กำลังบันทึก…':'บันทึกทั้งหมด'}</button><button className="tb-btn tb-btn-ghost" disabled={saving} onClick={()=>setEditing(false)}>ยกเลิก</button></div>}</div>
     <div className="card-body">
       {loadError&&<p role="alert">{loadError}</p>}{message&&<p role="status" style={{marginBottom:16}}>{message}</p>}
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:12}}>ข้อมูลชุดกลางร่วมกันสำหรับแอดมินทุกคน · อัปเดตอัตโนมัติทุก 15 วินาที · การแก้ไขจะเผยแพร่เมื่อกดบันทึกทั้งหมด</p>
@@ -253,12 +253,12 @@ export function SafetyDashboard({initial,initialRevision,canEdit,loadError}:{ini
         <button className="tb-btn tb-btn-ghost" disabled={saving||year>=2800} onClick={()=>setYear(y=>y+1)}>ปีถัดไป</button>
         {canEdit&&<button className="tb-btn tb-btn-primary" disabled={saving||year>=2800} onClick={addNextYear}>เพิ่มปีถัดไป</button>}
       </div>
-      <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>ทุกมุมมองใช้ปีปฏิทิน มกราคม–ธันวาคม: Q1 ม.ค.–มี.ค. · Q2 เม.ย.–มิ.ย. · Q3 ก.ค.–ก.ย. · Q4 ต.ค.–ธ.ค.<br/>ข้อมูลรายเดือนและไตรมาสเดิมจัดตามช่วงเดือนจริง ยอดรวมปีงบประมาณเดิมยังอยู่ในข้อมูลอ้างอิง แอดมินกรอกผลรวมรายปีปฏิทินแยกต่างหาก ไม่มีการเฉลี่ยหรือรวมอัตราอัตโนมัติ</p>
+      <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>รายไตรมาสใช้ปีงบประมาณ: Q1 ต.ค.–ธ.ค. ของปีก่อน · Q2 ม.ค.–มี.ค. · Q3 เม.ย.–มิ.ย. · Q4 ก.ค.–ก.ย.<br/>รายเดือนและรายปีใช้ปีปฏิทิน มกราคม–ธันวาคม ข้อมูลรายปีงบประมาณเดิมอยู่ในข้อมูลอ้างอิง ไม่มีการเฉลี่ยหรือรวมอัตราอัตโนมัติ</p>
       <p style={{fontSize:12,color:'var(--text2)',marginBottom:16}}>เส้นประสีส้ม = เป้าหมาย · สีเขียว = ผ่าน · สีแดง = ไม่ผ่าน · — = ไม่มีข้อมูล</p>
       <div className="safety-grid">{visible.map(item=>{
         const series=periodSeries(item,data.periods,mode,year,(editing?draft:data).years);
         return <article key={item.id} style={{padding:18,border:'1px solid var(--border2)',borderRadius:14,background:'var(--bg2)',minWidth:0}}>
-        <div style={{overflowX:'auto'}}><Trend item={{...item,values:series.map(r=>r.value)}} periods={series.map(r=>r.label)} periodCaption={mode==='year'?'รายปีปฏิทิน (มกราคม–ธันวาคม)':`${mode==='quarter'?'รายไตรมาส':'รายเดือน'} ปี พ.ศ. ${year}`}/></div>
+        <div style={{overflowX:'auto'}}><Trend item={{...item,values:series.map(r=>r.value)}} periods={series.map(r=>r.label)} periodCaption={mode==='year'?'รายปีปฏิทิน (มกราคม–ธันวาคม)':mode==='quarter'?`รายไตรมาส ปีงบประมาณ พ.ศ. ${year}`:`รายเดือน ปี พ.ศ. ${year}`}/></div>
         {series.every(r=>r.value===null)&&<p style={{fontSize:13,color:'var(--text2)',marginBottom:12}}>ยังไม่มีข้อมูลในช่วงเวลานี้{canEdit?' แอดมินสามารถกดแก้ไขเพื่อกรอกข้อมูลได้':''}</p>}
         {item.benchmark&&<p style={{fontSize:12}}>Benchmark: {item.benchmark} (ตามต้นฉบับ)</p>}{item.note&&<p style={{fontSize:12,color:'var(--amber)'}}>{item.note}</p>}
         {canEdit&&!editing&&<button className="tb-btn tb-btn-ghost" style={{margin:'12px 0'}} aria-label={`แก้ไขข้อมูล ${item.name}`} onClick={startEditing}>แก้ไขข้อมูล</button>}

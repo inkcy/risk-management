@@ -28,7 +28,7 @@ const groups: { label: string; items: { href: string; icon: string; label: strin
       { href: '/home', icon: '⌂', label: 'หน้าหลัก' },
       { href: '/dashboard', icon: '⬡', label: 'แดชบอร์ด' },
       { href: '/incidents', icon: '⚠', label: 'อุบัติการณ์' },
-      { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA' },
+      { href: '/rca', icon: '◎', label: 'การวิเคราะห์ RCA 5 Tier' },
       { href: '/risk-profile', icon: '▤', label: 'Risk Profile' },
       { href: '/smart-risk-profile', icon: '◈', label: 'Smart Risk Profile' },
     ],

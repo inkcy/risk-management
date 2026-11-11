@@ -21,7 +21,7 @@ const analysisLevels = [
   { color: 'red', label: 'สูงมาก' },
 ] as const;
 
-export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod }: { units: Unit[]; risks: Risk[]; canLogout: boolean; initialPeriod?: { unitId: number; year: number; quarter: number } }) {
+export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, readOnly = false }: { units: Unit[]; risks: Risk[]; canLogout: boolean; initialPeriod?: { unitId: number; year: number; quarter: number }; readOnly?: boolean }) {
   const router = useRouter();
   const [unitId, setUnitId] = useState(initialPeriod?.unitId ?? units[0]?.id ?? 0);
   const [year, setYear] = useState(() => { const now = new Date(); return initialPeriod?.year ?? now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0); });
@@ -85,9 +85,9 @@ export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod }: { u
   return <>
     <section id="risk-profile-details" className="card" style={{ marginBottom: 16, scrollMarginTop: 90 }}><div className="card-header"><div className="card-title">Risk Profile ตามหน่วยงาน</div>{canLogout && <button className="tb-btn tb-btn-ghost" type="button" onClick={async () => { const response = await fetch('/api/risk-units/logout', { method: 'POST' }); if (response.ok) router.refresh(); else setError('ออกจากระบบหน่วยงานไม่สำเร็จ'); }}>ออกจากหน่วยงาน</button>}</div><div className="card-body">
       <div className="risk-assessment-fields">
-        <label>หน่วยงาน<select value={unitId} onChange={e => { clearPreview(); setUnitId(Number(e.target.value)); }}>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
-        <label>ปีงบประมาณ พ.ศ.<input type="number" min="2500" max="2700" value={year} onChange={e => { clearPreview(); setYear(Number(e.target.value)); }} /></label>
-        <label>ไตรมาส<select value={quarter} onChange={e => { clearPreview(); setQuarter(Number(e.target.value)); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}</option>)}</select></label>
+        <label>หน่วยงาน<select disabled={readOnly} value={unitId} onChange={e => { clearPreview(); setUnitId(Number(e.target.value)); }}>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
+        <label>ปีงบประมาณ พ.ศ.<input disabled={readOnly} type="number" min="2500" max="2700" value={year} onChange={e => { clearPreview(); setYear(Number(e.target.value)); }} /></label>
+        <label>ไตรมาส<select disabled={readOnly} value={quarter} onChange={e => { clearPreview(); setQuarter(Number(e.target.value)); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}</option>)}</select></label>
         <label>ประเภท<select value={category} onChange={e => { clearPreview(); setCategory(e.target.value as RiskType); }}><option value="clinical">Clinical</option><option value="nonclinical">Non-Clinical</option></select></label>
       </div>
       <h3 style={{ marginTop: 16, marginBottom: 10 }}>ตาราง 5×5 · สีคำนวณตามจำนวนครั้งและผลกระทบ</h3>
@@ -108,7 +108,7 @@ export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod }: { u
       <p style={{ color: 'var(--text2)', marginTop: 12, fontSize: 13 }}>คำนวณจำนวนครั้ง ÷ จำนวนวันในไตรมาส × 365.2425 วัน: 0 = Remote, มากกว่า 0 ถึง 1 ครั้ง/ปี = Uncommon, มากกว่า 1 ถึง 36 ครั้ง/ปี = Occasional, มากกว่า 36 ถึง 624 ครั้ง/ปี = Probable, มากกว่า 624 ครั้ง/ปี = Frequent</p>
       <p style={{ color: 'var(--text3)', marginTop: 6, fontSize: 12 }}>ช่วงที่ต้นฉบับไม่ได้ระบุใช้การจัดเข้าช่วงถัดไปที่ครอบคลุม และสมมติอัตราเฉลี่ยคงที่ตลอดปี · โปรดทบทวนผลก่อนนำไปใช้</p>
       {error && <p className="announcement-error" role="alert">{error}</p>}
-      <div style={{marginTop:20}}>
+      {!readOnly && <div style={{marginTop:20}}>
         <h3>นำเข้าตารางความเสี่ยงจาก Word</h3>
         <p>เลือกไฟล์ .doc หรือ .docx ที่มีตารางจำนวนครั้งและระดับ A–I รองรับทั้งจำนวนและเครื่องหมายเลือกผลกระทบ (ไม่เกิน 5 MB) ระบบจะคำนวณสีตามเกณฑ์หน้า Risk Matrix และแสดงตัวอย่างด้านบน</p>
         <input aria-label="เลือกไฟล์ความเสี่ยง Word" type="file" accept=".doc,.docx" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void readFile(file);e.target.value='';}} />
@@ -122,15 +122,15 @@ export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod }: { u
           <button className="tb-btn tb-btn-primary" disabled={busy} onClick={saveImport}>บันทึกข้อมูลนำเข้า</button>{' '}
           <button className="tb-btn tb-btn-ghost" disabled={busy} onClick={()=>setPreview([])}>ยกเลิกตัวอย่าง</button>
         </>}
-      </div>
+      </div>}
     </div></section>
-    <section className="card"><div className="card-header"><div className="card-title">เพิ่มรายการความเสี่ยง</div></div><div className="card-body">
+    {!readOnly && <section className="card"><div className="card-header"><div className="card-title">เพิ่มรายการความเสี่ยง</div></div><div className="card-body">
       <form className="survey-form" onSubmit={add}>
         <label>ชื่อความเสี่ยง<input name="title" required maxLength={300} /></label>
         <div className="survey-form-grid"><label>จำนวนครั้งในไตรมาส<input name="occurrence_count" type="number" min="0" max="10000000" step="1" required /></label><label>ผลกระทบ<select name="impact" required>{impacts.map((text,i) => <option value={i+1} key={text}>{text}</option>)}</select></label></div>
         <button className="tb-btn tb-btn-primary" disabled={busy} type="submit">บันทึกรายการ</button>
       </form>
       {selected.length > 0 && <div style={{ marginTop: 20 }}><h3>รายการในช่วงที่เลือก</h3>{selected.map(r => <div key={r.id} className="unit-risk-list-item"><span>{r.title} · {r.occurrence_count} ครั้ง</span><button className="announcement-delete" type="button" onClick={() => remove(r.id)} disabled={busy}>ลบ</button></div>)}</div>}
-    </div></section>
+    </div></section>}
   </>;
 }

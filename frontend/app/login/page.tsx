@@ -53,7 +53,7 @@ export default async function LoginPage({
           textAlign: 'center',
         }}>
           <img
-            src="/safety-chart-logo.png"
+            src="/hospital-logo-2026.png"
             alt="โลโก้โรงพยาบาลสมเด็จพระบรมราชเทวี ณ ศรีราชา สภากาชาดไทย"
             width={256}
             height={100}

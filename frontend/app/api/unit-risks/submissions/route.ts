@@ -19,8 +19,14 @@ export async function POST(request: NextRequest) {
     const unit = await getRiskUnit(auth.user.id);
     if (!unit) return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบหน่วยงานก่อนยืนยันส่ง' }, { status: 403 });
     await ensureRiskSubmissions();
-    const result = await query(`INSERT INTO risk_profile_submissions (unit_id, year, quarter, submitted_by)
-      VALUES ($1,$2,$3,$4) ON CONFLICT (unit_id,year,quarter) DO NOTHING RETURNING submitted_at`, [unit.id, year, quarter, auth.user.id]);
+    // Capture all rows and the submission record in one statement, using one database snapshot.
+    const result = await query(`INSERT INTO risk_profile_submissions (unit_id, year, quarter, submitted_by, snapshot)
+      SELECT $1,$2,$3,$4,jsonb_build_object(
+        'unitName', u.name,
+        'risks', COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.id) FROM unit_risks r
+          WHERE r.unit_id=$1 AND r.year=$2 AND r.quarter=$3), '[]'::jsonb))
+      FROM risk_units u WHERE u.id=$1
+      ON CONFLICT (unit_id,year,quarter) DO NOTHING RETURNING submitted_at`, [unit.id, year, quarter, auth.user.id]);
     if (result.rowCount) await audit(auth.user, 'risk_profile.submit', 'risk_unit', unit.id, { year, quarter });
     return NextResponse.json({ ok: true, alreadySubmitted: !result.rowCount });
   } catch (error) {

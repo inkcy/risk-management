@@ -34,7 +34,7 @@ export function RiskSubmissionForm({ unit, submissions }: { unit: { id: number; 
         <label>ไตรมาส<select value={quarter} onChange={event => { setQuarter(Number(event.target.value)); setMessage(''); }}>{[1, 2, 3, 4].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
       </div>
       <p style={{ margin: '10px 0' }}>{submitted ? `ส่งแล้ว เมื่อ ${new Date(submitted.submitted_at).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}` : 'ยังไม่ยืนยันส่ง'}</p>
-      <p style={{ color: 'var(--text2)', fontSize: 13 }}>การยืนยันครอบคลุมทั้ง Clinical และ Non-Clinical ของหน่วยงานในไตรมาสที่เลือก โปรดตรวจสอบข้อมูลก่อนส่ง</p>
+      <p style={{ color: 'var(--text2)', fontSize: 13 }}>การยืนยันจะเก็บสำเนา Clinical และ Non-Clinical ของหน่วยงานในไตรมาสที่เลือก การแก้ไขภายหลังจะไม่เปลี่ยนสำเนาที่ส่งแล้ว โปรดตรวจสอบข้อมูลก่อนส่ง</p>
       <button type="button" className="tb-btn tb-btn-primary" disabled={busy || !!submitted || year < 2500 || year > 2700} onClick={submit}>ยืนยันส่งไตรมาสนี้</button>
       {message && <p role="status">{message}</p>}
     </div>

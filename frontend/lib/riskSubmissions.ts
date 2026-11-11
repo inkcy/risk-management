@@ -11,6 +11,7 @@ export async function ensureRiskSubmissions() {
     submitted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     PRIMARY KEY (unit_id, year, quarter)
   )`);
+  await query('ALTER TABLE risk_profile_submissions ADD COLUMN IF NOT EXISTS snapshot JSONB');
 }
 
 export async function loadRiskSubmissions(unitId: number | null): Promise<RiskSubmission[]> {

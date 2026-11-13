@@ -1023,11 +1023,11 @@ option { background: var(--bg3); }
 
 /* Chatbot */
 .risk-chat { max-width: 980px; margin: 0 auto; overflow: hidden; border: 1px solid var(--border); border-radius: 22px; background: var(--bg2); box-shadow: 0 12px 32px rgba(20, 75, 83, .09); }
-.risk-chat-header { display: flex; gap: 15px; align-items: center; padding: 22px 26px; border-bottom: 1px solid var(--border); }
-.risk-chat-header h2 { margin: 0; font-size: 22px; }
-.risk-chat-header p { margin: 3px 0 0; color: var(--text2); font-size: 14px; }
+.risk-chat-header { display: flex; gap: 12px; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+.risk-chat-header h2 { margin: 0; font-size: 18px; }
+.risk-chat-header p { margin: 2px 0 0; color: var(--text2); font-size: 12px; }
 .risk-chat-mark,.risk-chat-welcome-icon,.risk-chat-avatar { display: grid; place-items: center; flex: none; color: #fff; background: linear-gradient(140deg,#0a8678,#31b59e); }
-.risk-chat-mark { width: 46px; height: 46px; border-radius: 15px; font-size: 24px; }
+.risk-chat-mark { width: 38px; height: 38px; border-radius: 12px; font-size: 20px; }
 .risk-chat-badge { margin-left: auto; color: #138b7a; background: #e4f5ee; border-radius: 20px; padding: 6px 10px; font-size: 10px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; }
 .risk-chat-log { height: min(52vh, 510px); min-height: 300px; overflow-y: auto; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; background: var(--bg3); }
 .risk-chat-welcome { margin: auto; max-width: 560px; text-align: center; color: var(--text2); }
@@ -1062,4 +1062,4 @@ option { background: var(--bg3); }
 .risk-chat-compact .risk-chat-welcome h3 { font-size: 16px; }
 .risk-chat-compact .risk-chat-welcome p,.risk-chat-compact .risk-chat-suggestions button { font-size: 12px; }
 .risk-chat-compact .risk-chat-bottom { padding: 12px; }
-@media (max-width: 600px) { .risk-chat-header { padding: 16px; } .risk-chat-header h2 { font-size: 18px; } .risk-chat-badge { display: none; } .risk-chat-log { padding: 16px; } .risk-chat-bottom { padding: 12px; } }
+@media (max-width: 600px) { .risk-chat-header { padding: 10px 12px; } .risk-chat-header h2 { font-size: 16px; } .risk-chat-badge { display: none; } .risk-chat-log { padding: 16px; } .risk-chat-bottom { padding: 12px; } }

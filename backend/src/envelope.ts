@@ -13,6 +13,6 @@ export async function envelope<T>(
     return { data, demo: false, error: null };
   } catch (err) {
     console.error('DB query failed:', err);
-    return { data: fallback, demo: true, error: String(err) };
+    return { data: fallback, demo: true, error: 'Unable to load data' };
   }
 }

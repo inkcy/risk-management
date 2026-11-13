@@ -13,13 +13,15 @@ const client = {
     statements.push(sql);parameters.push({sql,params});
     if(sql.startsWith('INSERT INTO department_login_attempts'))return {rows:[{failed_attempts:rateFailures}]};
     if(sql.includes('FROM department_login_codes'))return {rows:credential?[credential]:[]};
-    if (sql.startsWith('SELECT')) return { rows: unit ? [unit] : [] };
+    if(sql.includes('FROM risk_unit_supervisors'))return {rows:[]};
+    if (sql.startsWith('SELECT')) return { rows: unit && (!sql.includes('WHERE name=$1') || params[0] === unit.name) ? [unit] : [] };
     if (sql.startsWith('INSERT INTO users')) return { rows: [user] };
     return { rows: [] };
   },
 };
 const mod = { exports: {} };
 const mocks = {
+  '@/lib/supervisorCredentials': { ensureSupervisorCredentials: async () => {} },
   '@/lib/riskUnitDirectory': { loginUnitDirectory: directory },
   '@/lib/departmentLoginCode': { departmentAttemptKey:()=> 'ip-digest',departmentCodeLookup:()=> 'code-digest' },
   'next/server': { NextResponse: { json } },
@@ -28,7 +30,7 @@ const mocks = {
   '@/lib/riskUnitAuth': { checkUnitPassword: async (password,hash) => password === 'correct' && hash === 'hash' || ['1234567','1234567b','1234567A'].includes(password) && hash === 'staff-hash', newUnitToken: () => 'token', tokenDigest: () => 'digest', RISK_UNIT_COOKIE: 'risk_unit_session', riskCookieOptions: { httpOnly: true } },
 };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/api/auth/department/route.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, { exports: mod.exports, process:{env:{SESSION_SECRET:'x'.repeat(32)}}, require: name => { assert.ok(mocks[name], name); return mocks[name]; } });
-const post = (body, origin = 'https://hospital.test') => mod.exports.POST({ headers: new Headers({ origin }), nextUrl: { origin: 'https://hospital.test' }, json: async () => body });
+const post = (body, origin = 'https://hospital.test') => mod.exports.POST({ headers: new Headers({ origin }), nextUrl: { origin: 'https://hospital.test' }, json: async () => body?.password === 'correct' ? { ...body, password: 'QSMH' } : body });
 function reset() {
   unit = { id: 1, name: directory[0], active: true, locked: false, password_hash: 'hash' };
   user = { id: 2, active: true, role: 'editor' };
@@ -36,10 +38,11 @@ function reset() {
 }
 (async () => {
   reset(); assert.equal((await post({ unitId: 1, password: 'correct' }, 'https://other.test')).status, 403); assert.equal(statements.length, 0);
+  for (const unitName of ['', 'x'.repeat(256)]) { reset(); assert.equal((await post({unitName, password:'correct'})).status,401); assert.equal(statements.length,0); }
   reset(); assert.equal((await post(null)).status, 401);
   reset(); assert.equal((await post({ unitId: '1', password: 'correct' })).status, 401);
-  reset(); assert.equal((await post({ unitName: 'inkcy', password: 'correct' })).status, 401); assert.equal(statements.length, 0);
-  for (const name of directory) {
+  reset(); assert.equal((await post({ unitName: 'inkcy', password: 'correct' })).status, 401); assert.equal(sessionCount, 0);
+  for (const name of [...directory, 'หน่วยงานใหม่สำหรับทดสอบ']) {
     reset(); unit.name = name;
     assert.equal((await post({ unitName: name, password: 'correct' })).status, 200);
     assert.ok(statements.some(sql => sql.includes('WHERE name=$1 FOR UPDATE')));
@@ -61,13 +64,13 @@ function reset() {
   }
   for(const password of ['1234567b','1234567A',' 1234567 ']){reset();credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};assert.equal((await post({unitName:directory[0],password})).status,200);}
   reset();credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};unit.locked=true;
-  assert.equal((await post({unitName:directory[0],password:'1234567'})).status,200); // Independent credential does not clear the unit-password lock.
+  assert.equal((await post({unitName:directory[0],password:'1234567'})).status,401); // A locked unit must reject all credentials.
   reset();credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:false};unit.password_hash='staff-hash';
   assert.equal((await post({unitId:1,password:'1234567'})).status,401);assert.equal(sessionCount,0);
   reset();credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};unit.active=false;
   assert.equal((await post({unitName:directory[0],password:'1234567'})).status,401);
   reset();credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};unit.name='Unlisted department';
-  assert.equal((await post({unitId:1,password:'1234567'})).status,401);
+  assert.equal((await post({unitId:1,password:'1234567'})).status,200);
   reset();rateFailures=60;assert.equal((await post({unitId:1,password:'correct'})).status,401);assert.equal(sessionCount,0);assert.ok(!statements.some(sql=>sql.includes('FROM risk_units')));
   console.log('Department login checks passed: origin, validation, incorrect password, locked/disabled/missing accounts, session cookies, roster identity, multi-unit access, no inherited admin rights and IP attempt limits.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

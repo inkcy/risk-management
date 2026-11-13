@@ -26,6 +26,6 @@ export async function PATCH(
     await audit(auth.user, 'cauti.remove', 'cauti_patient', id, { removed_at: removed_at ?? null, outcome: outcome ?? 'removed' });
     return NextResponse.json({ patient: rows[0] });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' }, { status: 500 });
   }
 }

@@ -5,8 +5,27 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/chatbotKnowledge.ts',
 (async () => {
   const corpus = JSON.parse(fs.readFileSync('data/chatbot-knowledge.json', 'utf8'));
   assert.ok(corpus.length > 1000); assert.ok(corpus.some(item => item.source.endsWith('.xlsx'))); assert.ok(corpus.some(item => item.source.endsWith('.pptx'))); assert.ok(corpus.some(item => item.source.endsWith('.png')));
+  const hrms = await mod.exports.findKnowledge('มีคู่มือHRMSไหม');
+  assert.ok(hrms.length>0);assert.ok(hrms.every(item=>/HRMS/i.test(item.source+' '+item.text)));assert.ok(hrms.some(item=>/คู่มือ.*HRMS/i.test(item.source)));assert.match(hrms[0].source,/คู่มือ.*HRMS/i);
+  const lowerHrms=await mod.exports.findKnowledge('มีคู่มือhrmsไหม');assert.match(lowerHrms[0].source,/คู่มือ.*HRMS/i);
   const rca = await mod.exports.findKnowledge('RCA 5 Tier สืบสอบปัจจัยร่วม'); assert.ok(rca.length > 0); assert.ok(rca.some(item => /RCA|Tier|สืบสอบ/i.test(item.source + item.text)));
-  const safety = await mod.exports.findKnowledge('Patient Safety Goals'); assert.ok(safety.some(item => /safety/i.test(item.source + item.text)));
+  const register = await mod.exports.findKnowledge('Risk Register มีองค์ประกอบอะไรบ้าง');
+  assert.ok(register.some(item => item.source.includes('Introduction Risk Management') && item.location === 'หน้า 33'));
+  assert.ok(/risk\s*register|ทะเบียน(?:จัดการ)?ความเสี่ยง/i.test(register[0].text));
+  const profile = await mod.exports.findKnowledge('ตัวอย่างตาราง Risk Profile');
+  assert.ok(profile.length > 0);
+  assert.ok(profile.slice(0, 3).every(item => /risk\s+profile/i.test(item.text)));
+  assert.ok(profile.some(item => /Risk severity prioritization/i.test(item.source) && item.location === 'หน้า 34' && item.visualId));
+  const safety = await mod.exports.findKnowledge('แนวทาง Patient Safety Goals'); assert.ok(safety.some(item => /safety/i.test(item.source + item.text)));
+  assert.ok(safety.every(item => !/[\uFFFD\u25A1\uFFFC\uE000-\uF8FF]|\(cid:\d+\)|[À-ÿ]{3,}|[ก-๛][À-ÿ·][ก-๛]/u.test(item.text)));
+  const finance = await mod.exports.findKnowledge('ยกตัวอย่างความเสี่ยงแผนกการเงิน');
+  assert.ok(finance.every(item=>/การเงิน|การคลัง|บัญชี|เบิกจ่าย|การรับเงิน|การจ่ายเงิน|financial|finance|cashier/i.test(item.source+' '+item.text)));
+  assert.equal(new Set(finance.map(item=>item.source+'|'+item.location.replace(/\s*\(OCR[^)]*\)$/,''))).size,finance.length);
+  assert.ok(!finance.some(item=>/Physical Hazard/i.test(item.text) && !/การเงิน|การคลัง|บัญชี|เบิกจ่าย/i.test(item.text)));
+  assert.ok(finance.some(item=>item.source==='Slide RM (พี่นุ้ย).pptx' && item.location==='สไลด์ 7' && item.text.includes('การปิดบัญชีและเรียกเก็บหนี้ค่ารักษาพยาบาลไม่ได้ตามที่กำหนด')));
+  assert.ok((await mod.exports.findKnowledge('ความเสี่ยงจัดซื้อ')).some(item=>/จัดซื้อ/i.test(item.source+' '+item.text)));
+  const complaints = await mod.exports.findKnowledge('กระบวนการจัดการข้อร้องเรียน');
+  assert.equal(complaints[0].source,'กระบวนการจัดการข้อร้องเรียน.docx');assert.ok(complaints[0].visualId);
   const coso = await mod.exports.findKnowledge('COSO ERM 2017'); assert.ok(coso.some(item => item.source.includes('สปสช.')));
   assert.equal((await mod.exports.findKnowledge('zqxwivnonsenseterm')).length, 0);
   console.log('PASS: supplied source corpus, Thai/English retrieval and no-match handling');

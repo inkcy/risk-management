@@ -17,3 +17,8 @@ _legacy/
 # Reference materials (large binaries — don't commit)
 *.docx
 *.zip
+
+.vercel
+
+# Word source template required by the report exporter
+!frontend/templates/risk-profile-form.docx

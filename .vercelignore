@@ -7,3 +7,5 @@
 **/*.log
 **/*.tsbuildinfo
 _legacy
+
+tmp/

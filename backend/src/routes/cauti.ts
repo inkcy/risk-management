@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
     );
     res.status(201).json({ patient: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' });
   }
 });
 
@@ -50,7 +50,7 @@ router.patch('/:id/remove', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     res.json({ patient: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' });
   }
 });
 

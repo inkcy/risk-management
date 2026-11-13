@@ -15,6 +15,10 @@ risk_management/
 - **backend** เดิมทำหน้าที่เป็น API แยก ตอนนี้ frontend ไม่เรียกใช้แล้ว (ไม่มีการอ้าง `BACKEND_URL` ที่ไหนเลย)
   แต่ยังเก็บไว้เพราะเป็นที่อยู่ของ `migrations/` และสคริปต์ `db:migrate` / `db:seed`
 
+หากเปิดใช้ Express backend แยก ต้องตั้ง `BACKEND_API_TOKEN` เป็นค่าลับสุ่มอย่างน้อย 32 ตัวอักษร
+และส่ง `Authorization: Bearer <token>` ทุกครั้งที่เรียก `/api/*` ยกเว้น `/api/health`;
+หากไม่ได้ตั้งค่า API จะปฏิเสธคำขอ ห้ามนำ token ไปใส่ในโค้ดหรือ frontend
+
 > เดิมโครงสร้างนี้แยก 2 ระบบและ frontend เรียก backend ผ่าน `fetch` — เปลี่ยนมาเป็นระบบเดียวแล้ว
 > เพื่อให้ deploy ง่ายขึ้น (Vercel project เดียว ไม่ต้องตั้ง CORS)
 

@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     );
     const unit = rows[0];
     const id = unit?.id;
-    if (!unit || !unit.active) return await fail(id);
+    if (!unit || !unit.active || unit.locked) return await fail(id);
     const adminUnit = unit.name.trim().toLowerCase() === 'admin';
     const adminPassword = adminUnit && password !== 'QSMH' && await checkUnitPassword(password, unit.password_hash);
     if (adminUnit && !adminPassword) return await fail(id);

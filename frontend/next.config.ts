@@ -4,7 +4,9 @@ const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   outputFileTracingIncludes: {
-    '/api/chatbot': ['./data/chatbot-knowledge.json'],
+    '/api/chatbot': ['./data/chatbot-knowledge.json', './data/chatbot-ocr.json', './data/chatbot-visuals.json', './data/chatbot-extra.json', './data/chatbot-extra-ocr.json', './data/chatbot-extra-visuals.json', './data/chatbot-page-visuals.json'],
+    '/api/chatbot/images/*': ['./data/chatbot-visuals.json', './data/chatbot-visuals.zip', './data/chatbot-extra-visuals.json', './data/chatbot-extra-visuals.zip'],
+    '/api/chatbot/pages/*': ['./data/chatbot-page-visuals.json', './data/chatbot-page-visuals-*.zip'],
     '/api/matrix/export': ['./templates/risk-profile-form.docx'],
     '/api/matrix/export-pdf': ['./public/risk-profile/risk-profile-form.pdf', './public/fonts/Sarabun-Regular.ttf'],
   },

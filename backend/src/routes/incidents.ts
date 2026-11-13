@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
     );
     res.status(201).json({ incident: rows[0] });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' });
   }
 });
 

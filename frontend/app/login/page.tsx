@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
 import { DepartmentLogin } from '@/components/DepartmentLogin';
 import { dbConfigured, query } from '@/lib/db';
+export const dynamic = 'force-dynamic';
 
 const ERRORS: Record<string, string> = {
   config: 'ระบบยังตั้งค่าไม่ครบ — ดูรายการที่ขาดด้านล่าง',

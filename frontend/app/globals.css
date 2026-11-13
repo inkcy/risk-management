@@ -1023,11 +1023,11 @@ option { background: var(--bg3); }
 
 /* Chatbot */
 .risk-chat { max-width: 980px; margin: 0 auto; overflow: hidden; border: 1px solid var(--border); border-radius: 22px; background: var(--bg2); box-shadow: 0 12px 32px rgba(20, 75, 83, .09); }
-.risk-chat-header { display: flex; gap: 15px; align-items: center; padding: 22px 26px; border-bottom: 1px solid var(--border); }
-.risk-chat-header h2 { margin: 0; font-size: 22px; }
-.risk-chat-header p { margin: 3px 0 0; color: var(--text2); font-size: 14px; }
+.risk-chat-header { display: flex; gap: 12px; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+.risk-chat-header h2 { margin: 0; font-size: 18px; }
+.risk-chat-header p { margin: 2px 0 0; color: var(--text2); font-size: 12px; }
 .risk-chat-mark,.risk-chat-welcome-icon,.risk-chat-avatar { display: grid; place-items: center; flex: none; color: #fff; background: linear-gradient(140deg,#0a8678,#31b59e); }
-.risk-chat-mark { width: 46px; height: 46px; border-radius: 15px; font-size: 24px; }
+.risk-chat-mark { width: 38px; height: 38px; border-radius: 12px; font-size: 20px; }
 .risk-chat-badge { margin-left: auto; color: #138b7a; background: #e4f5ee; border-radius: 20px; padding: 6px 10px; font-size: 10px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; }
 .risk-chat-log { height: min(52vh, 510px); min-height: 300px; overflow-y: auto; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; background: var(--bg3); }
 .risk-chat-welcome { margin: auto; max-width: 560px; text-align: center; color: var(--text2); }
@@ -1043,13 +1043,16 @@ option { background: var(--bg3); }
 .risk-chat-message.is-user > div { background: #117f70; color: #fff; border-color: #117f70; border-radius: 15px 5px 15px 15px; }
 .risk-chat-message strong { font-size: 12px; }
 .risk-chat-message p { white-space: pre-wrap; margin: 4px 0 0; }
+.risk-chat-figure { margin: 14px 0 0; }
+.risk-chat-figure img { display: block; width: 100%; max-width: 640px; height: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+.risk-chat-figure figcaption { margin-top: 5px; color: var(--text2); font-size: 12px; }
 .risk-chat-avatar { width: 32px; height: 32px; border-radius: 10px; }
 .risk-chat-status { color: var(--text2); font-size: 13px; }
 .risk-chat-bottom { padding: 16px 22px; }
 .risk-chat-compose { display: flex; gap: 10px; align-items: flex-end; border: 1px solid var(--border); border-radius: 14px; padding: 9px 10px 9px 14px; background: var(--bg3); }
 .risk-chat-compose:focus-within { border-color: #138b7a; box-shadow: 0 0 0 3px rgba(19,139,122,.12); }
 .risk-chat-input { flex: 1; min-width: 0; }
-.risk-chat-input textarea { display: block; width: 100%; resize: vertical; min-height: 44px; max-height: 130px; padding: 4px 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; }
+.risk-chat-input textarea { display: block; width: 100%; resize: vertical; height: 52px; min-height: 52px; max-height: 130px; padding: 4px 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; line-height: 1.4; }
 .risk-chat-send { border: 0; width: 42px; height: 42px; flex: none; border-radius: 12px; color: white; background: #118575; font-size: 19px; cursor: pointer; }
 .risk-chat-send:disabled { opacity: .45; cursor: default; }
 .risk-chat-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 9px; color: var(--text2); font-size: 12px; }
@@ -1062,4 +1065,15 @@ option { background: var(--bg3); }
 .risk-chat-compact .risk-chat-welcome h3 { font-size: 16px; }
 .risk-chat-compact .risk-chat-welcome p,.risk-chat-compact .risk-chat-suggestions button { font-size: 12px; }
 .risk-chat-compact .risk-chat-bottom { padding: 12px; }
-@media (max-width: 600px) { .risk-chat-header { padding: 16px; } .risk-chat-header h2 { font-size: 18px; } .risk-chat-badge { display: none; } .risk-chat-log { padding: 16px; } .risk-chat-bottom { padding: 12px; } }
+@media (max-width: 600px) { .risk-chat-header { padding: 10px 12px; } .risk-chat-header h2 { font-size: 16px; } .risk-chat-badge { display: none; } .risk-chat-log { padding: 16px; } .risk-chat-bottom { padding: 12px; } }
+
+.floating-risk-chat { position: fixed; right: 18px; bottom: 18px; z-index: 190; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.floating-risk-chat-panel { width: min(410px, calc(100vw - 24px)); max-height: min(650px, calc(100dvh - 96px)); overflow-y: auto; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,.22); }
+.floating-risk-chat-header { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; background: var(--green); color: #fff; }
+.floating-risk-chat-controls { display: flex; gap: 6px; align-items: center; }
+.floating-risk-chat-controls a, .floating-risk-chat-controls button { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; color: inherit; background: transparent; font: inherit; font-size: 23px; text-decoration: none; cursor: pointer; }
+.floating-risk-chat-controls a:hover, .floating-risk-chat-controls button:hover { background: rgba(255,255,255,.18); }
+.floating-risk-chat-launcher { display: grid; place-items: center; width: 58px; height: 58px; border: 0; border-radius: 50%; background: #108c7c; color: #fff; cursor: pointer; box-shadow: 0 5px 18px rgba(0,0,0,.25); font-size: 30px; }
+.floating-risk-chat-launcher svg { width: 31px; height: 31px; }
+.floating-risk-chat-launcher:focus-visible, .floating-risk-chat-controls :focus-visible { outline: 3px solid #f6b71b; outline-offset: 3px; }
+@media (max-width: 600px) { .floating-risk-chat { right: 12px; bottom: 12px; } .floating-risk-chat-panel { max-height: calc(100dvh - 90px); } }

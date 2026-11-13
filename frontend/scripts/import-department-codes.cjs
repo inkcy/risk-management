@@ -15,7 +15,7 @@ function check(password,stored){const [salt,hex]=stored.split(':');return crypto
  if(!args.includes('--apply')){console.log(JSON.stringify({dryRun:true,...summary}));return;}
  if(envFile){for(const line of fs.readFileSync(envFile,'utf8').split(/\r?\n/)){const match=line.match(/^([A-Z_]+)=(.*)$/);if(match)process.env[match[1]]=match[2].startsWith('"')?JSON.parse(match[2]):match[2];}}
  const secret=process.env.SESSION_SECRET??'';const url=process.env.POSTGRES_URL||process.env.DATABASE_URL;if(!url||secret.length<32)throw Error('Production database and SESSION_SECRET must be configured');
- const {Pool}=require('pg');const pool=new Pool({connectionString:url,ssl:/localhost|127\.0\.0\.1/.test(url)?undefined:{rejectUnauthorized:false},connectionTimeoutMillis:10000,max:1});
+ const {Pool}=require('pg');const pool=new Pool({connectionString:url,ssl:/localhost|127\.0\.0\.1/.test(url)?undefined:{rejectUnauthorized:true},connectionTimeoutMillis:10000,max:1});
  let client;
  try{
   client=await pool.connect();await client.query('BEGIN');await client.query(fs.readFileSync('../backend/migrations/017_department_login_codes.sql','utf8'));

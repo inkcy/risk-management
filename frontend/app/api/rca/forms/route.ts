@@ -75,6 +75,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ form: rows[0] }, { status: 201 });
   } catch (err) {
     console.error('save rca form failed:', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: 'บันทึกแบบฟอร์มไม่สำเร็จ' }, { status: 500 });
   }
 }

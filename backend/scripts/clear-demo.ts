@@ -18,7 +18,7 @@ async function main() {
 
   const alsoUnits = process.argv.includes('--units');
   const useSsl = /sslmode=require/i.test(url) || !/localhost|127\.0\.0\.1/.test(url);
-  const pool = new Pool({ connectionString: url, ssl: useSsl ? { rejectUnauthorized: false } : undefined });
+  const pool = new Pool({ connectionString: url, ssl: useSsl ? { rejectUnauthorized: true } : undefined });
 
   // เรียงตามลำดับ foreign key — ลูกก่อนแม่
   const tables = [

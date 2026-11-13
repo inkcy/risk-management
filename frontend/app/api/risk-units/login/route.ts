@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
     if (!(name ? name.length <= 255 : /^[a-z0-9._-]{3,64}$/.test(username)) || !password || password.length > 128) return NextResponse.json({ error: 'ชื่อหน่วยงานหรือรหัสผ่านไม่ถูกต้อง' }, { status: 401 });
     const { rows } = await query<{ id: number; password_hash: string; active: boolean; locked: boolean }>('SELECT id, password_hash, active, COALESCE(locked_until > now(), false) AS locked FROM risk_units WHERE ' + (name ? 'name=$1' : 'username=$1'), [name || username]);
     const unit = rows[0];
+    const staffUnit = /^department-(\d+)@units\.invalid$/i.exec(auth.user.email);
+    const supervisorUnit = /^supervisor-(?:reviewer-)?(\d+)@units\.invalid$/i.exec(auth.user.email);
+    if (unit && (staffUnit || supervisorUnit) && Number((staffUnit || supervisorUnit)![1]) !== unit.id) return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงหน่วยงานนี้' }, { status: 403 });
     if (!unit || !unit.active || unit.locked || !await checkUnitPassword(password, unit.password_hash)) {
       if (unit && !unit.locked) await query('UPDATE risk_units SET failed_attempts=failed_attempts+1, locked_until=CASE WHEN failed_attempts+1 >= 5 THEN now()+interval \'15 minutes\' ELSE NULL END WHERE id=$1', [unit.id]);
       return NextResponse.json({ error: 'ชื่อหน่วยงานหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกพักชั่วคราว' }, { status: 401 });

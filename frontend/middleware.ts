@@ -20,6 +20,14 @@ function demoModeOpen(): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Browser-authenticated state changes must originate from this application.
+  // Cookie SameSite alone is not a complete CSRF defence.
+  if (pathname.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    if (request.headers.get('origin') !== request.nextUrl.origin) {
+      return NextResponse.json({ error: 'คำขอไม่ถูกต้อง' }, { status: 403 });
+    }
+  }
+
   // ส่ง path ปัจจุบันให้ root layout เพื่อยืนยัน session กับฐานข้อมูลอีกชั้น
   // (middleware บน Edge ตรวจได้เพียงลายเซ็น cookie)
   const nextWithPath = () => {

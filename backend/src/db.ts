@@ -20,7 +20,7 @@ export function getPool(): pg.Pool {
     const useSsl = /sslmode=require/i.test(url) || !/localhost|127\.0\.0\.1/.test(url);
     pool = new Pool({
       connectionString: url,
-      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      ssl: useSsl ? { rejectUnauthorized: true } : undefined,
       max: 10,
       connectionTimeoutMillis: 10_000,
       idleTimeoutMillis: 30_000,

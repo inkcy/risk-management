@@ -27,6 +27,8 @@ export async function getRiskUnit(userId: number): Promise<{ id: number; name: s
     `SELECT u.id, u.name FROM risk_unit_sessions s JOIN risk_units u ON u.id=s.unit_id
      JOIN users account ON account.id=s.user_id
      WHERE s.token_hash=$1 AND s.user_id=$2 AND s.expires_at > now() AND u.active
+       AND (account.email !~ '^department-[0-9]+@units[.]invalid$'
+         OR account.email = 'department-' || u.id || '@units.invalid')
        AND (account.email !~ '^supervisor-(reviewer-)?[0-9]+@units[.]invalid$'
          OR account.email IN ('supervisor-' || u.id || '@units.invalid', 'supervisor-reviewer-' || u.id || '@units.invalid'))`, [tokenDigest(token), userId],
   );

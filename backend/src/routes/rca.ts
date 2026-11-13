@@ -16,7 +16,7 @@ router.post('/:id/analyze', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('AI analyze failed:', err);
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' });
   }
 });
 
@@ -33,7 +33,7 @@ router.get('/:id/export', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="RCA_${safeName}.docx"`);
     res.send(buffer);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' });
   }
 });
 

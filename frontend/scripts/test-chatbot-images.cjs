@@ -1,0 +1,27 @@
+process.chdir(require('node:path').resolve(__dirname, '..'));
+const assert = require('node:assert/strict'), fs = require('node:fs'), vm = require('node:vm'), ts = require('typescript'), JSZip = require('jszip');
+let allowed = true;
+const json = (body, opts = {}) => ({ body, status: opts.status ?? 200 });
+const mocks = { 'next/server': { NextResponse: { json } }, '@/lib/auth': { requireRole: async () => allowed ? { ok: true } : { ok: false, response: { status: 401 } } } };
+const mod = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/api/chatbot/images/[id]/route.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, { exports: mod.exports, require: name => mocks[name] || require(name), process, console, Response, Uint8Array });
+(async () => {
+  const index = JSON.parse(fs.readFileSync('data/chatbot-visuals.json', 'utf8')); const id = Object.keys(index)[0]; assert.match(id, /^[a-f0-9]{24}$/);
+  const archive = await JSZip.loadAsync(fs.readFileSync('data/chatbot-visuals.zip')); assert.ok(archive.file(index[id].file));
+  const call = value => mod.exports.GET({}, { params: Promise.resolve({ id: value }) });
+  allowed = false; assert.equal((await call(id)).status, 401); allowed = true;
+  assert.equal((await call('../secret')).status, 404); assert.equal((await call('000000000000000000000000')).status, 404);
+  const image = await call(id); assert.equal(image.status, 200); assert.match(image.headers.get('content-type'), /^image\/(jpeg|png)$/); assert.equal(image.headers.get('cache-control'), 'private, no-store'); assert.ok((await image.arrayBuffer()).byteLength > 100);
+  const extraIndex = JSON.parse(fs.readFileSync('data/chatbot-extra-visuals.json', 'utf8'));
+  const extraArchive = await JSZip.loadAsync(fs.readFileSync('data/chatbot-extra-visuals.zip'));
+  const extraId = Object.keys(extraIndex)[0]; assert.ok(extraArchive.file(extraIndex[extraId].file));
+  const extraImage = await call(extraId); assert.equal(extraImage.status,200); assert.ok((await extraImage.arrayBuffer()).byteLength>100);
+  const extra = JSON.parse(fs.readFileSync('data/chatbot-extra.json','utf8'));
+  const extraOcr = JSON.parse(fs.readFileSync('data/chatbot-extra-ocr.json','utf8'));
+  assert.equal(new Set([...extra,...extraOcr].map(item=>item.source)).size,10);
+  assert.ok(extraOcr.some(item=>item.source==='ความเสี่ยงจัดซื้อ_rotated.pdf'));
+  const word = extra.find(item=>item.source==='กระบวนการจัดการข้อร้องเรียน.docx'); assert.ok(word); assert.ok(Object.values(extraIndex).some(item=>item.source===word.source && item.location==='เอกสาร Word'));
+  assert.ok(extraOcr.every(item=>extraIndex[item.visualId] && item.location.includes('OCR')));
+  const ocr = JSON.parse(fs.readFileSync('data/chatbot-ocr.json', 'utf8')); assert.ok(ocr.length > 10); assert.ok(ocr.every(item => index[item.visualId] && item.location.includes('OCR')));
+  console.log('PASS: OCR references link to authenticated private images; invalid IDs and unauthorized requests are blocked');
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body>
-        <AppShell user={user} selectedUnitName={selectedUnit?.name ?? null}>{children}</AppShell>
+        <AppShell user={user} selectedUnitName={selectedUnit?.name ?? null} selectedUnitId={selectedUnit?.id ?? null}>{children}</AppShell>
       </body>
     </html>
   );

@@ -31,6 +31,6 @@ export async function POST(request: NextRequest) {
     await audit(auth.user, 'cauti.create', 'cauti_patient', rows[0].id, { bed, ward: ward ?? null });
     return NextResponse.json({ patient: rows[0] }, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: 'ดำเนินการไม่สำเร็จ กรุณาลองใหม่' }, { status: 500 });
   }
 }

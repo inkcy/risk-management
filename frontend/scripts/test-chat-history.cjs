@@ -1,0 +1,15 @@
+process.chdir(require('node:path').resolve(__dirname,'..'));
+const assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript'),vm=require('node:vm');
+const m={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/chatHistory.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:m.exports,JSON});
+const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
+const pair=[{role:'user',text:'RCA คืออะไร'},{role:'assistant',text:'คำตอบ [1]',images:[{id:'0123456789abcdef01234567',label:'ต้นฉบับ',kind:'images'}],sources:[{number:1,label:'หน้า 1',id:'0123456789abcdef01234567',kind:'images'}]}];
+m.exports.saveChatHistory(storage,'1:7',pair);
+assert.equal(JSON.stringify(m.exports.loadChatHistory(storage,'1:7')),JSON.stringify(pair));
+assert.equal(m.exports.loadChatHistory(storage,'2:7').length,0);assert.equal(m.exports.loadChatHistory(storage,'1:8').length,0);
+const many=Array.from({length:24},(_,i)=>({role:i%2?'assistant':'user',text:'message '+i}));m.exports.saveChatHistory(storage,'1:7',many);const loaded=m.exports.loadChatHistory(storage,'1:7');assert.equal(loaded.length,20);assert.equal(loaded[0].text,'message 4');
+m.exports.saveChatHistory(storage,'1:7',[{role:'user',text:'incomplete'}]);assert.equal(m.exports.loadChatHistory(storage,'1:7').length,20);
+data.set('risk-chat-history-v1:3:7','{broken');assert.equal(m.exports.loadChatHistory(storage,'3:7').length,0);
+data.set('risk-chat-history-v1:3:7',JSON.stringify([{role:'user',text:'x'},{role:'assistant',text:'x',sources:[{number:1,label:'bad',id:'../secret'}]}]));assert.equal(m.exports.loadChatHistory(storage,'3:7').length,0);
+m.exports.saveChatHistory(storage,'1:7',[]);assert.equal(m.exports.loadChatHistory(storage,'1:7').length,0);
+assert.doesNotThrow(()=>m.exports.saveChatHistory({setItem(){throw Error('quota')},removeItem(){throw Error('quota')}},'1:7',pair));
+console.log('PASS: tab history keeps the last 20 messages, isolates user/unit, handles malformed data and clears safely');

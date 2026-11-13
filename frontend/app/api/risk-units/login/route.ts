@@ -16,6 +16,11 @@ export async function POST(request: NextRequest) {
     const staffUnit = /^department-(\d+)@units\.invalid$/i.exec(auth.user.email);
     const supervisorUnit = /^supervisor-(?:reviewer-)?(\d+)@units\.invalid$/i.exec(auth.user.email);
     if (unit && (staffUnit || supervisorUnit) && Number((staffUnit || supervisorUnit)![1]) !== unit.id) return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงหน่วยงานนี้' }, { status: 403 });
+    if (unit && /^roster-\d+@staff\.invalid$/i.test(auth.user.email)) {
+      const access = await query<{ allowed: boolean }>(`SELECT NOT EXISTS (SELECT 1 FROM department_access_policy WHERE id=true AND enforced)
+        OR EXISTS (SELECT 1 FROM department_login_codes c JOIN department_code_units m ON m.code_id=c.id WHERE c.user_id=$1 AND c.active AND m.unit_id=$2) AS allowed`, [auth.user.id, unit.id]);
+      if (!access.rows[0]?.allowed) return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงหน่วยงานนี้' }, { status: 403 });
+    }
     if (!unit || !unit.active || unit.locked || !await checkUnitPassword(password, unit.password_hash)) {
       if (unit && !unit.locked) await query('UPDATE risk_units SET failed_attempts=failed_attempts+1, locked_until=CASE WHEN failed_attempts+1 >= 5 THEN now()+interval \'15 minutes\' ELSE NULL END WHERE id=$1', [unit.id]);
       return NextResponse.json({ error: 'ชื่อหน่วยงานหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกพักชั่วคราว' }, { status: 401 });

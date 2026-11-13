@@ -4,6 +4,7 @@ import { dbConfigured, getPool } from '@/lib/db';
 import { checkUnitPassword, newUnitToken, RISK_UNIT_COOKIE, riskCookieOptions, tokenDigest } from '@/lib/riskUnitAuth';
 import { departmentAttemptKey, departmentCodeLookup } from '@/lib/departmentLoginCode';
 import { ensureSupervisorCredentials } from '@/lib/supervisorCredentials';
+import { ensureDepartmentCodeUnits } from '@/lib/departmentCodeUnits';
 
 export const runtime = 'nodejs';
 
@@ -18,13 +19,15 @@ export async function POST(request: NextRequest) {
   const denied = () => NextResponse.json({ error: 'หน่วยงานหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกพักชั่วคราว' }, { status: 401 });
   if (name !== null ? !name || name.length > 255 : typeof requestedId !== 'number' || !Number.isSafeInteger(requestedId) || requestedId < 1) return denied();
   if (typeof password !== 'string' || !password || password.length > 128) return denied();
-  try { await ensureSupervisorCredentials(); } catch { return NextResponse.json({ error: 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน' }, { status: 503 }); }
+  try { await ensureSupervisorCredentials(); await ensureDepartmentCodeUnits(); } catch { return NextResponse.json({ error: 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน' }, { status: 503 }); }
   let client;
   try { client = await getPool().connect(); } catch {
     return NextResponse.json({ error: 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน' }, { status: 503 });
   }
   try {
     await client.query('BEGIN');
+    const policy = await client.query<{ enforced: boolean }>('SELECT enforced FROM department_access_policy WHERE id=true FOR SHARE');
+    const enforceUnits = policy.rows[0]?.enforced === true;
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('x-real-ip') || 'unknown';
     const attemptKey = departmentAttemptKey(ip, process.env.SESSION_SECRET ?? '');
     const limit = await client.query<{ failed_attempts: number }>(
@@ -48,6 +51,7 @@ export async function POST(request: NextRequest) {
     const id = unit?.id;
     if (!unit || !unit.active || unit.locked) return await fail(id);
     const adminUnit = unit.name.trim().toLowerCase() === 'admin';
+    if (enforceUnits && password === 'QSMH') return await fail(id);
     const adminPassword = adminUnit && password !== 'QSMH' && await checkUnitPassword(password, unit.password_hash);
     if (adminUnit && !adminPassword) return await fail(id);
     const supervisorRecord = !adminUnit && password !== 'QSMH' ? (await client.query<{ password_hash: string | null; reviewer_password_hash: string | null }>('SELECT password_hash, reviewer_password_hash FROM risk_unit_supervisors WHERE unit_id=$1 FOR SHARE', [id])).rows[0] : undefined;
@@ -61,6 +65,10 @@ export async function POST(request: NextRequest) {
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
+      if (enforceUnits) {
+        const grant = await client.query('SELECT 1 FROM department_code_units WHERE code_id=$1 AND unit_id=$2', [credential.id,id]);
+        if (!grant.rows.length) return await fail(id);
+      }
     } else if (password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword && !reviewerPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);

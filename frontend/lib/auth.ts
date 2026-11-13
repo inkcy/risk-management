@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { NextResponse } from 'next/server';
 import { dbConfigured, query } from './db';
+import { ensureDepartmentCodeUnits } from './departmentCodeUnits';
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE_SEC,
@@ -133,6 +134,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   if (!sessionId) return null;
 
   try {
+    await ensureDepartmentCodeUnits();
     const { rows } = await query<SessionUser>(
       `SELECT u.id, u.email, COALESCE(ru.name, u.name) AS name, u.picture, u.role, rc.display_name AS roster_name
        FROM sessions s
@@ -141,6 +143,11 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
        LEFT JOIN department_login_codes rc ON rc.user_id=u.id AND rc.active
        WHERE s.id = $1 AND s.expires_at > now() AND u.active
          AND (u.risk_unit_id IS NULL OR ru.active)
+         AND (NOT EXISTS (SELECT 1 FROM department_access_policy WHERE id=true AND enforced)
+           OR (u.email !~ '^department-[0-9]+@units[.]invalid$' AND (u.email !~ '^roster-[0-9]+@staff[.]invalid$'
+             OR EXISTS (SELECT 1 FROM department_login_codes c JOIN department_code_units m ON m.code_id=c.id
+                        JOIN risk_unit_sessions rus ON rus.user_id=u.id AND rus.unit_id=m.unit_id AND rus.expires_at>now()
+                        WHERE c.user_id=u.id AND c.active))))
          AND (u.email !~ '^admin-unit-[0-9]+@units[.]invalid$' OR EXISTS (
            SELECT 1 FROM risk_units admin_unit
            WHERE u.email = 'admin-unit-' || admin_unit.id || '@units.invalid'

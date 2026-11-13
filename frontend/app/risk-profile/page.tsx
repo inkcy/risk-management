@@ -10,6 +10,7 @@ import { RiskSubmissionOverview } from '@/components/RiskSubmissionOverview';
 import { RiskSubmissionForm } from '@/components/RiskSubmissionForm';
 import { loadRiskSubmissions } from '@/lib/riskSubmissions';
 import { SupervisorAdmin } from '@/components/SupervisorAdmin';
+import { DepartmentCodeAccess } from '@/components/DepartmentCodeAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export default async function RiskProfilePage({ searchParams }: { searchParams: 
     const risks = await query<{ id: number; unit_id: number; year: number; quarter: number; category: 'clinical' | 'nonclinical'; title: string; occurrence_count: number; impact: number; source_title: string | null; source_analysis_level: 'green' | 'yellow' | 'orange' | 'red' | null }>(
       'SELECT id, unit_id, year, quarter, category, title, occurrence_count, impact, source_title, source_analysis_level FROM unit_risks WHERE ($1::boolean OR unit_id=$2) ORDER BY created_at DESC', [admin, currentUnit?.id ?? null],
     );
-    return <>{admin ? <><RiskUnitAdmin units={adminUnits} pending={pending} /><SupervisorAdmin units={adminUnits} /><RiskSubmissionOverview units={adminUnits.filter(unit => !['admin', 'dev'].includes(unit.name.trim().toLowerCase()))} risks={risks.rows} submissions={submissions} /></> : departmentAccess(user) === 'supervisor' && <RiskSubmissionForm unit={currentUnit!} submissions={submissions} />}<UnitRiskProfiles units={units} risks={risks.rows} canLogout={!admin} initialPeriod={selectedPeriod} /></>;
+    return <>{admin ? <><RiskUnitAdmin units={adminUnits} pending={pending} /><SupervisorAdmin units={adminUnits} /><DepartmentCodeAccess units={adminUnits} /><RiskSubmissionOverview units={adminUnits.filter(unit => !['admin', 'dev'].includes(unit.name.trim().toLowerCase()))} risks={risks.rows} submissions={submissions} /></> : departmentAccess(user) === 'supervisor' && <RiskSubmissionForm unit={currentUnit!} submissions={submissions} />}<UnitRiskProfiles units={units} risks={risks.rows} canLogout={!admin} initialPeriod={selectedPeriod} /></>;
   } catch (err) {
     console.error('risk profile load failed:', err);
     return <div className="announcement-error" role="alert">ไม่สามารถโหลด Risk Profile ได้ กรุณาตรวจสอบฐานข้อมูล</div>;

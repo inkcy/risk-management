@@ -13,6 +13,7 @@ export function ensureDepartmentCodeUnits() {
     id BOOLEAN PRIMARY KEY DEFAULT true CHECK (id), enforced BOOLEAN NOT NULL DEFAULT false
   )`);
   await query('INSERT INTO department_access_policy (id) VALUES (true) ON CONFLICT DO NOTHING');
+  await query('ALTER TABLE department_login_codes ADD COLUMN IF NOT EXISTS is_supervisor BOOLEAN NOT NULL DEFAULT false');
   })().catch(error => { initialized = undefined; throw error; });
   return initialized;
 }

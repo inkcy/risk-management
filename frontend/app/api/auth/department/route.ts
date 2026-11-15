@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
     )).rows[0] : undefined;
     if (credential) {
       if (!credential.active || !await checkUnitPassword(accessCode,credential.password_hash)) return await fail(id);
-      if (enforceUnits) {
-        const grant = await client.query('SELECT 1 FROM department_code_units WHERE code_id=$1 AND unit_id=$2', [credential.id,id]);
-        if (!grant.rows.length) return await fail(id);
-      }
+      const grant = await client.query<{ assigned: boolean; allowed: boolean }>(`SELECT
+        EXISTS (SELECT 1 FROM department_code_units WHERE code_id=$1) AS assigned,
+        EXISTS (SELECT 1 FROM department_code_units WHERE code_id=$1 AND unit_id=$2) AS allowed`, [credential.id,id]);
+      if ((enforceUnits || grant.rows[0]?.assigned) && !grant.rows[0]?.allowed) return await fail(id);
     } else if (password !== 'QSMH' && !devPassword && !adminPassword && !supervisorPassword && !reviewerPassword) {
       if (!unit.locked) await client.query("UPDATE risk_units SET failed_attempts=CASE WHEN locked_until <= now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN locked_until <= now() THEN NULL WHEN failed_attempts+1 >= 5 THEN now()+interval '15 minutes' ELSE NULL END WHERE id=$1", [id]);
       return await fail(id);

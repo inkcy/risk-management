@@ -21,6 +21,7 @@ export interface SessionUser {
   picture: string | null;
   role: Role;
   roster_name?: string | null;
+  roster_is_supervisor?: boolean | null;
 }
 
 export interface GoogleProfile {
@@ -136,7 +137,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   try {
     await ensureDepartmentCodeUnits();
     const { rows } = await query<SessionUser>(
-      `SELECT u.id, u.email, COALESCE(ru.name, u.name) AS name, u.picture, u.role, rc.display_name AS roster_name
+      `SELECT u.id, u.email, COALESCE(ru.name, u.name) AS name, u.picture, u.role, rc.display_name AS roster_name, rc.is_supervisor AS roster_is_supervisor
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN risk_units ru ON ru.id = u.risk_unit_id

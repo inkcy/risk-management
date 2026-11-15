@@ -5,7 +5,7 @@ const ts = require('typescript');
 const directoryModule = { exports: {} };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/riskUnitDirectory.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: directoryModule.exports });
 const directory = directoryModule.exports.loginUnitDirectory;
-let unit, user, statements, cookies, sessionCount, credential, rateFailures, parameters, policyEnforced, grantAllowed;
+let unit, user, statements, cookies, sessionCount, credential, rateFailures, parameters, policyEnforced, grantAssigned, grantAllowed;
 const json = (body, options = {}) => ({ body, status: options.status || 200, cookies: { set: (...args) => cookies.push(args) } });
 const client = {
   release() {},
@@ -13,7 +13,7 @@ const client = {
     statements.push(sql);parameters.push({sql,params});
     if(sql.startsWith('INSERT INTO department_login_attempts'))return {rows:[{failed_attempts:rateFailures}]};
     if(sql.includes('FROM department_access_policy'))return {rows:[{enforced:policyEnforced}]};
-    if(sql.includes('FROM department_code_units'))return {rows:grantAllowed?[{allowed:1}]:[]};
+    if(sql.includes('FROM department_code_units'))return {rows:[{assigned:grantAssigned,allowed:grantAllowed}]};
     if(sql.includes('FROM department_login_codes'))return {rows:credential?[credential]:[]};
     if(sql.includes('FROM risk_unit_supervisors'))return {rows:[]};
     if (sql.startsWith('SELECT')) return { rows: unit && (!sql.includes('WHERE name=$1') || params[0] === unit.name) ? [unit] : [] };
@@ -37,7 +37,7 @@ const post = (body, origin = 'https://hospital.test') => mod.exports.POST({ head
 function reset() {
   unit = { id: 1, name: directory[0], active: true, locked: false, password_hash: 'hash' };
   user = { id: 2, active: true, role: 'editor' };
-  statements = []; cookies = []; sessionCount = 0;credential=null;rateFailures=0;parameters=[];policyEnforced=false;grantAllowed=false;
+  statements = []; cookies = []; sessionCount = 0;credential=null;rateFailures=0;parameters=[];policyEnforced=false;grantAssigned=false;grantAllowed=false;
 }
 (async () => {
   reset(); assert.equal((await post({ unitId: 1, password: 'correct' }, 'https://other.test')).status, 403); assert.equal(statements.length, 0);
@@ -77,6 +77,7 @@ function reset() {
   reset();rateFailures=60;assert.equal((await post({unitId:1,password:'correct'})).status,401);assert.equal(sessionCount,0);assert.ok(!statements.some(sql=>sql.includes('FROM risk_units')));
   reset();policyEnforced=true;assert.equal((await post({unitId:1,password:'QSMH'})).status,401);
   reset();policyEnforced=true;credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};assert.equal((await post({unitId:1,password:'1234567'})).status,401);
+  reset();grantAssigned=true;credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};assert.equal((await post({unitId:1,password:'1234567'})).status,401);
   reset();policyEnforced=true;grantAllowed=true;credential={id:9,display_name:'Staff fixture',password_hash:'staff-hash',active:true};assert.equal((await post({unitId:1,password:'1234567'})).status,200);
   console.log('Department login checks passed: origin, validation, incorrect password, locked/disabled/missing accounts, session cookies, roster identity, multi-unit access, no inherited admin rights and IP attempt limits.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

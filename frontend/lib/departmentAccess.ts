@@ -5,6 +5,6 @@ export function departmentAccess(user: SessionUser | null): 'staff' | 'superviso
   if (!user || user.role === 'admin') return null;
   if (/^supervisor-(?:reviewer-)?\d+@units\.invalid$/i.test(user.email)) return 'supervisor';
   if (/^department-\d+@units\.invalid$/i.test(user.email)) return 'staff';
-  if (/^roster-\d+@staff\.invalid$/i.test(user.email)) return 'staff';
+  if (/^roster-\d+@staff\.invalid$/i.test(user.email)) return user.roster_is_supervisor ? 'supervisor' : 'staff';
   return null;
 }

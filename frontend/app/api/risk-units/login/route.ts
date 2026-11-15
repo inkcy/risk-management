@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
     const supervisorUnit = /^supervisor-(?:reviewer-)?(\d+)@units\.invalid$/i.exec(auth.user.email);
     if (unit && (staffUnit || supervisorUnit) && Number((staffUnit || supervisorUnit)![1]) !== unit.id) return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงหน่วยงานนี้' }, { status: 403 });
     if (unit && /^roster-\d+@staff\.invalid$/i.test(auth.user.email)) {
-      const access = await query<{ allowed: boolean }>(`SELECT NOT EXISTS (SELECT 1 FROM department_access_policy WHERE id=true AND enforced)
+      const access = await query<{ allowed: boolean }>(`SELECT (NOT EXISTS (SELECT 1 FROM department_access_policy WHERE id=true AND enforced)
+        AND NOT EXISTS (SELECT 1 FROM department_login_codes c JOIN department_code_units m ON m.code_id=c.id WHERE c.user_id=$1))
         OR EXISTS (SELECT 1 FROM department_login_codes c JOIN department_code_units m ON m.code_id=c.id WHERE c.user_id=$1 AND c.active AND m.unit_id=$2) AS allowed`, [auth.user.id, unit.id]);
       if (!access.rows[0]?.allowed) return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงหน่วยงานนี้' }, { status: 403 });
     }

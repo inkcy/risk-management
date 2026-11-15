@@ -12,3 +12,4 @@ CREATE TABLE IF NOT EXISTS department_access_policy (
   enforced BOOLEAN NOT NULL DEFAULT false
 );
 INSERT INTO department_access_policy (id) VALUES (true) ON CONFLICT DO NOTHING;
+ALTER TABLE department_login_codes ADD COLUMN IF NOT EXISTS is_supervisor BOOLEAN NOT NULL DEFAULT false;

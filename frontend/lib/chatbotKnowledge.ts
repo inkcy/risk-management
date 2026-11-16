@@ -62,6 +62,8 @@ export async function findKnowledge(question: string): Promise<KnowledgeExcerpt[
   const financeEvidence = /การเงิน|การคลัง|เบิกจ่าย|การรับเงิน|การจ่ายเงิน|การเรียกเก็บ|เรียกเก็บหนี้|ปิดบัญชี|บัญชี(?:การเงิน|ลูกหนี้|เจ้าหนี้)|financial|finance|cashier/iu;
   const asksSafetyGoals = /patient\s+safety\s+goals/iu.test(question);
   const asksRegister = /risk\s*register|ทะเบียน(?:จัดการ)?ความเสี่ยง/iu.test(question);
+  const asksHospitalStandardsSix = /มาตรฐาน/u.test(question) && /ฉบับ(?:ที่)?\s*(?:6|๖|หก)/u.test(question);
+  const standardsTopic = asksHospitalStandardsSix ? question.split(/ฉบับ(?:ที่)?\s*(?:6|๖|หก)/u)[1]?.trim().replace(/^การ/u, '') : '';
   const ranked = items.map(item => {
     let score = 0, matches = 0;
     for (const term of terms) if (item.tokens.has(term)) {
@@ -80,6 +82,19 @@ export async function findKnowledge(question: string): Promise<KnowledgeExcerpt[
     if (asksSafetyGoals && /^(?:คำนำ|คํานํา)/u.test(item.text.trim())) score -= 4;
     if (asksRegister && /risk\s*register|ทะเบียน(?:จัดการ)?ความเสี่ยง/iu.test(item.text)) score += 8;
     if (asksRegister && /risk\s*register|ทะเบียน(?:จัดการ)?ความเสี่ยง/iu.test(item.source) && /ระบุความเสี่ยง|วิเคราะห์ความเสี่ยง|มาตรการ|ติดตาม|องค์ประกอบ/iu.test(item.text)) score += 4;
+    if (asksHospitalStandardsSix && item.source === 'มาตรฐาน รพ.ฉบับ6.pdf') {
+      const topicTerms = focus.filter(term => !['มาตรฐาน', 'ฉบับ', 'โรงพยาบาล'].includes(term));
+      const topicMatches = topicTerms.filter(term => item.textTokens.has(term)).length;
+      score += 15 + 12 * topicMatches;
+      if (standardsTopic && standardsTopic.length >= 5 && normalizedText.includes(standardsTopic)) {
+        score += 50;
+        if (normalizedText.indexOf(standardsTopic) < 300) score += 30;
+        score += 8 * Math.min(4, normalizedText.split(standardsTopic).length - 1);
+      }
+      // Main standards pages have a section header and numbered requirements.
+      // Front matter and contents list the same terms without those requirements.
+      if (topicMatches && /^ตอนที่\s+(?:I{1,3}|IV)\b/u.test(item.text.trim()) && /\(\d+\)/u.test(item.text)) score += 35;
+    }
     return { item, score, matches };
   }).filter(entry => entry.matches > 0 && entry.score >= 2.2 && (!focus.length || focus.some(term => entry.item.tokens.has(term))) && (!acronyms.length || acronyms.every(term => (entry.item.source + ' ' + entry.item.text).toLowerCase().includes(term))) && (!asksFinanceUnit || financeEvidence.test(entry.item.source + ' ' + entry.item.text))).sort((a, b) => b.score - a.score);
   const result: KnowledgeExcerpt[] = [];

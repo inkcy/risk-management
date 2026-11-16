@@ -34,6 +34,8 @@ export function Topbar({ user, selectedUnitName }: { user: SessionUser | null; s
     .sort((a, b) => b.length - a.length)[0] ?? '/';
   const [title, breadcrumb] = titles[titleKey];
   const [isLight, setIsLight] = useState(false);
+  const [logoutError, setLogoutError] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const canEdit = user?.role === 'admin' || user?.role === 'editor';
 
   useEffect(() => {
@@ -50,6 +52,19 @@ export function Topbar({ user, selectedUnitName }: { user: SessionUser | null; s
 
   const toggleSidebar = () => {
     document.body.classList.toggle('sidebar-open');
+  };
+
+  const logout = async () => {
+    setLoggingOut(true);
+    setLogoutError(false);
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('Logout failed');
+      window.location.assign('/login');
+    } catch {
+      setLogoutError(true);
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -101,11 +116,12 @@ export function Topbar({ user, selectedUnitName }: { user: SessionUser | null; s
                 <span className="topbar-identity-role">{ROLE_LABEL[user.role] ?? user.role}</span>
               </span>
             </Link>
-            <form action="/api/auth/logout" method="post">
-              <button className="tb-btn tb-btn-ghost" type="submit" title="ออกจากระบบ" style={{ fontSize: 17.3, padding: '7px 10px' }}>
+            <div>
+              <button className="tb-btn tb-btn-ghost" type="button" onClick={logout} disabled={loggingOut} aria-label="ออกจากระบบ" title="ออกจากระบบ" style={{ fontSize: 17.3, padding: '7px 10px' }}>
                 ⏻
               </button>
-            </form>
+              {logoutError && <span role="alert">ออกจากระบบไม่สำเร็จ กรุณาลองใหม่</span>}
+            </div>
           </div>
         )}
       </div>

@@ -18,7 +18,12 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/api/chatbot/images/[i
   const extraImage = await call(extraId); assert.equal(extraImage.status,200); assert.ok((await extraImage.arrayBuffer()).byteLength>100);
   const extra = JSON.parse(fs.readFileSync('data/chatbot-extra.json','utf8'));
   const extraOcr = JSON.parse(fs.readFileSync('data/chatbot-extra-ocr.json','utf8'));
-  assert.equal(new Set([...extra,...extraOcr].map(item=>item.source)).size,10);
+  for (const source of ['A-W 60 x 120 cm มาตรฐานสำคัญ 9 ข้อ - มีแล้ว.jpg', '103.นโยบายด้านความปลอดภัยในการดูแลผู้ป่วย cop.jpg']) {
+    const record = extra.find(item => item.source === source);
+    assert.ok(record && extraIndex[record.visualId], `Missing indexed image: ${source}`);
+    assert.ok(extraArchive.file(extraIndex[record.visualId].file), `Missing archived image: ${source}`);
+    const response = await call(record.visualId); assert.equal(response.status, 200); assert.ok((await response.arrayBuffer()).byteLength > 100);
+  }
   assert.ok(extraOcr.some(item=>item.source==='ความเสี่ยงจัดซื้อ_rotated.pdf'));
   const word = extra.find(item=>item.source==='กระบวนการจัดการข้อร้องเรียน.docx'); assert.ok(word); assert.ok(Object.values(extraIndex).some(item=>item.source===word.source && item.location==='เอกสาร Word'));
   assert.ok(extraOcr.every(item=>extraIndex[item.visualId] && item.location.includes('OCR')));

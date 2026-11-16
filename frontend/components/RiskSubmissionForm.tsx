@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RiskSubmission } from '@/lib/riskSubmissions';
 
@@ -13,6 +13,18 @@ export function RiskSubmissionForm({ unit, submissions, selectableUnits }: { uni
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const submitted = submissions.find(item => item.unit_id === selectedUnit.id && item.year === year && item.quarter === quarter);
+
+  useEffect(() => {
+    const onImportSaved = (event: Event) => {
+      const detail = (event as CustomEvent<{ unitId: number; year: number; quarter: number }>).detail;
+      if (!detail || !Number.isInteger(detail.year) || detail.year < 2500 || detail.year > 2700 || !Number.isInteger(detail.quarter) || detail.quarter < 1 || detail.quarter > 4) return;
+      if (selectableUnits ? !selectableUnits.some(item => item.id === detail.unitId) : detail.unitId !== unit.id) return;
+      setUnitId(detail.unitId); setYear(detail.year); setQuarter(detail.quarter); setMessage('');
+      document.getElementById('risk-profile-confirmation')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    };
+    window.addEventListener('risk-profile-import-saved', onImportSaved);
+    return () => window.removeEventListener('risk-profile-import-saved', onImportSaved);
+  }, [selectableUnits, unit.id]);
 
   async function submit() {
     if (!window.confirm(`ยืนยันส่ง Risk Profile ของ ${selectedUnit.name} ปี ${year} ไตรมาส ${quarter} หรือไม่?`)) return;
@@ -27,7 +39,7 @@ export function RiskSubmissionForm({ unit, submissions, selectableUnits }: { uni
     finally { setBusy(false); }
   }
 
-  return <section className="card" style={{ marginBottom: 16 }}>
+  return <section id="risk-profile-confirmation" className="card" style={{ marginBottom: 16, scrollMarginTop: 90 }}>
     <div className="card-header"><h2 className="card-title">ยืนยันส่ง Risk Profile รายไตรมาส</h2></div>
     <div className="card-body">
       {selectableUnits ? <label>หน่วยงาน <select value={unitId} disabled={busy} onChange={event => { setUnitId(Number(event.target.value)); setMessage(''); }}>{selectableUnits.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : <p>หน่วยงาน {unit.name}</p>}

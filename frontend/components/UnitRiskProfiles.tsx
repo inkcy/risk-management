@@ -45,7 +45,7 @@ export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, defau
       setImportInfo(`${file.name} · ${body.unitName ?? ''} · ${body.sourceRows} รายการความเสี่ยง`);
       if(body.year) setYear(body.year); if(body.quarter) setQuarter(body.quarter);
       setCategory('clinical');
-      const match=units.find(u=>u.name===body.unitName); if(match) setUnitId(match.id);
+      const match=units.find(u=>u.name===body.unitName); if(match) { setUnitId(match.id); setUnitSearch(null); }
     } catch(err) { setError((err as Error).message); } finally {setBusy(false);}
   }
   async function saveImport() {
@@ -54,6 +54,7 @@ export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, defau
       const response=await fetch('/api/unit-risks/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({unit_id:unitId,year,quarter,category,items:preview.map(i=>({...i,title:`${i.title} [${i.levels}]`}))})});
       const body=await response.json(); if(!response.ok) throw new Error(body.error);
       setImportMessage(`บันทึก ${body.inserted} รายการแยกตามผลกระทบ · ปรับข้อมูลต้นฉบับ ${body.updated ?? 0} รายการ · ข้ามรายการซ้ำ ${body.skipped} รายการ`);setPreview([]);router.refresh();
+      window.dispatchEvent(new CustomEvent('risk-profile-import-saved', { detail: { unitId, year, quarter } }));
     } catch(err) {setError((err as Error).message);} finally {setBusy(false);}
   }
   const selected = risks.filter(r => r.unit_id === unitId && r.year === year && r.quarter === quarter && r.category === category);

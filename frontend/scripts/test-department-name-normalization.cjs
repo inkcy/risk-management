@@ -1,0 +1,15 @@
+process.chdir(require('node:path').resolve(__dirname, '..'));
+const assert = require('node:assert/strict'), fs = require('node:fs'), ts = require('typescript'), vm = require('node:vm');
+const mod = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/departmentName.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports: mod.exports });
+const { resolveDepartmentName, hideDuplicateDepartmentNames } = mod.exports;
+const stored = 'สำนักงานฝ่ายการพยาบาล'.normalize('NFKC');
+assert.equal(resolveDepartmentName('สำนักงานฝ่ายการพยาบาล', [stored]), stored);
+assert.equal(resolveDepartmentName('  หน่วยงานทดสอบ  ', ['หน่วยงานทดสอบ']), 'หน่วยงานทดสอบ');
+assert.equal(resolveDepartmentName('หน่วยงานอื่น', [stored]), undefined);
+assert.equal(resolveDepartmentName('สำนักงานฝ่ายการพยาบาล', [stored, 'สำนักงานฝ่ายการพยาบาล '.normalize('NFKC')]), undefined);
+const alias = 'หน่วยอุบัติเหตุและฉุกเฉิน', preferred = 'หน่วยอุบัติเหตุและฉุกเฉิน (ER)';
+assert.deepEqual(Array.from(hideDuplicateDepartmentNames([alias, preferred, 'หน่วยงานอื่น'])), [preferred, 'หน่วยงานอื่น']);
+assert.deepEqual(Array.from(hideDuplicateDepartmentNames([alias])), [alias]);
+assert.deepEqual(Array.from(hideDuplicateDepartmentNames(['หอผู้ป่วย สามัญอายุรกรรมชาย (22B)', 'หอผู้ป่วยสก.3 สามัญอายุรกรรมชาย (22C)'])), ['หอผู้ป่วย สามัญอายุรกรรมชาย (22B)', 'หอผู้ป่วยสก.3 สามัญอายุรกรรมชาย (22C)']);
+console.log('PASS: department names resolve Unicode variants and reject ambiguous or missing matches');

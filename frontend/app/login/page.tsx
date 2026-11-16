@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
 import { DepartmentLogin } from '@/components/DepartmentLogin';
 import { dbConfigured, query } from '@/lib/db';
+import { hideDuplicateDepartmentNames } from '@/lib/departmentName';
 export const dynamic = 'force-dynamic';
 
 const ERRORS: Record<string, string> = {
@@ -34,7 +35,7 @@ export default async function LoginPage({
 
   const ready = dbConfigured() && (process.env.SESSION_SECRET?.length ?? 0) >= 32;
   const missing = ready ? [] : missingConfig();
-  const units = ready ? (await query<{ name: string }>('SELECT name FROM risk_units WHERE active ORDER BY name')).rows.map(unit => unit.name) : [];
+  const units = ready ? hideDuplicateDepartmentNames((await query<{ name: string }>('SELECT name FROM risk_units WHERE active ORDER BY name')).rows.map(unit => unit.name)) : [];
 
   return (
     <div style={{

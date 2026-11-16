@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { resolveDepartmentName } from '@/lib/departmentName';
 
 export function DepartmentLogin({ units, next }: { units: readonly string[]; next?: string }) {
   const [unitName, setUnitName] = useState('');
@@ -9,13 +10,14 @@ export function DepartmentLogin({ units, next }: { units: readonly string[]; nex
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!units.includes(unitName)) { setError('กรุณาเลือกหน่วยงานจากรายการ'); return; }
+    const resolvedName = resolveDepartmentName(unitName, units);
+    if (!resolvedName) { setError('กรุณาเลือกหน่วยงานจากรายการ'); return; }
     const form = new FormData(event.currentTarget);
     setBusy(true); setError('');
     try {
       const response = await fetch('/api/auth/department', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unitName, password: form.get('password') }),
+        body: JSON.stringify({ unitName: resolvedName, password: form.get('password') }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'เข้าสู่ระบบไม่สำเร็จ');

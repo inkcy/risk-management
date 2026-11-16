@@ -16,8 +16,10 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(year) || year < 2500 || year > 2700 || !Number.isInteger(quarter) || quarter < 1 || quarter > 4) {
       return NextResponse.json({ error: 'ปีหรือไตรมาสไม่ถูกต้อง' }, { status: 400 });
     }
-    const unit = await getRiskUnit(auth.user.id);
-    if (!unit) return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบหน่วยงานก่อนยืนยันส่ง' }, { status: 403 });
+    const unit = auth.user.role === 'admin'
+      ? (await query<{ id: number; name: string }>("SELECT id, name FROM risk_units WHERE active AND lower(trim(name))='admin' ORDER BY id LIMIT 1")).rows[0]
+      : await getRiskUnit(auth.user.id);
+    if (!unit) return NextResponse.json({ error: auth.user.role === 'admin' ? 'ไม่พบหน่วยงาน Admin ที่เปิดใช้งาน' : 'กรุณาเข้าสู่ระบบหน่วยงานก่อนยืนยันส่ง' }, { status: 403 });
     await ensureRiskSubmissions();
     // Capture all rows and the submission record in one statement, using one database snapshot.
     const result = await query(`INSERT INTO risk_profile_submissions (unit_id, year, quarter, submitted_by, snapshot)

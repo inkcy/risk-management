@@ -21,9 +21,9 @@ const analysisLevels = [
   { color: 'red', label: 'สูงมาก' },
 ] as const;
 
-export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, readOnly = false }: { units: Unit[]; risks: Risk[]; canLogout: boolean; initialPeriod?: { unitId: number; year: number; quarter: number }; readOnly?: boolean }) {
+export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, defaultUnitId, readOnly = false }: { units: Unit[]; risks: Risk[]; canLogout: boolean; initialPeriod?: { unitId: number; year: number; quarter: number }; defaultUnitId?: number; readOnly?: boolean }) {
   const router = useRouter();
-  const [unitId, setUnitId] = useState(initialPeriod?.unitId ?? units[0]?.id ?? 0);
+  const [unitId, setUnitId] = useState(initialPeriod?.unitId ?? defaultUnitId ?? units[0]?.id ?? 0);
   const [year, setYear] = useState(() => { const now = new Date(); return initialPeriod?.year ?? now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0); });
   const [quarter, setQuarter] = useState(() => initialPeriod?.quarter ?? Math.floor(((new Date().getMonth() + 3) % 12) / 3) + 1);
   const [category, setCategory] = useState<RiskType>('clinical');

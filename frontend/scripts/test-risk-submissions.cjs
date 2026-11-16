@@ -5,6 +5,7 @@ const ts = require('typescript');
 
 let authorized = true;
 let staff = false;
+let role = 'editor';
 let unit = { id: 7, name: 'หน่วยทดสอบ' };
 let inserted = false;
 let currentRisks = [{ id: 1, title: 'ความเสี่ยงเดิม', category: 'clinical' }, { id: 2, title: 'ความเสี่ยงทั่วไป', category: 'nonclinical' }];
@@ -12,11 +13,12 @@ let savedSnapshot;
 const json = (body, options = {}) => ({ body, status: options.status ?? 200 });
 const mocks = {
   'next/server': { NextResponse: { json } },
-  '@/lib/auth': { requireRole: async () => authorized ? { ok: true, user: { id: 1 } } : { ok: false, response: json({}, { status: 403 }) }, audit: async () => {} },
+  '@/lib/auth': { requireRole: async () => authorized ? { ok: true, user: { id: 1, role } } : { ok: false, response: json({}, { status: 403 }) }, audit: async () => {} },
   '@/lib/riskUnitAuth': { getRiskUnit: async () => unit },
   '@/lib/departmentAccess': { departmentAccess: () => staff ? 'staff' : 'supervisor' },
   '@/lib/riskSubmissions': { ensureRiskSubmissions: async () => {} },
   '@/lib/db': { query: async (sql, params) => {
+    if (sql.startsWith('SELECT id, name FROM risk_units')) return { rows: [{ id: 7, name: 'admin' }] };
     assert.equal(params[0], 7);
     if (inserted) return { rowCount: 0, rows: [] };
     assert.match(sql, /INSERT INTO risk_profile_submissions[\s\S]*snapshot/);
@@ -46,5 +48,8 @@ const req = (body, origin = 'https://example.test') => ({ json: async () => body
   currentRisks[0].title = 'แก้ไขภายหลัง'; currentRisks.splice(1, 1);
   assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 1 }))).body.alreadySubmitted, true);
   assert.equal(savedSnapshot[0].title, 'ความเสี่ยงเดิม'); assert.equal(savedSnapshot[1].category, 'nonclinical');
+  role = 'admin'; unit = null; inserted = false;
+  assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 2, unit_id: 99 }))).body.alreadySubmitted, false);
+  assert.equal((await mod.exports.POST(req({ year: 2569, quarter: 2 }))).body.alreadySubmitted, true);
   console.log('Risk submission authorization, atomic snapshot and duplicate checks passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

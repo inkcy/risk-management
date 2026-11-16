@@ -24,6 +24,7 @@ const analysisLevels = [
 export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, defaultUnitId, readOnly = false }: { units: Unit[]; risks: Risk[]; canLogout: boolean; initialPeriod?: { unitId: number; year: number; quarter: number }; defaultUnitId?: number; readOnly?: boolean }) {
   const router = useRouter();
   const [unitId, setUnitId] = useState(initialPeriod?.unitId ?? defaultUnitId ?? units[0]?.id ?? 0);
+  const [unitSearch, setUnitSearch] = useState('');
   const [year, setYear] = useState(() => { const now = new Date(); return initialPeriod?.year ?? now.getFullYear() + 543 + (now.getMonth() >= 9 ? 1 : 0); });
   const [quarter, setQuarter] = useState(() => initialPeriod?.quarter ?? Math.floor(((new Date().getMonth() + 3) % 12) / 3) + 1);
   const [category, setCategory] = useState<RiskType>('clinical');
@@ -85,7 +86,13 @@ export function UnitRiskProfiles({ units, risks, canLogout, initialPeriod, defau
   return <>
     <section id="risk-profile-details" className="card" style={{ marginBottom: 16, scrollMarginTop: 90 }}><div className="card-header"><div className="card-title">Risk Profile ตามหน่วยงาน</div>{canLogout && <button className="tb-btn tb-btn-ghost" type="button" onClick={async () => { const response = await fetch('/api/risk-units/logout', { method: 'POST' }); if (response.ok) router.refresh(); else setError('ออกจากระบบหน่วยงานไม่สำเร็จ'); }}>ออกจากหน่วยงาน</button>}</div><div className="card-body">
       <div className="risk-assessment-fields">
-        <label>หน่วยงาน<select disabled={readOnly} value={unitId} onChange={e => { clearPreview(); setUnitId(Number(e.target.value)); }}>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
+        <label>หน่วยงาน
+          {!readOnly && <input type="search" aria-label="ค้นหาหน่วยงาน" placeholder="พิมพ์ค้นหาหน่วยงาน" value={unitSearch} onChange={e => setUnitSearch(e.target.value)} />}
+          <select disabled={readOnly} value={unitId} onChange={e => { clearPreview(); setUnitId(Number(e.target.value)); setUnitSearch(''); }}>
+            {units.filter(u => u.id === unitId || u.name.toLocaleLowerCase('th').includes(unitSearch.trim().toLocaleLowerCase('th'))).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+          {!readOnly && unitSearch.trim() && !units.some(u => u.name.toLocaleLowerCase('th').includes(unitSearch.trim().toLocaleLowerCase('th'))) && <small>ไม่พบหน่วยงานที่ค้นหา</small>}
+        </label>
         <label>ปีงบประมาณ พ.ศ.<input disabled={readOnly} type="number" min="2500" max="2700" value={year} onChange={e => { clearPreview(); setYear(Number(e.target.value)); }} /></label>
         <label>ไตรมาส<select disabled={readOnly} value={quarter} onChange={e => { clearPreview(); setQuarter(Number(e.target.value)); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}</option>)}</select></label>
         <label>ประเภท<select value={category} onChange={e => { clearPreview(); setCategory(e.target.value as RiskType); }}><option value="clinical">Clinical</option><option value="nonclinical">Non-Clinical</option></select></label>

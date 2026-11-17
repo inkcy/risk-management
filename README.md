@@ -46,6 +46,16 @@ demo mode ล้วน (ไม่ตั้งทั้ง `POSTGRES_URL` แล�
 
 ## เชื่อม Postgres จริง (Neon / Vercel / local)
 
+### ฐานข้อมูลที่ใช้งานปัจจุบัน
+
+ตรวจสอบการตั้งค่า Production บน Vercel เมื่อ 17 พฤศจิกายน 2569: เว็บใช้ PostgreSQL ของ **Neon** โฮสต์บน AWS ภูมิภาค `ap-southeast-1` (สิงคโปร์) ผ่าน connection pooler ฐานข้อมูลชื่อ `neondb` และ Neon project ID คือ `falling-haze-10744378` จัดการได้ผ่าน [Neon Console](https://console.neon.tech/) ด้วยบัญชีที่มีสิทธิ์เข้าถึงโปรเจกต์ โดย Vercel project ชื่อ `risk-management`
+
+Frontend เชื่อมต่อโดยตรงผ่าน `frontend/lib/db.ts` โดยเลือก `POSTGRES_URL` ก่อน `DATABASE_URL` เมื่อกำหนดทั้งสองค่า ค่า connection string และรหัสผ่านต้องเก็บใน environment variables ไม่ใส่ใน Git
+
+**ระวัง:** ณ วันที่ตรวจสอบ `frontend/.env.local` บนเครื่องพัฒนาชี้ไปยัง host และชื่อฐานข้อมูลเดียวกับ Production ควรแยกฐานข้อมูลหรือ Neon branch สำหรับ development และ staging ก่อนทดลองเขียนข้อมูล รัน migration หรือ seed และตรวจเป้าหมายพร้อมสำรองข้อมูลก่อนเปลี่ยนฐานข้อมูลจริง ห้ามรัน seed กับ Production โดยพลการ
+
+ขั้นตอนด้านล่างเป็นแนวทางสร้างฐานข้อมูลแยกสำหรับการติดตั้งหรือพัฒนา ไม่ใช่คำสั่งให้สร้างฐานข้อมูล Production ใหม่:
+
 1. สร้างฐานข้อมูล Postgres (แนะนำ Neon free tier <https://neon.tech>)
 2. ที่ `frontend/.env.local` ใส่:
    ```
